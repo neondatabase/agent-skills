@@ -6,7 +6,13 @@
 
 # Agent Skills
 
-A collection of [Agent Skills](https://agentskills.io/) for Neon Serverless Postgres. As per the Agent Skills spec, skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently.
+A collection of [Agent Skills](https://agentskills.io/) for Neon Serverless Postgres.
+
+## What are Agent Skills?
+
+As per the Agent Skills spec, skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently.
+
+Once installed, skills are automatically invoked by the agent upon detection of relevant tasks.
 
 ## Available Skills
 
@@ -78,7 +84,7 @@ npx add-skill neondatabase/agent-skills
 
 ## Usage
 
-Installed skills are automatically invoked by the agent upon detection of relevant tasks.
+Example usage:
 
 **Examples:**
 
