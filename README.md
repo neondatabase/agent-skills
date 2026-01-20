@@ -6,7 +6,7 @@
 
 # Agent Skills
 
-A collection of [Agent Skills](https://agentskills.io/). As per the Agent Skills spec, skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently.
+A collection of [Agent Skills](https://agentskills.io/) for Neon Serverless Postgres. As per the Agent Skills spec, skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently.
 
 ## Available Skills
 
