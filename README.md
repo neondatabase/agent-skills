@@ -20,7 +20,7 @@ It all starts with the `SKILL.md` file in the skill's directory. It's the entry 
 
 [skills/using-neon](skills/using-neon/SKILL.md)
 
-Comprehensive guide and best practicesfor working with Neon Serverless Postgres. It covers:
+This is a comprehensive guide and best practices for working with Neon Serverless Postgres. It covers:
 
 **Core Guides:**
 
