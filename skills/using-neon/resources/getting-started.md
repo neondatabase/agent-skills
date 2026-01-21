@@ -1,32 +1,12 @@
----
-name: neon-get-started
-description: Use this skill when users ask to 'Get started with Neon' to connect their project to a Neon database. Interactive guide for project setup, connection strings, dependencies, schema, and authentication.
----
-
-# Get Started with Neon
+# Getting Started with Neon
 
 Interactive guide to help users get started with Neon in their project. Sets up their Neon project (with a connection string) and connects their database to their code.
 
-## Trigger Phrases
+For the official getting started guide:
 
-- "Get started with Neon"
-- "Connect my app to Neon"
-- "Set up Neon database"
-
-## Communication Style
-
-**Keep all responses succinct:**
-
-- Tell the user what you did: "Created users table with 3 columns"
-- Ask direct questions when needed: "Which database should I use?"
-- Avoid verbose explanations of what you're about to do
-
-**Examples:**
-
-- Good: "Added DATABASE_URL to .env. Ready to connect?"
-- Bad: "I'm going to add the DATABASE_URL environment variable to your .env file so that your application can connect to the database..."
-
----
+```bash
+curl -H "Accept: text/markdown" https://neon.tech/docs/get-started/signing-up
+```
 
 ## Interactive Setup Flow
 
@@ -67,7 +47,7 @@ DATABASE_URL=postgresql://user:password@host/database
 
 ### Step 3: Install Dependencies
 
-Check if they have a common driver installed. If not, recommend based on their deployment platform and runtime:
+Recommend drivers based on deployment platform and runtime. For detailed guidance, see `connection-methods.md`.
 
 **Quick Recommendations:**
 
@@ -79,15 +59,8 @@ Check if they have a common driver installed. If not, recommend based on their d
 | Traditional Node.js      | `pg`                       | `npm install pg`                       |
 | Long-running servers     | `pg` with pooling          | `npm install pg`                       |
 
-**For complex scenarios** (multiple runtimes, hybrid architectures, or unsure which to use):
-
-Reference the **choose-connection-method** skill for detailed guidance:
-
-```bash
-npx skill add neondatabase/agent-skills -s choose-connection-method
-```
-
-This skill provides a decision tree based on deployment platform (Vercel, Cloudflare, Netlify, Railway, etc.) and runtime environment (serverless, edge, long-running).
+For detailed serverless driver usage, see `neon-serverless.md`.
+For complex scenarios (multiple runtimes, hybrid architectures), reference `connection-methods.md`.
 
 ### Step 4: Understand the Project
 
@@ -114,6 +87,8 @@ Ask: "Does your app need user authentication? Neon Auth can handle sign-in/sign-
 - Configure environment variables
 - Set up basic auth code
 
+For detailed auth setup, see `neon-auth.md`. For auth + database queries, see `neon-js.md`.
+
 ### Step 6: ORM Setup
 
 **Check for existing ORM** (Prisma, Drizzle, TypeORM).
@@ -122,6 +97,8 @@ Ask: "Does your app need user authentication? Neon Auth can handle sign-in/sign-
 Ask: "Want to set up an ORM for type-safe database queries?"
 
 If yes, suggest based on project. If no, proceed with raw SQL.
+
+For Drizzle ORM integration, see `neon-drizzle.md`.
 
 ### Step 7: Schema Setup
 
@@ -162,26 +139,13 @@ CREATE TABLE users (
 - Database migrations and schema changes
 - Performance optimization"
 
----
-
-## Best Practices
-
-### Security
+## Security Best Practices
 
 1. Never commit connection strings to version control
 2. Use environment variables for all credentials
 3. Prefer SSL connections (default in Neon)
 4. Use least-privilege database roles
 5. Rotate API keys and passwords regularly
-
-### Neon-Specific Features
-
-1. **Branching**: Create database branches for development/staging
-2. **Autoscaling**: Neon automatically scales compute based on load
-3. **Scale to Zero**: Databases automatically suspend after inactivity
-4. **Point-in-Time Recovery**: Restore databases to any point in time
-
----
 
 ## Resume Support
 
@@ -194,10 +158,26 @@ If user says "Continue with Neon setup", check what's already configured:
 
 Then resume from where they left off.
 
-## Related Skills
+## Developer Tools
 
-- **choose-connection-method** - Deep dive into connection options by platform/runtime
-- **neon-serverless** - Serverless driver for database queries
-- **neon-drizzle** - Drizzle ORM integration
-- **neon-auth** - Authentication setup
-- **neon-api** - Managing projects programmatically
+For the best development experience, set up Neon's developer tools:
+
+```bash
+npx neon init
+```
+
+This installs the VSCode extension and configures the MCP server for AI-assisted development.
+
+For detailed setup instructions, see `devtools.md`.
+
+## Documentation Resources
+
+| Topic              | URL                                                 |
+| ------------------ | --------------------------------------------------- |
+| Getting Started    | https://neon.tech/docs/get-started/signing-up       |
+| Connecting to Neon | https://neon.tech/docs/connect/connect-intro        |
+| Connection String  | https://neon.tech/docs/connect/connect-from-any-app |
+| Frameworks Guide   | https://neon.tech/docs/get-started/frameworks       |
+| ORMs Guide         | https://neon.tech/docs/get-started/orms             |
+| VSCode Extension   | https://neon.tech/docs/local/vscode-extension       |
+| MCP Server         | https://neon.tech/docs/ai/neon-mcp-server           |

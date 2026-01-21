@@ -1,11 +1,14 @@
----
-name: neon-python-sdk
-description: Use this skill when managing Neon projects, branches, databases, and other resources programmatically using the neon-api Python SDK.
----
-
 # Neon Python SDK
 
 The `neon-api` Python SDK is a Pythonic wrapper around the Neon REST API. It provides methods for managing all Neon resources, including projects, branches, endpoints, roles, and databases.
+
+For core concepts (Organization, Project, Branch, Endpoint, etc.), see `what-is-neon.md`.
+
+## Documentation
+
+```bash
+curl -H "Accept: text/markdown" https://neon.tech/docs/reference/python-sdk
+```
 
 ## Installation
 
@@ -25,18 +28,6 @@ if not api_key:
 
 neon = NeonAPI(api_key=api_key)
 ```
-
-## Core Concepts
-
-| Concept          | Description                                          | Key Relationship          |
-| ---------------- | ---------------------------------------------------- | ------------------------- |
-| Organization     | Highest-level container for billing, users, projects | Contains Projects         |
-| Project          | Primary container for database resources             | Contains Branches         |
-| Branch           | Copy-on-write clone of database state                | Contains Databases, Roles |
-| Compute Endpoint | Running PostgreSQL instance                          | Attached to a Branch      |
-| Database         | Logical container for data                           | Exists within a Branch    |
-| Role             | PostgreSQL role for auth                             | Belongs to a Branch       |
-| Operation        | Async action by control plane                        | Associated with Project   |
 
 ## Projects
 
@@ -268,8 +259,3 @@ ops = neon.operations(project_id='your-project-id')
 ```python
 op = neon.operation(project_id='your-project-id', operation_id='op-xxx')
 ```
-
-## Related Skills
-
-- **neon-api** - Neon REST API guidelines
-- **neon-typescript-sdk** - TypeScript SDK for Neon

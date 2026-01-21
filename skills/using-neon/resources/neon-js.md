@@ -1,21 +1,22 @@
----
-name: neon-js
-description: Use this skill when building apps with @neondatabase/neon-js SDK for combined Auth and Data API (PostgREST-style database queries). Full SDK for Next.js, React SPA, or Node.js projects.
----
-
 # Neon JS SDK
 
 The `@neondatabase/neon-js` SDK provides a unified client for Neon Auth and Data API. It combines authentication handling with PostgREST-compatible database queries.
 
-**Auth only?** Use the `neon-auth` skill instead for smaller bundle size.
+**Auth only?** Use `neon-auth.md` instead for smaller bundle size.
+
+For official documentation:
+
+```bash
+curl -H "Accept: text/markdown" https://neon.tech/docs/reference/javascript-sdk
+```
 
 ## Package Selection
 
-| Use Case        | Package                      | Notes                                    |
-| --------------- | ---------------------------- | ---------------------------------------- |
-| Auth + Data API | `@neondatabase/neon-js`      | Full SDK, includes everything            |
-| Auth only       | `@neondatabase/auth`         | Smaller bundle, no database dependencies |
-| Data API only   | `@neondatabase/postgrest-js` | Bring your own auth                      |
+| Use Case        | Package                      | Notes               |
+| --------------- | ---------------------------- | ------------------- |
+| Auth + Data API | `@neondatabase/neon-js`      | Full SDK            |
+| Auth only       | `@neondatabase/auth`         | Smaller bundle      |
+| Data API only   | `@neondatabase/postgrest-js` | Bring your own auth |
 
 ## Installation
 
@@ -122,6 +123,8 @@ await client.from("items").update({ status: "completed" }).eq("id", 1);
 await client.from("items").delete().eq("id", 1);
 ```
 
+For complete Data API query reference, see `neon-js/data-api.md`.
+
 ## Auth Methods
 
 ### BetterAuth API (Default)
@@ -159,11 +162,12 @@ const {
 } = await client.auth.getSession();
 ```
 
-## Supporting Documents
+## Sub-Resources
 
-- For complete Data API query reference, review `references/data-api.md`
-- For auth setup details, see the `neon-auth` skill
-- For common mistakes and debugging, review `references/common-mistakes.md`
+| Topic            | Resource                     |
+| ---------------- | ---------------------------- |
+| Data API queries | `neon-js/data-api.md`        |
+| Common mistakes  | `neon-js/common-mistakes.md` |
 
 ## Key Imports
 
@@ -211,8 +215,4 @@ npx neon-js gen-types --db-url "postgresql://..." --output src/types/database.ts
 4. **Wrong package for auth-only**: Use `@neondatabase/auth` for smaller bundle
 5. **Missing "use client"**: Required for auth client components
 
-## Related Skills
-
-- **neon-auth** - Auth-only package (smaller bundle)
-- **neon-drizzle** - Drizzle ORM setup
-- **neon-serverless** - Direct database connections
+See `neon-js/common-mistakes.md` for detailed examples.

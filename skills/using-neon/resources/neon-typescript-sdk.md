@@ -1,11 +1,14 @@
----
-name: neon-typescript-sdk
-description: Use this skill when managing Neon projects, branches, databases, and other resources programmatically using the @neondatabase/api-client TypeScript SDK.
----
-
 # Neon TypeScript SDK
 
 The `@neondatabase/api-client` TypeScript SDK is a typed wrapper around the Neon REST API. It provides methods for managing all Neon resources, including projects, branches, endpoints, roles, and databases.
+
+For core concepts (Organization, Project, Branch, Endpoint, etc.), see `what-is-neon.md`.
+
+## Documentation
+
+```bash
+curl -H "Accept: text/markdown" https://neon.tech/docs/reference/typescript-sdk
+```
 
 ## Installation
 
@@ -25,26 +28,6 @@ if (!apiKey) {
 
 const apiClient = createApiClient({ apiKey });
 ```
-
-## API Key Types
-
-| Type           | Scope                           | Best For                      |
-| -------------- | ------------------------------- | ----------------------------- |
-| Personal       | All projects user has access to | Individual use, scripting     |
-| Organization   | Entire organization             | CI/CD, org-wide automation    |
-| Project-scoped | Single project only             | Project-specific integrations |
-
-## Core Concepts
-
-| Concept          | Description                     | Key Relationship          |
-| ---------------- | ------------------------------- | ------------------------- |
-| Organization     | Highest-level container         | Contains Projects         |
-| Project          | Primary container for resources | Contains Branches         |
-| Branch           | Copy-on-write clone             | Contains Databases, Roles |
-| Compute Endpoint | Running PostgreSQL instance     | Attached to a Branch      |
-| Database         | Logical container for data      | Exists within a Branch    |
-| Role             | PostgreSQL role for auth        | Belongs to a Branch       |
-| Operation        | Async action by control plane   | Associated with Project   |
 
 ## Projects
 
@@ -349,8 +332,3 @@ async function safeApiOperation(projectId: string) {
   }
 }
 ```
-
-## Related Skills
-
-- **neon-api** - Neon REST API guidelines
-- **neon-python-sdk** - Python SDK for Neon

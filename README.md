@@ -10,71 +10,40 @@ A collection of [Agent Skills](https://agentskills.io/) for Neon Serverless Post
 
 ## What are Agent Skills?
 
-As per the Agent Skills spec, skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently.
+As per the Agent Skills spec, skills are folders of instructions, scripts, and resources that agents can discover and use to do things more accurately and efficiently. Once installed, skills are automatically invoked by the agent upon detection of relevant tasks.
 
-Once installed, skills are automatically invoked by the agent upon detection of relevant tasks.
+It all starts with the `SKILL.md` file in the skill's directory. It's the entry point and allows agents to progressively discover information as needed.
 
 ## Available Skills
 
-### Get Started with Neon
+### Using Neon
 
-[skills/neon-get-started](skills/neon-get-started/SKILL.md)
+[skills/using-neon](skills/using-neon/SKILL.md)
 
-Interactive guide to help users get started with Neon. Sets up Neon project, connection strings, dependencies, schema, and authentication.
+Comprehensive guide and best practicesfor working with Neon Serverless Postgres. It covers:
 
-### Choose Your Neon Connection Method
+**Core Guides:**
 
-[skills/choose-connection-method](skills/choose-connection-method/SKILL.md)
+- Getting started with Neon
+- Developer tools (VSCode extension, MCP server, neon init CLI)
+- Choosing connection methods (decision tree by language/platform/runtime)
+- Feature overview (branching, autoscaling, scale-to-zero, instant restore)
 
-Helps choose the right Neon Postgres connection method based on deployment platform (Vercel, Cloudflare, Netlify, Railway, etc.) and runtime environment (serverless, edge, long-running).
+**Database Drivers & ORMs:**
 
-### Neon Serverless Driver
+- `@neondatabase/serverless` - HTTP/WebSocket queries for serverless/edge functions
+- Drizzle ORM integration
 
-[skills/neon-serverless](skills/neon-serverless/SKILL.md)
+**Authentication & Full SDK:**
 
-Use this skill when querying Neon databases using the `@neondatabase/serverless` driver. Covers HTTP queries (neon function), WebSocket connections (Pool/Client), transactions, and ORM integration.
+- `@neondatabase/auth` - Authentication only
+- `@neondatabase/neon-js` - Auth + Data API (PostgREST-style queries)
 
-### Neon + Drizzle ORM
+**Platform API & SDKs:**
 
-[skills/neon-drizzle](skills/neon-drizzle/SKILL.md)
-
-Use this skill when integrating Neon (serverless Postgres) with Drizzle ORM. Covers connection setup (HTTP vs WebSocket), schema definition, migrations, transactions, and query patterns.
-
-### Neon Auth
-
-[skills/neon-auth](skills/neon-auth/SKILL.md)
-
-Use this skill when implementing authentication with `@neondatabase/auth`. Sets up sign-in, sign-up, social login (Google, GitHub), session management, and auth UI components for Next.js, React SPA, or Node.js projects.
-
-### Neon JS SDK
-
-[skills/neon-js](skills/neon-js/SKILL.md)
-
-Use this skill when building apps with `@neondatabase/neon-js` SDK for combined Auth and Data API (PostgREST-style database queries). Full SDK for Next.js, React SPA, or Node.js projects.
-
-### Neon API
-
-[skills/neon-api](skills/neon-api/SKILL.md)
-
-Use this skill when managing Neon projects, branches, compute endpoints, databases, roles, API keys, organizations, or operations programmatically via the Neon REST API.
-
-### Neon TypeScript SDK
-
-[skills/neon-typescript-sdk](skills/neon-typescript-sdk/SKILL.md)
-
-Use this skill when managing Neon projects, branches, databases, and other resources programmatically using the `@neondatabase/api-client` TypeScript SDK.
-
-### Neon Python SDK
-
-[skills/neon-python-sdk](skills/neon-python-sdk/SKILL.md)
-
-Use this skill when managing Neon projects, branches, databases, and other resources programmatically using the `neon-api` Python SDK.
-
-### Referencing Neon Docs
-
-[skills/referencing-neon-docs](skills/referencing-neon-docs/SKILL.md)
-
-Use this skill when you need to look up Neon documentation, verify Neon-related information, or find accurate details about Neon features, APIs, or configurations.
+- REST API for managing Neon resources
+- TypeScript SDK (`@neondatabase/api-client`)
+- Python SDK (`neon-api`)
 
 ## Installation
 
@@ -84,22 +53,32 @@ npx add-skill neondatabase/agent-skills
 
 ## Usage
 
-Example usage:
-
-**Examples:**
+Example prompts:
 
 ```
-Recommend a connection method for this project and my Neon database
+Get started with Neon
 ```
 
 ```
-Set up Drizzle ORM for Neon
+Recommend a connection method for this project
 ```
 
 ```
-Set up Neon Auth
+Set up Drizzle ORM with Neon
 ```
 
 ```
-Create a projects list route and query all projects from the database using neon-js
+Set up Neon Auth for my Next.js app
+```
+
+```
+Query the database using neon-js
+```
+
+```
+Create a new Neon branch using the API
+```
+
+```
+Use the serverless driver for edge functions
 ```

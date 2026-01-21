@@ -1,11 +1,12 @@
----
-name: neon-serverless
-description: Use this skill when querying Neon databases using the @neondatabase/serverless driver. Covers HTTP queries (neon function), WebSocket connections (Pool/Client), transactions, and ORM integration.
----
-
 # Neon Serverless Driver
 
 Patterns and best practices for connecting to Neon databases in serverless environments using the `@neondatabase/serverless` driver. The driver connects over **HTTP** for fast, single queries or **WebSockets** for `node-postgres` compatibility and interactive transactions.
+
+For official documentation:
+
+```bash
+curl -H "Accept: text/markdown" https://neon.tech/docs/serverless/serverless-driver
+```
 
 ## Installation
 
@@ -193,26 +194,7 @@ export const config = {
 
 ## ORM Integration
 
-### Drizzle ORM
-
-```typescript
-import { neon, neonConfig, Pool } from "@neondatabase/serverless";
-import { drizzle as drizzleWs } from "drizzle-orm/neon-serverless";
-import { drizzle as drizzleHttp } from "drizzle-orm/neon-http";
-import ws from "ws";
-
-const connectionString = process.env.DATABASE_URL!;
-neonConfig.webSocketConstructor = ws;
-
-const sql = neon(connectionString);
-const pool = new Pool({ connectionString });
-
-// HTTP - best for serverless/edge
-export const drizzleClientHttp = drizzleHttp({ client: sql });
-
-// WebSocket - best for long-running apps
-export const drizzleClientWs = drizzleWs({ client: pool });
-```
+For Drizzle ORM integration with the serverless driver, see `neon-drizzle.md`.
 
 ### Prisma
 
@@ -270,8 +252,3 @@ try {
   return new Response("Server error", { status: 500 });
 }
 ```
-
-## Related Skills
-
-- **neon-drizzle** - Drizzle ORM integration with Neon
-- **neon-api** - Managing Neon projects programmatically
