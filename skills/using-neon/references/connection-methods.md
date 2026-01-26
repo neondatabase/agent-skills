@@ -97,6 +97,8 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/guides/vercel-connection-
 
 Cloudflare Hyperdrive provides connection pooling for Workers. Use `node-postgres` or any native TCP driver.
 
+See https://neon.tech/docs/guides/cloudflare-hyperdrive for more on connecting with Cloudflare Workers and Hyperdrive.
+
 **No pooling support (Netlify, Deno Deploy)** → Use `@neondatabase/serverless`
 
 Fall back to the decision in step 5 based on transaction requirements.
