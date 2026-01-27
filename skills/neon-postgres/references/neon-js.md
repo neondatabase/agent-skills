@@ -7,7 +7,7 @@ The `@neondatabase/neon-js` SDK provides a unified client for Neon Auth and Data
 For official documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/javascript-sdk
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/javascript-sdk
 ```
 
 ## Package Selection

@@ -5,7 +5,7 @@ Patterns and best practices for connecting to Neon databases in serverless envir
 For official documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/serverless/serverless-driver
+curl -H "Accept: text/markdown" https://neon.com/docs/serverless/serverless-driver
 ```
 
 ## Installation
@@ -189,7 +189,7 @@ export const config = {
 };
 
 // For Cloudflare Workers, consider using Hyperdrive
-// https://neon.tech/blog/hyperdrive-neon-faq
+// https://neon.com/blog/hyperdrive-neon-faq
 ```
 
 ## ORM Integration

@@ -7,7 +7,7 @@ Overview of Neon's key platform features. For detailed information, fetch the of
 Create instant, copy-on-write clones of your database at any point in time. Branches are isolated environments perfect for development, testing, and preview deployments.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/branching
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/branching
 ```
 
 **Key Points:**
@@ -33,7 +33,7 @@ If the Neon MCP server is available, you can use it to list and create branches.
 Neon automatically scales compute resources based on workload demand.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/autoscaling
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/autoscaling
 ```
 
 **Key Points:**
@@ -48,7 +48,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/autoscaling
 Databases automatically suspend after a period of inactivity, reducing costs to storage-only.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/scale-to-zero
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/scale-to-zero
 ```
 
 **Key Points:**
@@ -63,7 +63,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/scale-to-zer
 Restore your database to any point within your retention window without backups.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/branch-restore
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/branch-restore
 ```
 
 **Key Points:**
@@ -78,7 +78,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/branch-resto
 Create read-only compute endpoints to scale read workloads.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/read-replicas
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/read-replicas
 ```
 
 **Key Points:**
@@ -93,7 +93,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/read-replica
 Built-in connection pooling via PgBouncer for efficient connection management.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/connect/connection-pooling
+curl -H "Accept: text/markdown" https://neon.com/docs/connect/connection-pooling
 ```
 
 **Key Points:**
@@ -108,7 +108,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/connect/connection-poolin
 Restrict database access to specific IP addresses or ranges.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/ip-allow
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/ip-allow
 ```
 
 ## Logical Replication
@@ -116,7 +116,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/ip-allow
 Replicate data to/from external Postgres databases.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/logical-replication-guide
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/logical-replication-guide
 ```
 
 ## Neon Auth
@@ -124,7 +124,7 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/guides/logical-replicatio
 Managed authentication that branches with your database.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/auth/overview
+curl -H "Accept: text/markdown" https://neon.com/docs/auth/overview
 ```
 
 **Key Points:**
@@ -140,13 +140,13 @@ For setup, see `neon-auth.md`. For auth + data API, see `neon-js.md`.
 
 | Feature             | Documentation                                           | Resource       |
 | ------------------- | ------------------------------------------------------- | -------------- |
-| Branching           | https://neon.tech/docs/introduction/branching           | -              |
-| Autoscaling         | https://neon.tech/docs/introduction/autoscaling         | -              |
-| Scale to Zero       | https://neon.tech/docs/introduction/scale-to-zero       | -              |
-| Instant Restore     | https://neon.tech/docs/introduction/branch-restore      | -              |
-| Read Replicas       | https://neon.tech/docs/introduction/read-replicas       | -              |
-| Connection Pooling  | https://neon.tech/docs/connect/connection-pooling       | -              |
-| IP Allow            | https://neon.tech/docs/introduction/ip-allow            | -              |
-| Logical Replication | https://neon.tech/docs/guides/logical-replication-guide | -              |
-| Neon Auth           | https://neon.tech/docs/auth/overview                    | `neon-auth.md` |
-| Data API            | https://neon.tech/docs/data-api/overview                | `neon-js.md`   |
+| Branching           | https://neon.com/docs/introduction/branching           | -              |
+| Autoscaling         | https://neon.com/docs/introduction/autoscaling         | -              |
+| Scale to Zero       | https://neon.com/docs/introduction/scale-to-zero       | -              |
+| Instant Restore     | https://neon.com/docs/introduction/branch-restore      | -              |
+| Read Replicas       | https://neon.com/docs/introduction/read-replicas       | -              |
+| Connection Pooling  | https://neon.com/docs/connect/connection-pooling       | -              |
+| IP Allow            | https://neon.com/docs/introduction/ip-allow            | -              |
+| Logical Replication | https://neon.com/docs/guides/logical-replication-guide | -              |
+| Neon Auth           | https://neon.com/docs/auth/overview                    | `neon-auth.md` |
+| Data API            | https://neon.com/docs/data-api/overview                | `neon-js.md`   |

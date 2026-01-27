@@ -5,7 +5,7 @@ Neon is a serverless Postgres platform designed to help you build reliable and s
 For the full introduction, fetch the official docs:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction
 ```
 
 ## Core Concepts
@@ -33,18 +33,18 @@ Understanding Neon's resource hierarchy is essential for working with the platfo
 
 | Topic                  | Documentation URL                                         |
 | ---------------------- | --------------------------------------------------------- |
-| Introduction           | https://neon.tech/docs/introduction                       |
-| Architecture           | https://neon.tech/docs/introduction/architecture-overview |
-| Plans & Billing        | https://neon.tech/docs/introduction/about-billing         |
-| Regions                | https://neon.tech/docs/introduction/regions               |
-| Postgres Compatibility | https://neon.tech/docs/reference/compatibility            |
+| Introduction           | https://neon.com/docs/introduction                       |
+| Architecture           | https://neon.com/docs/introduction/architecture-overview |
+| Plans & Billing        | https://neon.com/docs/introduction/about-billing         |
+| Regions                | https://neon.com/docs/introduction/regions               |
+| Postgres Compatibility | https://neon.com/docs/reference/compatibility            |
 
 ```bash
 # Fetch architecture docs
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/architecture-overview
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/architecture-overview
 
 # Fetch plans and billing
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/about-billing
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/about-billing
 ```
 
 ## When to Use Neon

@@ -5,7 +5,7 @@ Interactive guide to help users get started with Neon in their project. Sets up 
 For the official getting started guide:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/get-started/signing-up
+curl -H "Accept: text/markdown" https://neon.com/docs/get-started/signing-up
 ```
 
 ## Interactive Setup Flow
@@ -174,10 +174,10 @@ For detailed setup instructions, see `devtools.md`.
 
 | Topic              | URL                                                 |
 | ------------------ | --------------------------------------------------- |
-| Getting Started    | https://neon.tech/docs/get-started/signing-up       |
-| Connecting to Neon | https://neon.tech/docs/connect/connect-intro        |
-| Connection String  | https://neon.tech/docs/connect/connect-from-any-app |
-| Frameworks Guide   | https://neon.tech/docs/get-started/frameworks       |
-| ORMs Guide         | https://neon.tech/docs/get-started/orms             |
-| VSCode Extension   | https://neon.tech/docs/local/vscode-extension       |
-| MCP Server         | https://neon.tech/docs/ai/neon-mcp-server           |
+| Getting Started    | https://neon.com/docs/get-started/signing-up       |
+| Connecting to Neon | https://neon.com/docs/connect/connect-intro        |
+| Connection String  | https://neon.com/docs/connect/connect-from-any-app |
+| Frameworks Guide   | https://neon.com/docs/get-started/frameworks       |
+| ORMs Guide         | https://neon.com/docs/get-started/orms             |
+| VSCode Extension   | https://neon.com/docs/local/vscode-extension       |
+| MCP Server         | https://neon.com/docs/ai/neon-mcp-server           |
