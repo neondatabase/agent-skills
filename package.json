@@ -1,0 +1,7 @@
+{
+  "name": "@neondatabase/agent-skills",
+  "description": "A collection of Agent Skills for Neon Serverless Postgres",
+  "scripts": {
+    "fmt": "npx prettier --write ."
+  }
+}
