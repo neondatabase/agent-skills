@@ -1,0 +1,15 @@
+{
+  "name": "neon",
+  "version": "1.0.0",
+  "description": "Neon Serverless Postgres integration for Claude Code. Includes guides for Neon development and the Neon MCP Server for natural language database management.",
+  "author": {
+    "name": "Neon",
+    "url": "https://neon.tech"
+  },
+  "homepage": "https://neon.tech/docs/ai/neon-mcp-server",
+  "repository": "https://github.com/neondatabase/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": ["neon", "postgres", "serverless", "database", "mcp"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

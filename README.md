@@ -51,6 +51,17 @@ A comprehensive guide and best practices for working with Neon Serverless Postgr
 npx add-skill neondatabase/agent-skills
 ```
 
+### Claude Code Plugin
+
+You can also install the skills as a Claude Code plugin, which bundles both the skills and the [Neon MCP Server](https://mcp.neon.tech) for natural language database management:
+
+```
+/plugin marketplace add neondatabase/agent-skills
+/plugin install using-neon@neon-agent-skills
+```
+
+After installation, you'll be prompted to authenticate with Neon via OAuth when you first use MCP tools.
+
 ## Usage
 
 Example prompts:
