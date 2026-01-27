@@ -1,0 +1,21 @@
+{
+  "name": "neon-agent-skills",
+  "owner": {
+    "name": "Andre Landgraf",
+    "email": "andre@neon.tech"
+  },
+  "metadata": {
+    "description": "Official Neon agent skills for Claude Code",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "using-neon",
+      "source": "./",
+      "description": "Neon Serverless Postgres integration - skills and MCP server",
+      "version": "1.0.0",
+      "category": "database",
+      "tags": ["postgres", "serverless", "database", "mcp", "neon"]
+    }
+  ]
+}
