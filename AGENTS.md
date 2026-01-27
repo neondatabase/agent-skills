@@ -28,7 +28,7 @@ skills/
 
 ### Naming Conventions
 
-- **Skill directory**: kebab-case, must match `name` in frontmatter (e.g., `using-neon`)
+- **Skill directory**: kebab-case, must match `name` in frontmatter (e.g., `neon-postgres`)
 - **Name field**: 1-64 chars, lowercase alphanumeric and hyphens only, no consecutive hyphens (`--`), must not start/end with `-`
 - **SKILL.md**: Always uppercase, always this exact filename
 - **Scripts**: `kebab-case.sh` (e.g., `deploy.sh`, `fetch-logs.sh`)
