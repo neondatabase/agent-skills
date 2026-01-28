@@ -15,16 +15,16 @@ The Neon Platform API allows you to manage Neon projects, branches, databases, a
 
 ```bash
 # REST API documentation
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/api-reference
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/api-reference
 
 # TypeScript SDK
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/typescript-sdk
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/typescript-sdk
 
 # Python SDK
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/python-sdk
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/python-sdk
 
 # CLI
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/neon-cli
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/neon-cli
 ```
 
 For the interactive API reference: https://api-docs.neon.tech/reference/getting-started-with-neon-api

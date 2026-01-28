@@ -19,7 +19,7 @@ This command:
 For full CLI reference:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/cli-init
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/cli-init
 ```
 
 ## VSCode Extension
@@ -46,7 +46,7 @@ code --install-extension neon.neon-vscode
 For detailed documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/local/vscode-extension
+curl -H "Accept: text/markdown" https://neon.com/docs/local/vscode-extension
 ```
 
 ## Neon MCP Server
@@ -108,14 +108,14 @@ Get your API key from: https://console.neon.tech/app/settings/api-keys
 For full MCP server documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/ai/neon-mcp-server
+curl -H "Accept: text/markdown" https://neon.com/docs/ai/neon-mcp-server
 ```
 
 ## Documentation Resources
 
 | Topic              | URL                                           |
 | ------------------ | --------------------------------------------- |
-| CLI Init Command   | https://neon.tech/docs/reference/cli-init     |
-| VSCode Extension   | https://neon.tech/docs/local/vscode-extension |
-| MCP Server         | https://neon.tech/docs/ai/neon-mcp-server     |
-| Neon CLI Reference | https://neon.tech/docs/reference/neon-cli     |
+| CLI Init Command   | https://neon.com/docs/reference/cli-init     |
+| VSCode Extension   | https://neon.com/docs/local/vscode-extension |
+| MCP Server         | https://neon.com/docs/ai/neon-mcp-server     |
+| Neon CLI Reference | https://neon.com/docs/reference/neon-cli     |

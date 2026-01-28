@@ -5,7 +5,7 @@ Guide to selecting the optimal connection method for your Neon Postgres database
 For official documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/connect/choose-connection
+curl -H "Accept: text/markdown" https://neon.com/docs/connect/choose-connection
 ```
 
 ## Decision Tree
@@ -20,14 +20,14 @@ For non-TypeScript languages, connect from a secure backend server using your la
 
 | Language/Framework  | Documentation                               |
 | ------------------- | ------------------------------------------- |
-| Django (Python)     | https://neon.tech/docs/guides/django        |
-| SQLAlchemy (Python) | https://neon.tech/docs/guides/sqlalchemy    |
-| Elixir Ecto         | https://neon.tech/docs/guides/elixir-ecto   |
-| Laravel (PHP)       | https://neon.tech/docs/guides/laravel       |
-| Ruby on Rails       | https://neon.tech/docs/guides/ruby-on-rails |
-| Go                  | https://neon.tech/docs/guides/go            |
-| Rust                | https://neon.tech/docs/guides/rust          |
-| Java                | https://neon.tech/docs/guides/java          |
+| Django (Python)     | https://neon.com/docs/guides/django        |
+| SQLAlchemy (Python) | https://neon.com/docs/guides/sqlalchemy    |
+| Elixir Ecto         | https://neon.com/docs/guides/elixir-ecto   |
+| Laravel (PHP)       | https://neon.com/docs/guides/laravel       |
+| Ruby on Rails       | https://neon.com/docs/guides/ruby-on-rails |
+| Go                  | https://neon.com/docs/guides/go            |
+| Rust                | https://neon.com/docs/guides/rust          |
+| Java                | https://neon.com/docs/guides/java          |
 
 **TypeScript/JavaScript** → Continue to step 2.
 
@@ -40,7 +40,7 @@ For non-TypeScript languages, connect from a secure backend server using your la
 This is the only option for client-side apps since browsers cannot make direct TCP connections to Postgres. See `neon-js.md` for setup.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/javascript-sdk
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/javascript-sdk
 ```
 
 **No** → Continue to step 3.
@@ -78,7 +78,7 @@ WebSocket maintains connection state needed for transactions. See `neon-serverle
 HTTP is faster for single queries (~3 roundtrips vs ~8 for TCP). See `neon-serverless.md` for setup.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/serverless/serverless-driver
+curl -H "Accept: text/markdown" https://neon.com/docs/serverless/serverless-driver
 ```
 
 ---
@@ -90,14 +90,14 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/serverless/serverless-dri
 Vercel's Fluid compute supports connection pooling. Use `attachDatabasePool` for optimal connection management.
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/vercel-connection-methods
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/vercel-connection-methods
 ```
 
 **Cloudflare (with Hyperdrive)** → Use **TCP via Hyperdrive**
 
 Cloudflare Hyperdrive provides connection pooling for Workers. Use `node-postgres` or any native TCP driver.
 
-See https://neon.tech/docs/guides/cloudflare-hyperdrive for more on connecting with Cloudflare Workers and Hyperdrive.
+See https://neon.com/docs/guides/cloudflare-hyperdrive for more on connecting with Cloudflare Workers and Hyperdrive.
 
 **No pooling support (Netlify, Deno Deploy)** → Use `@neondatabase/serverless`
 
@@ -125,10 +125,10 @@ Popular TypeScript/JavaScript ORMs all work with Neon:
 
 | ORM     | Drivers Supported                               | Documentation                         |
 | ------- | ----------------------------------------------- | ------------------------------------- |
-| Drizzle | `pg`, `postgres.js`, `@neondatabase/serverless` | https://neon.tech/docs/guides/drizzle |
-| Kysely  | `pg`, `postgres.js`, `@neondatabase/serverless` | https://neon.tech/docs/guides/kysely  |
-| Prisma  | `pg`, `@neondatabase/serverless`                | https://neon.tech/docs/guides/prisma  |
-| TypeORM | `pg`                                            | https://neon.tech/docs/guides/typeorm |
+| Drizzle | `pg`, `postgres.js`, `@neondatabase/serverless` | https://neon.com/docs/guides/drizzle |
+| Kysely  | `pg`, `postgres.js`, `@neondatabase/serverless` | https://neon.com/docs/guides/kysely  |
+| Prisma  | `pg`, `@neondatabase/serverless`                | https://neon.com/docs/guides/prisma  |
+| TypeORM | `pg`                                            | https://neon.com/docs/guides/typeorm |
 
 All ORMs support both TCP drivers and Neon's serverless driver depending on your platform.
 
@@ -186,8 +186,8 @@ Then provide:
 
 | Topic                      | URL                                                     |
 | -------------------------- | ------------------------------------------------------- |
-| Choosing Connection Method | https://neon.tech/docs/connect/choose-connection        |
-| Serverless Driver          | https://neon.tech/docs/serverless/serverless-driver     |
-| JavaScript SDK             | https://neon.tech/docs/reference/javascript-sdk         |
-| Connection Pooling         | https://neon.tech/docs/connect/connection-pooling       |
-| Vercel Connection Methods  | https://neon.tech/docs/guides/vercel-connection-methods |
+| Choosing Connection Method | https://neon.com/docs/connect/choose-connection        |
+| Serverless Driver          | https://neon.com/docs/serverless/serverless-driver     |
+| JavaScript SDK             | https://neon.com/docs/reference/javascript-sdk         |
+| Connection Pooling         | https://neon.com/docs/connect/connection-pooling       |
+| Vercel Connection Methods  | https://neon.com/docs/guides/vercel-connection-methods |

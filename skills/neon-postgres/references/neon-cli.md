@@ -16,12 +16,6 @@ brew install neonctl
 npm install -g neonctl
 ```
 
-**Direct download:**
-
-```bash
-curl -fsSL https://neon.tech/install.sh | bash
-```
-
 ## Authentication
 
 Authenticate with your Neon account:
@@ -150,15 +144,15 @@ Example GitHub Actions workflow:
 
 | Topic          | URL                                                    |
 | -------------- | ------------------------------------------------------ |
-| CLI Reference  | https://neon.tech/docs/reference/neon-cli              |
-| CLI Install    | https://neon.tech/docs/reference/cli-install           |
-| CLI Auth       | https://neon.tech/docs/reference/cli-auth              |
-| CLI Projects   | https://neon.tech/docs/reference/cli-projects          |
-| CLI Branches   | https://neon.tech/docs/reference/cli-branches          |
-| CLI Connection | https://neon.tech/docs/reference/cli-connection-string |
+| CLI Reference  | https://neon.com/docs/reference/neon-cli              |
+| CLI Install    | https://neon.com/docs/reference/cli-install           |
+| CLI Auth       | https://neon.com/docs/reference/cli-auth              |
+| CLI Projects   | https://neon.com/docs/reference/cli-projects          |
+| CLI Branches   | https://neon.com/docs/reference/cli-branches          |
+| CLI Connection | https://neon.com/docs/reference/cli-connection-string |
 
 Fetch CLI documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/neon-cli
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/neon-cli
 ```

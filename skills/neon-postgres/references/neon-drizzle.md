@@ -5,7 +5,7 @@ Integration patterns, configurations, and optimizations for using **Drizzle ORM*
 For official documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/drizzle
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/drizzle
 ```
 
 ## Choosing the Right Driver

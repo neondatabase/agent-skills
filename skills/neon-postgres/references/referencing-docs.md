@@ -7,7 +7,7 @@ The Neon documentation is the source of truth for all Neon-related information. 
 To get a list of all available Neon documentation pages:
 
 ```bash
-curl https://neon.tech/llms.txt
+curl https://neon.com/llms.txt
 ```
 
 This returns an index of all documentation pages with their URLs and descriptions.
@@ -17,23 +17,23 @@ This returns an index of all documentation pages with their URLs and description
 To fetch any documentation page as markdown for review:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/<path>
+curl -H "Accept: text/markdown" https://neon.com/docs/<path>
 ```
 
 **Examples:**
 
 ```bash
 # Fetch the API reference
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/api-reference
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/api-reference
 
 # Fetch connection pooling docs
-curl -H "Accept: text/markdown" https://neon.tech/docs/connect/connection-pooling
+curl -H "Accept: text/markdown" https://neon.com/docs/connect/connection-pooling
 
 # Fetch branching documentation
-curl -H "Accept: text/markdown" https://neon.tech/docs/introduction/branching
+curl -H "Accept: text/markdown" https://neon.com/docs/introduction/branching
 
 # Fetch serverless driver docs
-curl -H "Accept: text/markdown" https://neon.tech/docs/serverless/serverless-driver
+curl -H "Accept: text/markdown" https://neon.com/docs/serverless/serverless-driver
 ```
 
 ## Common Documentation Paths
@@ -55,16 +55,16 @@ curl -H "Accept: text/markdown" https://neon.tech/docs/serverless/serverless-dri
 
 ```bash
 # Next.js
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/nextjs
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/nextjs
 
 # Django
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/django
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/django
 
 # Drizzle ORM
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/drizzle
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/drizzle
 
 # Prisma
-curl -H "Accept: text/markdown" https://neon.tech/docs/guides/prisma
+curl -H "Accept: text/markdown" https://neon.com/docs/guides/prisma
 ```
 
 ## Best Practices

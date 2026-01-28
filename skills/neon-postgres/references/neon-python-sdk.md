@@ -7,7 +7,7 @@ For core concepts (Organization, Project, Branch, Endpoint, etc.), see `what-is-
 ## Documentation
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/reference/python-sdk
+curl -H "Accept: text/markdown" https://neon.com/docs/reference/python-sdk
 ```
 
 ## Installation

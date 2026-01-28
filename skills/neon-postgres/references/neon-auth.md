@@ -8,7 +8,7 @@ Neon Auth provides authentication for your application. It's available as:
 For official documentation:
 
 ```bash
-curl -H "Accept: text/markdown" https://neon.tech/docs/auth/overview
+curl -H "Accept: text/markdown" https://neon.com/docs/auth/overview
 ```
 
 ## Package Selection
