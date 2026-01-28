@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "using-neon",
+      "name": "neon-postgres",
       "source": "./",
       "description": "Neon Serverless Postgres integration - skills and MCP server",
       "version": "1.0.0",

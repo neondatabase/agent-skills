@@ -16,9 +16,9 @@ It all starts with the `SKILL.md` file in the skill's directory. It's the entry 
 
 ## Available Skills
 
-### Using Neon
+### Neon Postgres
 
-[skills/using-neon](skills/using-neon/SKILL.md)
+[skills/neon-postgres](skills/neon-postgres/SKILL.md)
 
 A comprehensive guide and best practices for working with Neon Serverless Postgres. It covers:
 
@@ -57,7 +57,7 @@ You can also install the skills as a Claude Code plugin, which bundles both the 
 
 ```
 /plugin marketplace add neondatabase/agent-skills
-/plugin install using-neon@neon-agent-skills
+/plugin install neon-postgres@neon-agent-skills
 ```
 
 After installation, you'll be prompted to authenticate with Neon via OAuth when you first use MCP tools.
