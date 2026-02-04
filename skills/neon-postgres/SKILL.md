@@ -11,7 +11,7 @@ Neon is a serverless Postgres platform that separates compute and storage to off
 
 Always reference the Neon documentation before making Neon-related claims. The documentation is the source of truth for all Neon-related information.
 
-Below you'll find a list of resources organized by area of concern. This is meant to support you find the right documentation pages to fetch and add a bit of additonal context.
+Below you'll find a list of resources organized by area of concern. This is meant to support you find the right documentation pages to fetch and add a bit of additional context.
 
 You can use the `curl` commands to fetch the documentation page as markdown:
 
