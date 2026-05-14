@@ -192,6 +192,16 @@ Key points:
 
 Link: https://neon.com/docs/introduction/branching.md
 
+For detailed branch creation workflows (normal vs schema-only branches, reset-from-parent, CLI/MCP selection), fetch the full branching skill:
+
+https://neon.com/docs/ai/skills/neon-postgres-branches/SKILL.md
+
+To install the skill directly:
+
+```bash
+npx skills add neondatabase/agent-skills --skill neon-postgres-branches
+```
+
 ## Autoscaling
 
 Use this when the user needs compute to scale automatically with workload and wants guidance on CU sizing and runtime behavior.
