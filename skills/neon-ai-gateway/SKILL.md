@@ -80,9 +80,9 @@ When `preview.aiGateway` is enabled, Neon injects the gateway credentials as **O
 | `OPENAI_API_KEY`           | Gateway bearer token (a Neon credential, `nt_live_...`)                                                                                    |
 | `OPENAI_BASE_URL`          | **Default chat endpoint** — full MLflow URL, **including** `/ai-gateway/mlflow/v1`: `https://<branch-id>-api.ai.<region>.aws.neon.tech/ai-gateway/mlflow/v1` |
 | `NEON_AI_GATEWAY_TOKEN`    | Same bearer as `OPENAI_API_KEY` (survives a user overriding `OPENAI_*` with their own keys)                                                |
-| `NEON_AI_GATEWAY_BASE_URL` | **Bare branch gateway host** (`scheme://host`, **no path** — no `/ai-gateway`): `https://<branch-id>-api.ai.<region>.aws.neon.tech`        |
+| `NEON_AI_GATEWAY_HOST` | **Bare branch gateway host** (`scheme://host`, **no path** — no `/ai-gateway`): `https://<branch-id>-api.ai.<region>.aws.neon.tech`        |
 
-**Default = MLflow (OpenRouter-style chat completions).** `OPENAI_BASE_URL` points at the unified chat endpoint so `new OpenAI()` and Mastra work with any catalog model without dialect swaps. `NEON_AI_GATEWAY_BASE_URL` is the bare host — append `/ai-gateway/<dialect>/v1` for native provider APIs.
+**Default = MLflow (OpenRouter-style chat completions).** `OPENAI_BASE_URL` points at the unified chat endpoint so `new OpenAI()` and Mastra work with any catalog model without dialect swaps. `NEON_AI_GATEWAY_HOST` is the bare host — append `/ai-gateway/<dialect>/v1` for native provider APIs.
 
 Routes under the host:
 
@@ -91,13 +91,13 @@ Routes under the host:
 - `/ai-gateway/anthropic/v1` — native Anthropic Messages (extended thinking, prompt caching). Advanced.
 - `/ai-gateway/gemini/v1beta/...` — native Gemini `generateContent`. Advanced.
 
-Do **not** use `@ai-sdk/openai` against the gateway for multi-provider routing. Use `@neondatabase/ai-sdk-provider` — it reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` and routes each model to the best dialect internally.
+Do **not** use `@ai-sdk/openai` against the gateway for multi-provider routing. Use `@neondatabase/ai-sdk-provider` — it reads `NEON_AI_GATEWAY_HOST` + `NEON_AI_GATEWAY_TOKEN` and routes each model to the best dialect internally.
 
 For typed access, `parseEnv` (from `@neondatabase/env`) returns `env.aiGateway` (`apiKey`, `baseUrl`) derived from your `neon.ts`.
 
 ## Use with the Vercel AI SDK
 
-Use `@neondatabase/ai-sdk-provider` (not `@ai-sdk/openai`). It reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow):
+Use `@neondatabase/ai-sdk-provider` (not `@ai-sdk/openai`). It reads `NEON_AI_GATEWAY_HOST` + `NEON_AI_GATEWAY_TOKEN` and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow):
 
 ```typescript
 import { neon } from "@neondatabase/ai-sdk-provider/v1";
@@ -147,9 +147,9 @@ const res = await client.chat.completions.create({
 });
 ```
 
-For native OpenAI **Responses** (advanced), point at `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/openai/v1` and call `client.responses.create()`.
+For native OpenAI **Responses** (advanced), point at `${NEON_AI_GATEWAY_HOST}/ai-gateway/openai/v1` and call `client.responses.create()`.
 
-The Anthropic SDK and google-genai work the same way for native provider features — point them at the `/anthropic` and `/gemini` routes on the bare gateway host (`${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/anthropic`, `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/gemini`).
+The Anthropic SDK and google-genai work the same way for native provider features — point them at the `/anthropic` and `/gemini` routes on the bare gateway host (`${NEON_AI_GATEWAY_HOST}/ai-gateway/anthropic`, `${NEON_AI_GATEWAY_HOST}/ai-gateway/gemini`).
 
 ## Model identifiers
 
