@@ -1,0 +1,32 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Core",
+      "description": "Start here for Neon platform and Postgres guidance.",
+      "skills": [
+        "neon",
+        "neon-postgres"
+      ]
+    },
+    {
+      "title": "Database Workflows",
+      "description": "Provision, branch, and optimize Postgres projects.",
+      "skills": [
+        "claimable-postgres",
+        "neon-postgres-branches",
+        "neon-postgres-egress-optimizer"
+      ]
+    },
+    {
+      "title": "Neon Platform",
+      "description": "Use Neon services beyond core Postgres.",
+      "skills": [
+        "neon-ai-gateway",
+        "neon-functions",
+        "neon-object-storage"
+      ]
+    }
+  ]
+}
