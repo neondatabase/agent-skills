@@ -6,7 +6,7 @@ The shape mirrors any other Node integration (see `references/sentry.md`): insta
 
 ## 1. Define the agent against the Neon AI Gateway
 
-Use the gateway's **MLflow (chat-completions) dialect**, which serves every provider (OpenAI, Anthropic, …) — derive it from the injected `aiGateway.baseUrl` (see the `neon-ai-gateway` skill). `parseEnv` reads the injected gateway credentials from your `neon.ts`.
+Use the gateway's OpenAI-compatible **chat-completions** endpoint, which serves every provider (OpenAI, Anthropic, …). `parseEnv` reads the injected gateway credentials from your `neon.ts`, and `env.aiGateway.baseUrl` is the ready-to-use chat-completions URL.
 
 ```typescript
 // src/mastra/agents/pricing.ts
@@ -15,7 +15,7 @@ import { parseEnv } from "@neondatabase/env";
 import config from "../../../neon";
 
 const env = parseEnv(config);
-const gatewayUrl = env.aiGateway.baseUrl.replace("/openai/v1", "/mlflow/v1");
+const gatewayUrl = env.aiGateway.baseUrl;
 
 export const pricingAgent = new Agent({
   id: "pricing-analyst",
@@ -70,7 +70,7 @@ const result = await agent.generate(prompt, {
 const data = result.object; // validated against myZodSchema
 ```
 
-For resilience, register a second agent on a different model (e.g. `neon/claude-haiku-4-5`) and fall back to it if the primary attempt throws — the same provider-fallback pattern works because both are reachable on the MLflow dialect.
+For resilience, register a second agent on a different model (e.g. `neon/claude-haiku-4-5`) and fall back to it if the primary attempt throws — the same provider-fallback pattern works because both are reachable on the chat-completions endpoint.
 
 ## 4. Create the Mastra project + token with the CLI
 

@@ -27,7 +27,7 @@ export default defineConfig({
 
 ## 2. The handler: stream a tool-calling agent
 
-The function's default export is a web-standard `{ fetch }` handler. The `@neondatabase/ai-sdk-provider` reads the injected gateway credentials automatically, so `neon("<model>")` is all the model config you need — it routes each model to the right dialect (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow). Return `result.toUIMessageStreamResponse()` so the AI SDK's `useChat` hooks can consume the stream:
+The function's default export is a web-standard `{ fetch }` handler. The `@neondatabase/ai-sdk-provider` reads the injected gateway credentials automatically, so `neon("<model>")` is all the model config you need — it routes each model to the right dialect (Anthropic → Messages, OpenAI/Codex → Responses, everything else → chat completions). Return `result.toUIMessageStreamResponse()` so the AI SDK's `useChat` hooks can consume the stream:
 
 ```typescript
 // src/index.ts

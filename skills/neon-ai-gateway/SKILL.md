@@ -34,7 +34,7 @@ If the user already has a deep, single-provider integration and no interest in N
 ## What It Does
 
 - **One API for all models** — Frontier and open-source models behind a single endpoint, addressed by their catalog ID (e.g. `claude-sonnet-4-6`, `gpt-5-mini`, `gemini-2-5-flash`).
-- **Standard SDKs, one URL change** — OpenAI SDK and AI SDK (OpenAI-compatible MLflow/Responses routes), Anthropic SDK (native Messages), google-genai (native Gemini).
+- **Standard SDKs, one URL change** — OpenAI-compatible chat completions and Responses routes, Anthropic SDK (native Messages), google-genai (native Gemini).
 - **Branch-scoped** — Each branch gets its own gateway host; the Neon credential authorizes requests for that branch and its descendants.
 - **Streaming** — Server-sent events work on all endpoints with no extra configuration.
 
@@ -78,18 +78,18 @@ When `preview.aiGateway` is enabled, Neon injects the gateway credentials as **O
 | Variable                   | Meaning                                                                                                                                    |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | `OPENAI_API_KEY`           | Gateway bearer token (a Neon credential, `nt_live_...`)                                                                                    |
-| `OPENAI_BASE_URL`          | Full OpenAI-dialect route, **including** `/ai-gateway/openai/v1`: `https://<branch-id>-api.ai.<region>.aws.neon.tech/ai-gateway/openai/v1` |
+| `OPENAI_BASE_URL`          | Full OpenAI-compatible chat-completions endpoint, **including** `/v1/chat/completions`: `https://<branch-id>-api.ai.<region>.aws.neon.tech/v1/chat/completions` |
 | `NEON_AI_GATEWAY_TOKEN`    | Same bearer as `OPENAI_API_KEY` (survives a user overriding `OPENAI_*` with their own keys)                                                |
 | `NEON_AI_GATEWAY_BASE_URL` | **Bare branch gateway host** (`scheme://host`, **no path** — no `/ai-gateway`): `https://<branch-id>-api.ai.<region>.aws.neon.tech`        |
 
-The two base URLs are **different**: `OPENAI_BASE_URL` already includes the full `/ai-gateway/openai/v1` (Responses) route, while `NEON_AI_GATEWAY_BASE_URL` is just the bare host, so you append `/ai-gateway/<dialect>` yourself (this is also what the `@neondatabase/ai-sdk-provider` does for you). The routes under the host are:
+The two base URLs are **different**: `OPENAI_BASE_URL` already includes the full `/v1/chat/completions` endpoint, while `NEON_AI_GATEWAY_BASE_URL` is just the bare host. Use the bare host when a client needs to append a provider-specific route (this is also what the `@neondatabase/ai-sdk-provider` does for you). The routes under the host are:
 
-- `/ai-gateway/mlflow/v1` — unified, OpenAI **Chat Completions**-compatible; recommended default, works with every provider.
-- `/ai-gateway/openai/v1` — OpenAI **Responses** API (required for `gpt-5-…-codex` variants and `gpt-5-5-pro`). This is the route `OPENAI_BASE_URL` already points at, because the `@ai-sdk/openai` provider uses the Responses API by default.
+- `/v1/chat/completions` — unified, OpenAI **Chat Completions**-compatible; recommended default, works with every provider. This is the endpoint `OPENAI_BASE_URL` points at.
+- `/ai-gateway/openai/v1` — OpenAI **Responses** API (required for `gpt-5-…-codex` variants and `gpt-5-5-pro`).
 - `/ai-gateway/anthropic/v1` — native Anthropic Messages (extended thinking, prompt caching).
 - `/ai-gateway/gemini/v1beta/...` — native Gemini `generateContent`.
 
-So `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/mlflow/v1` is the chat-completions endpoint, `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/openai/v1` equals `OPENAI_BASE_URL`, and so on. If you only have `OPENAI_BASE_URL` and need chat completions, swap the dialect: `baseUrl.replace("/openai/v1", "/mlflow/v1")` (this is what the Mastra example does).
+So `${NEON_AI_GATEWAY_BASE_URL}/v1/chat/completions` equals `OPENAI_BASE_URL`; `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/openai/v1` is the Responses API route; and so on. Do **not** derive routes by replacing `/openai/v1` in `OPENAI_BASE_URL` — that path is no longer present.
 
 For typed access, `parseEnv` (from `@neondatabase/env`) returns `env.aiGateway` (`apiKey`, `baseUrl`) derived from your `neon.ts`.
 
@@ -97,26 +97,7 @@ For typed access, `parseEnv` (from `@neondatabase/env`) returns `env.aiGateway` 
 
 The [Vercel AI SDK](https://ai-sdk.dev) is the recommended way to call the gateway and build agents from TypeScript: one set of primitives (`generateText`, `streamText`, tool calling, structured output) over every catalog model, with first-class streaming for the long agent responses Neon Functions are built to host.
 
-On a Neon Function that streams text and generates images, the `@ai-sdk/openai` provider reads `OPENAI_API_KEY` and `OPENAI_BASE_URL` from the injected env automatically — no client config needed; just pick a catalog model:
-
-```typescript
-import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
-
-const result = streamText({
-  model: openai("gpt-5-mini"),
-  messages,
-  tools: {
-    image_generation: openai.tools.imageGeneration({
-      outputFormat: "jpeg",
-      size: "1024x1024",
-    }),
-  },
-});
-return result.toUIMessageStreamResponse();
-```
-
-For multi-provider routing from a single call, the dedicated `@neondatabase/ai-sdk-provider` reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow):
+For multi-provider routing from a single call, use the dedicated `@neondatabase/ai-sdk-provider`. It reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → chat completions):
 
 ```typescript
 import { neon } from "@neondatabase/ai-sdk-provider";
@@ -126,6 +107,25 @@ const { text } = await generateText({
   model: neon("claude-haiku-4-5"), // or gpt-5-3-codex, gemini-2-5-flash, ...
   prompt: "Summarize Postgres for me.",
 });
+```
+
+On a Neon Function that streams text and generates images, the same provider exposes the gateway's built-in image generation tool while keeping route selection internal:
+
+```typescript
+import { neon } from "@neondatabase/ai-sdk-provider";
+import { streamText } from "ai";
+
+const result = streamText({
+  model: neon("gpt-5-mini"),
+  messages,
+  tools: {
+    image_generation: neon.tools.imageGeneration({
+      outputFormat: "jpeg",
+      size: "1024x1024",
+    }),
+  },
+});
+return result.toUIMessageStreamResponse();
 ```
 
 To build an **agent** — a model that calls tools in a loop and then answers — add `tools` and a `stopWhen` budget. The loop runs in-process, so on a Neon Function it isn't cut off by lambda-style timeouts:
@@ -153,7 +153,7 @@ For a full AI SDK agent deployed as a Neon Function (streaming, tool calling, im
 
 ## Build agents with Mastra (recommended)
 
-[Mastra](https://mastra.ai) is the recommended framework when you want batteries-included agents — built-in memory, tools, workflows, and tracing — with the model still pointed at the gateway. A memory-backed agent (threads/messages in Postgres via `@mastra/pg`) running as a Neon Function reads `env.aiGateway` from `parseEnv` and uses the **chat-completions** (MLflow) dialect:
+[Mastra](https://mastra.ai) is the recommended framework when you want batteries-included agents — built-in memory, tools, workflows, and tracing — with the model still pointed at the gateway. A memory-backed agent (threads/messages in Postgres via `@mastra/pg`) running as a Neon Function reads `env.aiGateway` from `parseEnv` and uses the injected **chat-completions** endpoint:
 
 ```typescript
 import { Agent } from "@mastra/core/agent";
@@ -161,7 +161,7 @@ import { parseEnv } from "@neondatabase/env";
 import config from "../neon";
 
 const env = parseEnv(config);
-const gatewayUrl = env.aiGateway.baseUrl.replace("/openai/v1", "/mlflow/v1");
+const gatewayUrl = env.aiGateway.baseUrl;
 
 export const personalAssistant = new Agent({
   id: "personal-assistant",
@@ -179,29 +179,35 @@ export const personalAssistant = new Agent({
 
 ## Use with plain SDKs (lower-level)
 
-When you don't need an agent framework — a single completion, an existing provider-SDK integration, or native provider features — call the gateway with the plain SDKs. The injected `OPENAI_API_KEY` and `OPENAI_BASE_URL` are OpenAI-standard, so `new OpenAI()` picks them up with **zero config**. Since `OPENAI_BASE_URL` is the OpenAI **Responses** dialect (`/openai/v1`), call the Responses API:
+When you don't need an agent framework — a single completion, an existing provider-SDK integration, or native provider features — call the gateway with plain HTTP or SDKs. The injected `OPENAI_API_KEY` and `OPENAI_BASE_URL` point at the OpenAI-compatible **chat-completions** endpoint:
+
+```typescript
+const res = await fetch(process.env.OPENAI_BASE_URL!, {
+  method: "POST",
+  headers: {
+    authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+    "content-type": "application/json",
+  },
+  body: JSON.stringify({
+    model: "claude-sonnet-4-6",
+    messages: [{ role: "user", content: "What is Neon?" }],
+  }),
+});
+```
+
+For the OpenAI **Responses** API, derive the route from the bare Neon gateway host:
 
 ```typescript
 import OpenAI from "openai";
 
-const client = new OpenAI(); // reads OPENAI_API_KEY + OPENAI_BASE_URL from the env
+const client = new OpenAI({
+  apiKey: process.env.NEON_AI_GATEWAY_TOKEN,
+  baseURL: `${process.env.NEON_AI_GATEWAY_BASE_URL}/ai-gateway/openai/v1`,
+});
 
 const res = await client.responses.create({
-  model: "gpt-5-mini", // swap to claude-sonnet-4-6, gemini-2-5-flash, ...
+  model: "gpt-5-mini",
   input: "What is Neon?",
-});
-```
-
-For the unified **chat-completions** dialect (`/mlflow/v1`) instead, point the client at it. The ergonomic way is to swap the dialect on the injected base URL rather than rebuild it (same move the Mastra example makes):
-
-```typescript
-const client = new OpenAI({
-  baseURL: process.env.OPENAI_BASE_URL!.replace("/openai/v1", "/mlflow/v1"),
-});
-
-const res = await client.chat.completions.create({
-  model: "claude-sonnet-4-6",
-  messages: [{ role: "user", content: "What is Neon?" }],
 });
 ```
 
