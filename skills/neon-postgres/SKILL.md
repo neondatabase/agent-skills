@@ -204,7 +204,7 @@ Link: https://neon.com/docs/reference/api-reference.md
 
 ### Neon TypeScript SDK
 
-Use this when implementing typed programmatic control of Neon resources in TypeScript via `@neondatabase/api-client`.
+Use this when implementing typed programmatic control of Neon resources in TypeScript via `@neon/sdk` (the fetch-based, zero-dependency successor to `@neondatabase/api-client`).
 
 Link: https://neon.com/docs/reference/typescript-sdk.md
 
