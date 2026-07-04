@@ -89,7 +89,7 @@ The two base URLs are **different**: `OPENAI_BASE_URL` already includes the full
 - `/ai-gateway/anthropic/v1` — native Anthropic Messages (extended thinking, prompt caching).
 - `/ai-gateway/gemini/v1beta/...` — native Gemini `generateContent`.
 
-So `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/mlflow/v1` is the chat-completions endpoint, `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/openai/v1` equals `OPENAI_BASE_URL`, and so on. If you only have `OPENAI_BASE_URL` and need chat completions, swap the dialect: `baseUrl.replace("/openai/v1", "/mlflow/v1")`. With Mastra (`@mastra/core` 1.47+), use a `neon/<model>` magic string instead — Mastra picks the right dialect from env automatically.
+So `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/mlflow/v1` is the chat-completions endpoint, `${NEON_AI_GATEWAY_BASE_URL}/ai-gateway/openai/v1` equals `OPENAI_BASE_URL`, and so on. If you only have `OPENAI_BASE_URL` and need chat completions, swap the dialect: `baseUrl.replace("/openai/v1", "/mlflow/v1")`.
 
 For typed access, `parseEnv` (from `@neon/env`) returns `env.aiGateway` (`apiKey`, `baseUrl`) derived from your `neon.ts`.
 
