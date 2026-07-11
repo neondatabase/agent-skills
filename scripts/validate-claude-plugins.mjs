@@ -3,6 +3,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import process from "node:process";
+import { validatePluginSkills } from "./lib/plugin-skills.mjs";
 
 const repoRoot = process.cwd();
 const errors = [];
@@ -213,6 +214,10 @@ async function main() {
         `${entry.name}: no mcp.json file found in plugin root (only needed when using MCP servers).`,
       );
     }
+  }
+
+  for (const error of await validatePluginSkills(repoRoot)) {
+    addError(error);
   }
 
   summarizeAndExit();
