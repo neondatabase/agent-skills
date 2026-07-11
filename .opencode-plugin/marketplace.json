@@ -1,0 +1,19 @@
+{
+  "name": "neon",
+  "owner": {
+    "name": "Neon",
+    "email": "andre@neon.tech"
+  },
+  "metadata": {
+    "description": "Official Neon Serverless Postgres plugins for OpenCode",
+    "version": "1.0.0",
+    "pluginRoot": "plugins"
+  },
+  "plugins": [
+    {
+      "name": "neon-postgres",
+      "source": "neon-postgres",
+      "description": "Manage your Neon projects, databases, and branches with the Neon agent skills and the Neon MCP Server"
+    }
+  ]
+}

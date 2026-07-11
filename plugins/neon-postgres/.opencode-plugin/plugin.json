@@ -1,0 +1,17 @@
+{
+  "name": "neon-postgres",
+  "displayName": "Neon Postgres",
+  "version": "1.0.0",
+  "description": "Manage your Neon projects, databases, and branches with the Neon agent skills and the Neon MCP Server",
+  "author": {
+    "name": "Neon",
+    "email": "andre@neon.tech"
+  },
+  "homepage": "https://neon.tech/docs/ai/neon-mcp-server",
+  "repository": "https://github.com/neondatabase/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": ["neon", "postgres", "serverless", "database", "mcp", "opencode"],
+  "logo": "assets/logo.svg",
+  "skills": "./skills/",
+  "config": "./opencode.json"
+}

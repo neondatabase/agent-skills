@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Validate Cursor and Claude plugins
+      - name: Validate agent plugins
         run: npm run validate:plugins
 
       - name: Validate Neon skill
