@@ -93,7 +93,7 @@ Two gotchas:
 
 ## 5. Pass the creds via `neon.ts` (third-party env)
 
-Neon-injected vars (`DATABASE_URL`, `OPENAI_*`, AI Gateway) are automatic. Declare only third-party vars under the function's `env`, resolved from `process.env` at deploy time:
+Neon-injected vars (`DATABASE_URL`, AI Gateway `NEON_AI_GATEWAY_*`) are automatic. Declare only third-party vars under the function's `env`, resolved from `process.env` at deploy time:
 
 ```typescript
 // neon.ts

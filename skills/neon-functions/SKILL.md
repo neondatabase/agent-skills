@@ -155,7 +155,7 @@ Neon injects branch-scoped connection strings and service URLs at runtime — yo
 | `NEON_AUTH_BASE_URL`    | Present when Neon Auth is enabled on the branch.                                         |
 | `NEON_DATA_API_URL`     | Present when the Data API is enabled on the branch.                                      |
 
-Object storage (`AWS_*`) and AI Gateway (`OPENAI_*`, `NEON_AI_GATEWAY_*`) vars are also injected when those services are declared — see the `neon-object-storage` and `neon-ai-gateway` skills.
+Object storage (`AWS_*`) and AI Gateway (`NEON_AI_GATEWAY_*`) vars are also injected when those services are declared — see the `neon-object-storage` and `neon-ai-gateway` skills.
 
 `neon env pull` / `neon-env run` / `neon dev` emit `NEON_BRANCH` (and the connection strings) into your local dev environment too, so local runs mirror the deployed runtime.
 
@@ -166,7 +166,7 @@ functions: {
   todos: {
     name: "todo api",
     source: "src/index.ts",
-    env: { OPENAI_API_KEY: process.env.OPENAI_API_KEY! },
+    env: { RESEND_API_KEY: process.env.RESEND_API_KEY! },
   },
 }
 ```
