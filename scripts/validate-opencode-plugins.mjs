@@ -194,59 +194,74 @@ async function validateFrontmatterFile(
   }
 }
 
-async function validateComponentFrontmatter(pluginDir, pluginName) {
-  const checks = [
-    {
-      dir: "rules",
-      exts: [".md", ".mdc", ".markdown"],
-      component: "rule",
-      required: ["description"],
-    },
-    {
-      dir: "agents",
-      exts: [".md", ".mdc", ".markdown"],
-      component: "agent",
-      required: ["name", "description"],
-    },
-    {
-      dir: "commands",
-      exts: [".md", ".mdc", ".markdown", ".txt"],
-      component: "command",
-      required: ["name", "description"],
-    },
-  ];
+async function validateSkillFrontmatter(pluginDir, pluginName) {
+  const skillsDir = path.join(pluginDir, "skills");
+  if (!(await pathExists(skillsDir))) {
+    addError(`${pluginName}: skills directory is missing.`);
+    return;
+  }
 
-  for (const check of checks) {
-    const dirPath = path.join(pluginDir, check.dir);
-    if (!(await pathExists(dirPath))) {
-      continue;
-    }
-    const files = await walkFiles(dirPath);
-    for (const file of files) {
-      if (check.exts.includes(path.extname(file).toLowerCase())) {
-        await validateFrontmatterFile(
-          file,
-          check.component,
-          check.required,
-          pluginName,
-        );
-      }
+  const files = await walkFiles(skillsDir);
+  let skillCount = 0;
+  for (const file of files) {
+    if (path.basename(file) === "SKILL.md") {
+      skillCount += 1;
+      await validateFrontmatterFile(
+        file,
+        "skill",
+        ["name", "description"],
+        pluginName,
+      );
     }
   }
 
-  const skillsDir = path.join(pluginDir, "skills");
-  if (await pathExists(skillsDir)) {
-    const files = await walkFiles(skillsDir);
-    for (const file of files) {
-      if (path.basename(file) === "SKILL.md") {
-        await validateFrontmatterFile(
-          file,
-          "skill",
-          ["name", "description"],
-          pluginName,
+  if (skillCount === 0) {
+    addError(`${pluginName}: no SKILL.md files found under skills/.`);
+  }
+}
+
+async function validateOpencodeConfig(configPath, pluginName) {
+  const config = await readJsonFile(configPath, `${pluginName} opencode config`);
+  if (!config) {
+    return;
+  }
+
+  if (!config.mcp || typeof config.mcp !== "object") {
+    addError(`${pluginName}: opencode.json must define an "mcp" object.`);
+    return;
+  }
+
+  const servers = Object.entries(config.mcp);
+  if (servers.length === 0) {
+    addError(`${pluginName}: opencode.json must define at least one MCP server.`);
+    return;
+  }
+
+  for (const [serverName, serverConfig] of servers) {
+    if (!serverConfig || typeof serverConfig !== "object") {
+      addError(`${pluginName}: mcp.${serverName} must be an object.`);
+      continue;
+    }
+
+    if (serverConfig.type === "remote") {
+      if (typeof serverConfig.url !== "string" || serverConfig.url.length === 0) {
+        addError(`${pluginName}: mcp.${serverName}.url is required for remote servers.`);
+      }
+      continue;
+    }
+
+    if (serverConfig.type === "local") {
+      if (!Array.isArray(serverConfig.command) || serverConfig.command.length === 0) {
+        addError(
+          `${pluginName}: mcp.${serverName}.command must be a non-empty array for local servers.`,
         );
       }
+      continue;
     }
+
+    addError(
+      `${pluginName}: mcp.${serverName}.type must be "remote" or "local".`,
+    );
   }
 }
 
@@ -271,12 +286,12 @@ function resolveMarketplaceSource(source, pluginRoot) {
 async function main() {
   const marketplacePath = path.join(
     repoRoot,
-    ".cursor-plugin",
+    ".opencode-plugin",
     "marketplace.json",
   );
   const marketplace = await readJsonFile(
     marketplacePath,
-    "Cursor marketplace manifest",
+    "OpenCode marketplace manifest",
   );
   if (!marketplace) {
     summarizeAndExit();
@@ -353,10 +368,10 @@ async function main() {
       continue;
     }
 
-    const manifestPath = path.join(pluginDir, ".cursor-plugin", "plugin.json");
+    const manifestPath = path.join(pluginDir, ".opencode-plugin", "plugin.json");
     const pluginManifest = await readJsonFile(
       manifestPath,
-      `${entry.name} cursor plugin manifest`,
+      `${entry.name} opencode plugin manifest`,
     );
     if (!pluginManifest) {
       continue;
@@ -376,26 +391,24 @@ async function main() {
       );
     }
 
-    for (const field of [
-      "logo",
-      "rules",
-      "skills",
-      "agents",
-      "commands",
-      "hooks",
-      "mcpServers",
-    ]) {
+    for (const field of ["logo", "skills", "config", "commands", "agents"]) {
       for (const value of extractPathValues(pluginManifest[field])) {
         await validateReferencedPath(pluginDir, field, value, entry.name);
       }
     }
 
-    await validateComponentFrontmatter(pluginDir, entry.name);
+    await validateSkillFrontmatter(pluginDir, entry.name);
 
-    const hooksPath = path.join(pluginDir, "hooks", "hooks.json");
-    if (!(await pathExists(hooksPath))) {
+    const configPath = path.join(pluginDir, "opencode.json");
+    if (!(await pathExists(configPath))) {
+      addError(`${entry.name}: opencode.json is missing in plugin root.`);
+    } else {
+      await validateOpencodeConfig(configPath, entry.name);
+    }
+
+    if (!pluginManifest.config) {
       addWarning(
-        `${entry.name}: no hooks/hooks.json file found (only needed when using hooks).`,
+        `${entry.name}: plugin.json should reference "./opencode.json" via the "config" field.`,
       );
     }
   }
