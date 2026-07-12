@@ -96,7 +96,7 @@ Refer to the connection methods guide to pick the correct driver based on deploy
 
 **4. User Authentication with Neon Auth (if needed)**
 
-Skip for CLI tools, scripts, or apps without user accounts. If the app needs auth: use MCP server `provision_neon_auth` tool, then see the auth overview (https://neon.com/docs/auth/overview.md) for setup. For auth + database queries, see the JavaScript SDK reference (https://neon.com/docs/reference/javascript-sdk.md).
+Skip for CLI tools, scripts, or apps without user accounts. If the app needs auth: use MCP server `neon_auth_provision` tool, then see the auth overview (https://neon.com/docs/auth/overview.md) for setup. For auth + database queries, see the JavaScript SDK reference (https://neon.com/docs/reference/javascript-sdk.md).
 
 **5. ORM Setup (optional)**
 
