@@ -257,7 +257,6 @@ There's no rush — `@neondatabase/api-client` is not being deprecated. When you
 ## Further reading
 
 - npm: https://www.npmjs.com/package/@neon/sdk
-- Neon TypeScript SDK docs: https://neon.com/docs/reference/typescript-sdk
+- Neon TypeScript SDK docs: https://neon.com/docs/reference/typescript-sdk.md
 - Neon API reference: https://neon.com/docs/reference/api-reference
-- Announcement: https://neon.com/blog/neon-sdk
 - Building a platform on Neon: the `neon-for-agent-platforms` skill (`npx skills add neondatabase/neon-for-agent-platforms`) ships runnable `@neon/sdk` scripts for provisioning, branching, snapshots, project transfer, and consumption metrics.
