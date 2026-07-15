@@ -215,6 +215,63 @@ Use a model's catalog ID directly in the `model` field — e.g. `claude-sonnet-4
 - **models.dev Neon provider page: https://models.dev/providers/neon** — the canonical, always-current list of the Neon provider's model IDs and their underlying models. The machine-readable catalog is at https://models.dev/api.json (the `neon` key).
 - **Models doc:** see Further reading.
 
+## List available models at runtime (`/v1/models`)
+
+The gateway also exposes the model catalog **live from your own branch endpoint**, so an app or agent can discover exactly which models this branch serves without hard-coding the list. It is an OpenAI-compatible list endpoint, served **only on the unified dialect** (`/v1`):
+
+```bash
+curl "$NEON_AI_GATEWAY_BASE_URL/v1/models" \
+  -H "Authorization: Bearer $NEON_AI_GATEWAY_TOKEN"
+```
+
+- `GET ${NEON_AI_GATEWAY_BASE_URL}/v1/models` → **200**
+- `GET ${NEON_AI_GATEWAY_BASE_URL}/openai/v1/models` → **404** (not served on the Responses dialect — use `/v1`)
+
+**Getting the credentials for the request.** Both values come from the same branch-scoped Neon credential the gateway uses everywhere else — you never manage a provider key:
+
+- **Provision via `neon.ts` (recommended).** Enable `preview.aiGateway` in `neon.ts` and run `neon deploy` (or `neon config apply`). Provisioning, `neon link`, and `neon checkout` pull `NEON_AI_GATEWAY_TOKEN` + `NEON_AI_GATEWAY_BASE_URL` into your local `.env.local`; inside a deployed Neon Function they're injected automatically. See **Setup** and **Environment variables** above.
+- **Pull into the environment via CLI.** On a branch that already has the gateway enabled, `neon env pull` writes the two vars to `.env`/`.env.local`, or `neon-env run -- <cmd>` injects them at runtime without a file.
+- **Provision via the Console UI.** Enable the AI Gateway on the branch in the Neon Console and copy the branch's gateway base URL and a Neon credential (token) from the project's connection/credentials view.
+
+Any Neon credential (`nt_live_...`) valid for the branch works as the bearer token; `NEON_AI_GATEWAY_BASE_URL` is the bare branch host (no path).
+
+**Response shape** — OpenAI/OpenRouter-compatible list:
+
+```jsonc
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "claude-sonnet-4-6",              // catalog model ID — use directly in the `model` field
+      "canonical_slug": "claude-sonnet-4-6",
+      "name": "Claude Sonnet 4.6",            // human-readable display name
+      "object": "model",
+      "owned_by": "anthropic",                // anthropic | openai | google | meta | alibaba | databricks
+      "created": 0,
+      "enabled": true,
+      "context_length": null,
+      "architecture": {
+        "modality": "text->text",
+        "input_modalities": ["text"],
+        "output_modalities": ["text"],
+        "tokenizer": "Claude",                // Claude | Gemini | GPT | "" (empty for open-source)
+        "instruct_type": null
+      },
+      "top_provider": {
+        "is_moderated": false,
+        "context_length": null,
+        "max_completion_tokens": null
+      },
+      "pricing": null,
+      "per_request_limits": null
+    }
+    // ... one entry per model in the branch's catalog
+  ]
+}
+```
+
+> Note: `context_length`, `pricing`, and `per_request_limits` are currently `null` and `created` is `0` for every entry — for context windows, pricing, and capabilities use the models.dev catalog above. Use `/v1/models` when you need the live, branch-scoped list of servable model IDs (e.g. to populate a model picker or validate a `model` before a request).
+
 ## Availability
 
 The AI Gateway is a preview (early access) feature available only on new projects in the `us-east-2` region; it can't be enabled on existing projects. Foundation model access requires a paid Neon plan. Confirm the user's project is a new project in `us-east-2`. If the user does not yet have access, point them to the private beta sign-up: https://neon.com/blog/were-building-backends#access
