@@ -2,17 +2,15 @@
 name: neon
 description: >-
   Overview of the Neon platform for apps and agents, spanning Postgres, Auth,
-  Data API, and the new services: Object Storage, Compute Functions, and AI
-  Gateway. Use whenever "Neon" is mentioned for an overview of how to work with Neon and how to get started. Otherwise, the individual capabilities are the triggers: "object storage" or "S3-compatible
-  storage", "serverless functions", "background jobs", or
-  "run code near my database", "AI gateway", "LLM proxy",
-  "model routing", or "call an LLM" → AI Gateway; "database", "Postgres", or
-  "authentication" → Postgres and Auth.
+  the Data API, and the new services: Object Storage, Compute Functions, and AI
+  Gateway. Use when "Neon" is mentioned, or when any of its individual
+  capabilities are the trigger: "object storage" or "S3", "buckets", "serverless
+  functions", "AI gateway", "call an LLM", "postgres", "database", or "backend".
 ---
 
 # Neon
 
-Important: Neon is no longer just a Serverless Postgres provider. Neon is the backend for apps and agents with Serverless Postgres, Auth, Functions, Storage, and an AI Gateway: instant, branchable, serverless.
+Important: Neon is no longer just a Serverless Postgres provider. Neon is the backend for apps and agents with Serverless Postgres, Auth, Functions, Object Storage, and an AI Gateway: instant, branchable, serverless.
 
 Use this skill as the starting point for anything Neon: get an overview of its capabilities, find your way around the Neon agent skills and documentation, and follow best practices for getting started and for branch-first development workflows.
 
@@ -23,14 +21,14 @@ Neon bundles several backend primitives for building apps and agents that all br
 - **Postgres** — Serverless Postgres that scales and branches with your app. _Generally available._
 - **Auth** — Managed authentication with users and sessions stored in Postgres. _Generally available._
 - **Object Storage** — S3-compatible object storage that branches with your projects. _Preview / early access._
-- **Compute Functions** — Long-running serverless functions running close to your database — for WebSocket servers, long agent HTTP streams, APIs, and server-sent event servers. _Preview / early access._
+- **Functions** — Long-running serverless functions - Neon's compute offering - running close to your database — for WebSocket servers, long agent HTTP streams, APIs, and server-sent event servers. _Preview / early access._
 - **AI Gateway** — One API for all frontier and open-source models, with routing, logging, and cost controls, powered by Databricks. _Preview / early access._
 
 ### Preview Service Availability
 
-Object Storage, Compute Functions, and AI Gateway are preview (early access) features.
+Object Storage, Functions, and AI Gateway are in public beta.
 
-Early access features are only available on net-new projects created in the `us-east-2` region; they cannot be enabled on existing projects for now. Before guiding a user through any of these services, confirm they are working with a new project in `us-east-2`. If not, they will need to create a new project in that region. Then confirm the user already has early access; otherwise, point them to the private beta sign-up: https://neon.com/blog/were-building-backends#access.
+Beta access features are only available on net-new projects created in the `us-east-2` region; they cannot be enabled on existing projects for now. Before guiding a user through any of these services, confirm they are working with a new project in `us-east-2`. If not, they will need to create a new project in that region.
 
 ## Architecture: how Neon fits
 
@@ -97,6 +95,8 @@ For example, to install the object storage skill globally for a specific agent w
 ```bash
 npx skills add neondatabase/agent-skills -s neon-object-storage -g -y -a <agent-name>
 ```
+
+You should also make sure the skills are up to date. You can run the same command or replace `add` with `update` to update all Neon skills.
 
 ## Getting Started with Neon
 
@@ -212,9 +212,13 @@ export default defineConfig({
   auth: true,
   dataApi: true,
   preview: {
-    functions: { /* ... */ }, // see the neon-functions skill
-    buckets: { /* ... */ },    // see the neon-object-storage skill
-    aiGateway: true,           // see the neon-ai-gateway skill
+    functions: {
+      /* ... */
+    }, // see the neon-functions skill
+    buckets: {
+      /* ... */
+    }, // see the neon-object-storage skill
+    aiGateway: true, // see the neon-ai-gateway skill
   },
 });
 ```
@@ -320,7 +324,10 @@ export default defineConfig({ auth: true, dataApi: true });
 
 // 2. Or verify a third-party IdP instead of Neon Auth:
 export default defineConfig({
-  dataApi: { authProvider: "external", jwksUrl: "https://your-idp/.well-known/jwks.json" },
+  dataApi: {
+    authProvider: "external",
+    jwksUrl: "https://your-idp/.well-known/jwks.json",
+  },
 });
 ```
 
