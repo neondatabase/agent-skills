@@ -155,5 +155,34 @@ If the skill requires network access, instruct users to add required domains at 
 Use the skills-ref tool to validate your skills:
 
 ```bash
+npm ci --ignore-scripts
+npm run validate:skills
+# or the full CI gate (skills + plugins):
+npm run validate:ci
+```
+
+You can also validate a single skill directly:
+
+```bash
 skills-ref validate ./my-skill
 ```
+
+## CI/CD
+
+Neon maintains **two** agent-skill repositories with a shared, hardened CI pipeline. Keep them aligned when you change CI/CD in either repo.
+
+| Repo | GitHub | What CI validates |
+| --- | --- | --- |
+| **agent-skills** (this repo) | [neondatabase/agent-skills](https://github.com/neondatabase/agent-skills) | Every skill under `skills/` via `skills-ref`, plus Cursor and Claude plugin manifests under `plugins/` |
+| **neon-for-agent-platforms** | [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms) | Every skill under `skills/` via `skills-ref` |
+
+Shared pipeline shape (both repos):
+
+- Workflow: `.github/workflows/validate.yml` (job name **Validate**)
+- Install: `npm ci --ignore-scripts` from `package-lock.json`
+- Entry point: `npm run validate:ci`
+- Supply chain: SHA-pinned GitHub Actions, `harden-runner` egress audit, Dependabot for `github-actions` + `npm`
+
+**Repo-specific (keep — do not drop when aligning):** this repo also validates the Cursor and Claude **plugin manifests** under `plugins/`. That's why `validate:ci` here is `validate:plugins && validate:skills` (vs. skills-only in `neon-for-agent-platforms`) and why this workflow also filters on `plugins/**`. Alignment means matching the shared shape above, **not** stripping this repo's plugin checks.
+
+**When you change CI/CD here** — workflow triggers, install hardening, `skills-ref` pinning, Dependabot config, or validate scripts — **apply the same change to [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms)**, preserving each repo's intentional differences (this repo's plugin validation and `plugins/**` path filter).

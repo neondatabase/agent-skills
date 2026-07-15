@@ -29,6 +29,7 @@ async function main() {
   }
 
   for (const skillDir of skillDirs) {
+    console.log(`Validating ${skillDir}`);
     const result = spawnSync(skillsRefBin, ["validate", skillDir], {
       stdio: "inherit",
     });

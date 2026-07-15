@@ -22,6 +22,8 @@ Each marketplace has its own packaging and validation steps — follow that repo
 Before opening a PR here, run:
 
 ```bash
-npm run validate:skills
-npm run validate:plugins
+npm ci --ignore-scripts
+npm run validate:ci
 ```
+
+This runs skill validation (`skills-ref` on every directory under `skills/`) and plugin manifest validation under `plugins/`. See `AGENTS.md` for the full CI/CD picture and the paired **neon-for-agent-platforms** repo.
