@@ -7,6 +7,7 @@ import process from "node:process";
 
 const repoRoot = process.cwd();
 const skillsRoot = path.join(repoRoot, "skills");
+const skillsRefBin = path.join(repoRoot, "node_modules", ".bin", "skills-ref");
 
 async function main() {
   let entries;
@@ -28,9 +29,8 @@ async function main() {
   }
 
   for (const skillDir of skillDirs) {
-    const result = spawnSync("npx", ["skills-ref", "validate", skillDir], {
+    const result = spawnSync(skillsRefBin, ["validate", skillDir], {
       stdio: "inherit",
-      shell: process.platform === "win32",
     });
 
     if (result.status !== 0) {
