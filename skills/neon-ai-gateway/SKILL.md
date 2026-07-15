@@ -276,6 +276,15 @@ Any Neon credential (`nt_live_...`) valid for the branch works as the bearer tok
 
 The AI Gateway is a preview (early access) feature available only on new projects in the `us-east-2` region; it can't be enabled on existing projects. Foundation model access requires a paid Neon plan. Confirm the user's project is a new project in `us-east-2`. If the user does not yet have access, point them to the private beta sign-up: https://neon.com/blog/were-building-backends#access
 
+### Enabling the gateway: plan and model-catalog gating
+
+Enabling `preview.aiGateway` **always provisions a working credential** — the gateway is credential-gated, not a provisioning step, so `neon config apply` / `deploy`, `neon checkout`, and `neon env pull` succeed on any plan and always write `NEON_AI_GATEWAY_TOKEN` + `NEON_AI_GATEWAY_BASE_URL`. Two things still gate the gateway at **serving** time, and the CLI surfaces each as a friendly notice (on `neon config plan`/`apply`/`deploy`, `neon checkout`, and `neon env pull`):
+
+- **Free plan → the gateway won't serve requests.** The credential provisions, but model calls won't work until the account is on a paid Neon plan. The CLI warns and points to the upgrade page. If a user enables the gateway and gets 4xx/"not available" errors on every request, check the plan first.
+- **Paid plan with a reduced model catalog.** During the beta, a paid account can start with a trimmed catalog — some flagship models (e.g. Anthropic Opus, OpenAI Codex / `*-pro`) are missing from `GET /v1/models`. This is expected; the CLI warns and links to a request form for access to more models. Verify what's actually available for the branch by reading `/v1/models` (see the models section above) rather than assuming the full catalog.
+
+When helping a user debug "the gateway isn't working" or "a model is missing", use `/v1/models` plus the account's plan to distinguish these two cases — don't assume the credential or provisioning failed.
+
 ## Neon Documentation
 
 The Neon documentation is the source of truth and the AI Gateway is evolving rapidly, so always verify against the official docs. Any doc page can be fetched as markdown by appending `.md` to the URL or by requesting `Accept: text/markdown`. Find the right page from the docs index (https://neon.com/docs/llms.txt) and the changelog announcements.
