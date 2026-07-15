@@ -278,12 +278,12 @@ The AI Gateway is a preview (early access) feature available only on new project
 
 ### Enabling the gateway: plan and model-catalog gating
 
-Enabling `preview.aiGateway` **always provisions a working credential** — the gateway is credential-gated, not a provisioning step, so `neon config apply` / `deploy`, `neon checkout`, and `neon env pull` succeed on any plan and always write `NEON_AI_GATEWAY_TOKEN` + `NEON_AI_GATEWAY_BASE_URL`. Two things still gate the gateway at **serving** time, and the CLI surfaces each as a friendly notice (on `neon config plan`/`apply`/`deploy`, `neon checkout`, and `neon env pull`):
+The AI Gateway is credential-gated rather than a provisioning step, but two plan/beta limits gate it — one blocks provisioning, the other only trims the catalog — and the CLI surfaces each:
 
-- **Free plan → the gateway won't serve requests.** The credential provisions, but model calls won't work until the account is on a paid Neon plan. The CLI warns and points to the upgrade page. If a user enables the gateway and gets 4xx/"not available" errors on every request, check the plan first.
-- **Paid plan with a reduced model catalog.** During the beta, a paid account can start with a trimmed catalog — some flagship models (e.g. Anthropic Opus, OpenAI Codex / `*-pro`) are missing from `GET /v1/models`. This is expected; the CLI warns and links to a request form for access to more models. Verify what's actually available for the branch by reading `/v1/models` (see the models section above) rather than assuming the full catalog.
+- **Free plan → provisioning is blocked.** `neon config apply` / `deploy` and `neon checkout` **refuse** to enable the gateway on a Free plan (the gateway can't serve requests there), with a friendly "upgrade to a paid plan, or remove `preview.aiGateway`" error. A dry-run `neon config plan` and `neon env pull` don't provision, so they only **warn**. So: to use the gateway the project's account must be on a paid Neon plan.
+- **Paid plan with a reduced model catalog.** On a paid plan the gateway provisions and serves, but during the beta an account can start with a trimmed catalog — some flagship models (e.g. Anthropic Opus, OpenAI Codex / `*-pro`) are missing from `GET /v1/models`. This is expected; `neon env pull` (and the env pull bundled into `apply` / `deploy` / `checkout`) warns and links the user to their branch's AI Gateway page in the Neon Console (`https://console.neon.tech/app/projects/<project-id>/branches/<branch-id>/ai-gateway`) to request access to more models. Verify what's actually available for the branch by reading `/v1/models` (see the models section above) rather than assuming the full catalog.
 
-When helping a user debug "the gateway isn't working" or "a model is missing", use `/v1/models` plus the account's plan to distinguish these two cases — don't assume the credential or provisioning failed.
+When helping a user debug "the gateway isn't working" or "a model is missing", use `/v1/models` plus the account's plan to distinguish these two cases — a Free plan blocks provisioning entirely, while a reduced catalog on a paid plan just needs a model-access request.
 
 ## Neon Documentation
 
