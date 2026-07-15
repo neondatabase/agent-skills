@@ -74,7 +74,7 @@ Common doc URLs are organized in the topic links below. If you need a page not l
 - Choosing or creating the right branch type for dev, preview, test, or CI workflows → `neon-postgres-branches`.
 - Storing and serving files (uploads, images, blobs) that branch with the database → `neon-object-storage`.
 - Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers — next to the database → `neon-functions`.
-- Calling an LLM or routing across model providers with one credential → `neon-ai-gateway`.
+- Calling an LLM or routing across model providers with one credential — including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint → `neon-ai-gateway`.
 - Provisioning instant, claimable temporary Postgres databases (for example, one per end user or demo) → `claimable-postgres`.
 - Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase → `neon-postgres-egress-optimizer`.
 
