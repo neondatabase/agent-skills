@@ -149,7 +149,7 @@ Neon injects branch-scoped connection strings and service URLs at runtime — yo
 
 | Variable                | Notes                                                                                    |
 | ----------------------- | ---------------------------------------------------------------------------------------- |
-| `NEON_BRANCH`           | The branch **name** (e.g. `main`, `preview/foo`). Injected on every branch, including the default. |
+| `NEON_BRANCH`           | The branch **ID** (e.g. `br-mute-dew-a5tcbaip`). Injected on every branch, including the default. |
 | `DATABASE_URL`          | Pooled connection string. Use for most queries. Present only if the branch has Postgres. |
 | `DATABASE_URL_UNPOOLED` | Direct connection. Use for migrations, `LISTEN`/`NOTIFY`, multi-round-trip transactions. |
 | `NEON_AUTH_BASE_URL`    | Present when Neon Auth is enabled on the branch.                                         |
