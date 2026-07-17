@@ -13,8 +13,9 @@
  *   - a link points at a skill file that does not exist (broken reference), or
  *   - a markdown file in the skill is never reached from SKILL.md (orphan).
  *
- * Non-markdown files (scripts, .env.example, …) are not required to be linked;
- * orphans among them are reported but do not fail the check (see IGNORED_EXTS).
+ * Non-markdown files (TypeScript/JS scripts, JSON, .env.example, …) are not
+ * required to be linked; orphans among them are reported (by count) but never
+ * fail the check. node_modules and .git are ignored entirely.
  *
  * Usage:
  *   node scripts/check-skill-references.mjs            # check every skill
@@ -29,8 +30,8 @@ import process from 'node:process';
 const REPO_ROOT = process.cwd();
 const SKILLS_ROOT = path.join(REPO_ROOT, 'skills');
 
-// Extensions whose orphans are reported but never fail the check.
-const IGNORED_EXTS = new Set(['.ts', '.tsx', '.js', '.mjs', '.cjs', '.json', '.env', '.example', '.sh', '.lock']);
+// Directories that are never part of a skill's authored content.
+const SKIP_DIRS = new Set(['node_modules', '.git']);
 
 const MD_LINK_RE = /!?\[[^\]]*\]\(\s*(<[^>]+>|[^)\s]+)(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/g;
 
@@ -39,13 +40,21 @@ function isMarkdown(file) {
 }
 
 async function walk(dir) {
-  const out = [];
+  const files = [];
+  const dirs = [];
   for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await walk(full)));
-    else if (entry.isFile()) out.push(full);
+    if (entry.isDirectory()) {
+      if (SKIP_DIRS.has(entry.name)) continue;
+      dirs.push(full);
+      const sub = await walk(full);
+      files.push(...sub.files);
+      dirs.push(...sub.dirs);
+    } else if (entry.isFile()) {
+      files.push(full);
+    }
   }
-  return out;
+  return { files, dirs };
 }
 
 function extractLinks(markdown) {
@@ -95,8 +104,9 @@ async function checkSkill(skillName) {
     return { skillName, problems: ['no SKILL.md at skill root'], ignoredOrphans };
   }
 
-  const allFiles = await walk(skillDir);
+  const { files: allFiles, dirs: allDirs } = await walk(skillDir);
   const existing = new Set(allFiles.map((f) => path.resolve(f)));
+  const existingDirs = new Set(allDirs.map((d) => path.resolve(d)));
 
   // BFS the reference graph from SKILL.md.
   const reached = new Set([path.resolve(skillMd)]);
@@ -114,13 +124,18 @@ async function checkSkill(skillName) {
       const target = resolveToSkillFile(link, file, skillDir, skillName);
       if (!target) continue;
       const abs = path.resolve(target);
-      if (!existing.has(abs)) {
-        problems.push(`broken reference in ${path.relative(skillDir, file)}: ${link}`);
+      if (existing.has(abs)) {
+        if (!reached.has(abs)) {
+          reached.add(abs);
+          queue.push(abs);
+        }
         continue;
       }
-      if (!reached.has(abs)) {
-        reached.add(abs);
-        queue.push(abs);
+      if (existingDirs.has(abs)) continue; // link to a directory (e.g. scripts/) — valid
+      // A missing target only fails when it looks like a markdown reference file;
+      // missing non-markdown targets (e.g. .env.example) are left to other tooling.
+      if (isMarkdown(abs)) {
+        problems.push(`broken reference in ${path.relative(skillDir, file)}: ${link}`);
       }
     }
   }
@@ -167,16 +182,15 @@ async function main() {
   } else {
     console.log('Skill reference-graph check\n');
     for (const r of results) {
+      const note = r.ignoredOrphans.length
+        ? `  (${r.ignoredOrphans.length} non-markdown file(s) not linked, ignored)`
+        : '';
       if (r.problems.length === 0) {
-        const note = r.ignoredOrphans.length
-          ? `  (${r.ignoredOrphans.length} non-markdown file(s) not linked, ignored)`
-          : '';
         console.log(`  [OK]   ${r.skillName}${note}`);
       } else {
-        console.log(`  [FAIL] ${r.skillName}`);
+        console.log(`  [FAIL] ${r.skillName}${note}`);
         for (const p of r.problems) console.log(`           - ${p}`);
       }
-      for (const ig of r.ignoredOrphans) console.log(`           · ignored (non-markdown): ${ig}`);
     }
   }
 
