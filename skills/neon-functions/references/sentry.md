@@ -6,7 +6,7 @@ This reference walks through wiring up Sentry for errors, logs, and traces — i
 
 ## Sentry (errors, logs, and traces)
 
-Because the runtime is a normal Node process, use the Node SDK `@sentry/node` — not an edge/serverless wrapper. It bundles cleanly through `neon deploy`'s esbuild with no extra build config.
+Because the runtime is a normal Node process, use the Node SDK `@sentry/node` — not an edge/serverless wrapper. **Use `@sentry/node` ≥10.67.0**: older versions fail to register their tracer against the OpenTelemetry API global the runtime pre-creates, and every span is silently non-recording while errors and logs keep working. The SDK bundles cleanly through `neon deploy`'s esbuild with no extra build config.
 
 Sentry has distinct signals, and picking the right one is the main instrumentation decision:
 
@@ -32,9 +32,6 @@ Put `Sentry.init` in its own module and import it as the very first import of yo
 ```typescript
 // src/instrument.ts
 import * as Sentry from "@sentry/node";
-
-// Required on Neon — see "Why the delete" below.
-delete (globalThis as Record<symbol, unknown>)[Symbol.for("opentelemetry.js.api.1")];
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -68,7 +65,6 @@ import { Hono } from "hono";
 // ... rest of the function
 ```
 
-- **Why the `delete`:** the runtime pre-creates the OpenTelemetry API global for its own telemetry, and OTel only accepts registrations from the exact `@opentelemetry/api` version that created the global. If the bundled version differs even by a patch release, Sentry's tracer silently never registers — every span is non-recording while errors and logs keep working, so nothing looks obviously broken. Deleting the global lets Sentry's copy recreate it.
 - **Gate `enabled` on the DSN.** Local dev (`neon dev`) and any branch where you haven't configured the secret then become a no-op — no init, no noise — without changing code.
 - **`enableLogs: true`** — the `Sentry.logger.*` API is off by default.
 - **`traceLifecycle: "stream"`** — sends each span as it finishes instead of holding the whole tree until the request ends, so spans that complete after the response (streaming agent calls) aren't lost. `streamGenAiSpans: true` is the default on current SDKs (sends gen_ai spans as standalone items so large prompts aren't truncated); set it to `false` on self-hosted Sentry.
@@ -218,7 +214,7 @@ Direct provider SDKs (`openai`, `@anthropic-ai/sdk`, `@langchain/*`, `@google/ge
 - **Logs:** trigger a recoverable failure (e.g. pass a bogus model name to the fallback path) and confirm the `Sentry.logger` records show up in **Explore → Logs**, linked to the same trace.
 - **Traces:** hit a real route and confirm a trace appears (**Explore → Traces**) with the spans you expect — the request root, outbound fetches, and (for agents) `gen_ai.*` spans with token counts. Two things to know before declaring it broken:
   - **Streamed span ingestion lags several minutes behind errors and logs.** An error visible in seconds does not mean its trace is lost — check again after a few minutes.
-  - If spans **never** appear while errors and logs flow, that's the OTel-global symptom from step 1 — confirm the `delete` line runs before `Sentry.init`.
+  - If spans **never** appear while errors and logs flow, check the SDK version — `@sentry/node` <10.67.0 cannot register its tracer against the runtime's pre-created OpenTelemetry API global. Upgrade, or on an older SDK run `delete globalThis[Symbol.for("opentelemetry.js.api.1")]` before `Sentry.init`.
 
 ## Other Node integrations
 
@@ -228,4 +224,4 @@ The same pattern generalizes to any Node integration (structured logging, analyt
 2. Gate it on an env var so local dev and unconfigured branches are a no-op.
 3. Pass secrets via `--env KEY=VALUE` on deploy or the function's `env` in `neon.ts`.
 
-Standard Node SDKs bundle through `neon deploy`'s esbuild without changes — but module-patching auto-instrumentation does not, and anything that registers OpenTelemetry globals contends with the runtime's own registration (see step 1).
+Standard Node SDKs bundle through `neon deploy`'s esbuild without changes — but module-patching auto-instrumentation does not, and anything that registers OpenTelemetry globals contends with the runtime's own registration (see the version note at the top).
