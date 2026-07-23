@@ -20,10 +20,13 @@
     "mcp"
   ],
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "fmt": "npx prettier --write .",
+    "sync:plugins": "node scripts/sync-plugin-skills.mjs",
     "validate:cursor-plugins": "node scripts/validate-cursor-plugins.mjs",
     "validate:claude-plugins": "node scripts/validate-claude-plugins.mjs",
-    "validate:plugins": "npm run validate:cursor-plugins && npm run validate:claude-plugins",
+    "validate:plugin-skills": "node scripts/sync-plugin-skills.mjs --check",
+    "validate:plugins": "npm run validate:cursor-plugins && npm run validate:claude-plugins && npm run validate:plugin-skills",
     "validate:skills": "node scripts/validate-skills.mjs",
     "validate:references": "node scripts/check-skill-references.mjs",
     "validate:ci": "npm run validate:plugins && npm run validate:skills && npm run validate:references"

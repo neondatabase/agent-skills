@@ -249,6 +249,31 @@ async function validateComponentFrontmatter(pluginDir, pluginName) {
   }
 }
 
+async function checkNoSymlinks(pluginDir, pluginName) {
+  const stack = [pluginDir];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    let entries;
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(current, entry.name);
+      if (entry.isSymbolicLink()) {
+        addError(
+          `${pluginName}: symlink is not allowed inside a plugin (it is silently dropped on install): ${path.relative(repoRoot, entryPath)}. Commit a real file instead (see scripts/sync-plugin-skills.mjs).`,
+        );
+        continue;
+      }
+      if (entry.isDirectory()) {
+        stack.push(entryPath);
+      }
+    }
+  }
+}
+
 function resolveMarketplaceSource(source, pluginRoot) {
   if (typeof source !== "string" || source.length === 0) {
     return null;
@@ -390,6 +415,7 @@ async function main() {
     }
 
     await validateComponentFrontmatter(pluginDir, entry.name);
+    await checkNoSymlinks(pluginDir, entry.name);
 
     const hooksPath = path.join(pluginDir, "hooks", "hooks.json");
     if (!(await pathExists(hooksPath))) {
