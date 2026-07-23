@@ -167,6 +167,16 @@ You can also validate a single skill directly:
 skills-ref validate ./my-skill
 ```
 
+## Plugins vendor real skill copies
+
+The plugins under `plugins/` are distributed as git repositories, and Cursor/Claude silently drop symlinks that escape the plugin root on install. So each plugin ships **real copies** of its skills, not symlinks into the top-level `skills/`.
+
+- The mapping of which skills each plugin vendors lives in the `PLUGIN_SKILLS` map in [`scripts/sync-plugin-skills.mjs`](scripts/sync-plugin-skills.mjs). A value of `"*"` vendors every skill under `skills/` (new skills ship automatically); an array vendors only the named skills.
+- `npm run sync:plugins` regenerates the copies from `skills/`. A git pre-commit hook (wired by the `prepare` script on `npm install`) runs it automatically and stages the result.
+- `npm run validate:plugin-skills` (part of `validate:ci`) fails if the vendored copies drift from the source or if any symlink reappears inside a plugin. The Cursor and Claude plugin validators also hard-error on any in-plugin symlink.
+
+When you add or change a skill that a plugin ships, run `npm run sync:plugins` (or just commit — the hook handles it).
+
 ## CI/CD
 
 Neon maintains **two** agent-skill repositories with a shared, hardened CI pipeline. Keep them aligned when you change CI/CD in either repo.

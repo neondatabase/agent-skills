@@ -4,7 +4,15 @@ Thanks for contributing to the Neon Agent Skills!
 
 ## Source of truth
 
-The top-level `skills/` directory is the source of truth. Plugin folders under `plugins/` symlink only the skill directories they expose.
+The top-level `skills/` directory is the source of truth. Plugin folders under `plugins/` ship **real copies** of the skill directories they expose (not symlinks — Cursor and Claude silently drop symlinks that escape the plugin root when a plugin is installed from git).
+
+Which skills each plugin vendors is declared in the `PLUGIN_SKILLS` map in [`scripts/sync-plugin-skills.mjs`](scripts/sync-plugin-skills.mjs). A value of `"*"` means "all skills under `skills/`", so new skills are vendored automatically without editing the map; you can also list specific skill names instead. To regenerate the copies after editing a skill or the map:
+
+```bash
+npm run sync:plugins
+```
+
+A git pre-commit hook (installed via the `prepare` script when you run `npm install`) runs this automatically and stages the result, so you never have to copy skills by hand. CI runs `npm run validate:plugin-skills` (part of `validate:ci`) to fail the build if the vendored copies drift from the source or if any symlink sneaks back into a plugin.
 
 ## Keep downstream marketplaces in sync
 
