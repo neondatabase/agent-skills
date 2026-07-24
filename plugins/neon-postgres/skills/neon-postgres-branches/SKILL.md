@@ -7,7 +7,17 @@ description: >-
   or branch creation via Neon CLI or Neon MCP. Triggers include "Neon branch",
   "test migrations safely", "branch production data", "schema-only branch",
   "reset branch" and "sensitive data testing".
+metadata:
+  parent: neon
 ---
+
+**FIRST**: Use the parent `neon` skill for a Neon platform overview, getting started with Neon, Neon development best practices, and more.
+
+If the `neon` skill is not installed, fetch it from https://neon.com/docs/ai/skills/neon/SKILL.md or install it with:
+
+```bash
+npx skills add neondatabase/agent-skills --skill neon
+```
 
 # Neon Postgres Branching
 
