@@ -355,13 +355,25 @@ See https://neon.com/docs/reference/neon-ts.md for documentation on the `neon.ts
 
 ## Manage Neon Resources
 
-Recommended: Use `@neon/sdk` to manage Neon resources programmatically, such as creating projects, branches, and snapshots.
+`@neon/sdk` is the official TypeScript client for the [Neon API](https://neon.com/docs/reference/api-reference.md): **Fetch-based, zero-dependency, ESM-only**, generated from Neon's [OpenAPI spec](https://neon.com/api_spec/release/v2.json) with an ergonomic layer on top. It is the successor to [`@neondatabase/api-client`](https://www.npmjs.com/package/@neondatabase/api-client) (axios-based, generated-only). The old client is **not deprecated** and is safe to keep using, but new code should prefer `@neon/sdk`.
 
-Link: https://neon.com/docs/reference/typescript-sdk.md
+Recommended: Use `@neon/sdk` to manage Neon resources programmatically, such as creating projects, branches, and snapshots for dev scripts, CI/CD automations, and platforms building on top of Neon.
 
-This is especially relevant for dev scripts, CI/CD automations, and platforms building on top of Neon for fleet management (see our agent platform program: https://neon.com/programs/agents.md).
+### Neon for (Agentic) Platforms
 
-You can also use the Neon REST API directly: https://neon.com/docs/reference/api-reference.md.
+If you're building agents that generate apps from prompts, your users want to build apps, not manage databases. Industry-leading platforms like Replit and V0 create databases on Neon because it aligns with how agents work: Instant, branchable, serverless Postgres data layer, invisible to users.
+
+Neon Features for Agents:
+
+- Instant Provisioning: your users never wait for infrastructure.
+- Snapshots: let users toggle between checkpoints of code and state together.
+- Low cost-per-Database: automatic scale to zero and 350ms cold starts.
+- Full-Stack, Batteries-Included: Neon Auth, Data API included at no added charge.
+- Granular API Controls: Track and control usage for flexible limits and invoicing.
+
+All details here: https://neon.com/programs/agents.md
+
+Apply for the Neon Agent Program for special program pricing here: https://neon.com/programs/agents
 
 ## Gotchas
 
