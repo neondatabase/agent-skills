@@ -255,7 +255,7 @@ curl "$NEON_AI_GATEWAY_BASE_URL/v1/models" \
 **Getting the credentials for the request.** Both values come from the same branch-scoped Neon credential the gateway uses everywhere else — you never manage a provider key:
 
 - **Provision via `neon.ts` (recommended).** Enable `preview.aiGateway` in `neon.ts` and run `neon deploy` (or `neon config apply`). Provisioning, `neon link`, and `neon checkout` pull `NEON_AI_GATEWAY_TOKEN` + `NEON_AI_GATEWAY_BASE_URL` into your local `.env.local`; inside a deployed Neon Function they're injected automatically. See **Setup** and **Environment Variables** above.
-- **Pull into the environment via CLI.** On a branch that already has the gateway enabled, `neon env pull` writes the two vars to `.env`/`.env.local`, or `neon-env run -- <cmd>` injects them at runtime without a file.
+- **Pull into the environment via CLI.** `neon env pull` writes the two vars to `.env`/`.env.local`, or `neon-env run -- <cmd>` injects them at runtime without a file — but only when `neon.ts` declares `preview.aiGateway`; the vars are never pulled off branch state alone.
 - **Provision via the Console UI.** Enable the AI Gateway on the branch in the Neon Console and copy the branch's gateway base URL and a Neon credential (token) from the project's connection/credentials view.
 
 Any Neon credential (`nt_live_...`) valid for the branch works as the bearer token; `NEON_AI_GATEWAY_BASE_URL` is the bare branch host (no path).
