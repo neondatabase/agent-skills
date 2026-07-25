@@ -133,7 +133,7 @@ If `init` is run in an empty project, it will run the `bootstrap` command, offer
 
 ### Getting Started with the Neon CLI
 
-**Prefer the CLI over the MCP server** unless the user instructs otherwise, the CLI is not authenticated, or you're in an environment without CLI access, since it provides more capabilities, including deploying Neon Functions.
+**Prefer the CLI over the MCP server** unless the user instructs otherwise, the CLI is unavailable or blocked in your environment, or it is not authenticated, since it provides more capabilities, including deploying Neon Functions.
 
 The above `init` command will install the Neon CLI, but the CLI can also be installed manually with `npm i -g neon` or `bun i -g neon`. For full CLI installation options, see https://neon.com/docs/cli/install.md
 

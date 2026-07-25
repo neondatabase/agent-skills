@@ -23,7 +23,7 @@ npx skills add neondatabase/agent-skills --skill neon
 
 # Neon Postgres Branching
 
-**Outcome:** a created Neon branch — or a clear, actionable next step if creation cannot proceed. Choose the correct branch type, then execute branch creation via MCP or CLI.
+**Outcome:** a created Neon branch — or a clear, actionable next step if creation cannot proceed. Choose the correct branch type, then execute branch creation with the CLI (or MCP where the CLI isn't usable).
 
 - **Normal branch** for realistic migration and query testing with real data.
 - **Schema-only branch (Beta)** for sensitive data workflows where structure is needed without copying rows.
@@ -40,21 +40,20 @@ If the request is ambiguous, ask one clarifying question:
 
 ## Tool Selection: CLI or MCP
 
-Always support both Neon CLI and Neon MCP server. Prefer the tool the user already has installed and authenticated.
+Support both the Neon CLI and the Neon MCP server, but **default to the CLI**. Use MCP only when the CLI is unavailable or blocked in your environment, cannot be authenticated, or the user explicitly asks for MCP.
 
-- MCP link: https://neon.com/docs/ai/neon-mcp-server.md
 - CLI link: https://neon.com/docs/cli/quickstart.md
+- MCP link: https://neon.com/docs/ai/neon-mcp-server.md
 
 ### Selection order
 
-1. Check MCP first in MCP-enabled environments:
-   - If Neon MCP tools are available and authenticated (for example, listing projects works), use MCP.
-2. If MCP is unavailable or not authenticated, check CLI:
-   - Run `neon --version` to confirm CLI is installed.
+1. Check the CLI first:
+   - Run `neon --version` to confirm the CLI is installed.
    - Run `neon projects list` to confirm auth/context.
-3. If CLI is missing, direct installation via quickstart.
-4. If CLI is installed but not authenticated, guide the user through `neon auth` (or API key auth), then continue.
-5. If both MCP and CLI paths are unsuccessful, use the Neon REST API:
+2. If the CLI is missing, direct installation via quickstart.
+3. If the CLI is installed but not authenticated, guide the user through `neon auth` (or API key auth), then continue.
+4. Switch to MCP when the CLI cannot be used — no CLI access in the environment, execution blocked, or authentication not possible — or when the user explicitly asks for MCP. Confirm Neon MCP tools are available and authenticated (for example, listing projects works), then follow the MCP branch flow below.
+5. If neither path is successful, use the Neon REST API:
    - https://neon.com/docs/guides/branching-neon-api.md
 
 ### MCP branch flow
@@ -73,7 +72,7 @@ Link: https://neon.com/docs/introduction/branching.md
 
 ### Steps
 
-1. Settle the tool path first (see [Selection order](#selection-order)): use MCP if it's already available and authenticated, otherwise verify the CLI with `neon --version`.
+1. Settle the tool path first (see [Selection order](#selection-order)): verify the CLI with `neon --version`, and fall back to MCP only if the CLI isn't usable.
 2. Ensure project context is set (`neon set-context --project-id <your-project-id>`) or include `--project-id` on commands.
 3. Create the branch:
 
@@ -98,7 +97,7 @@ Link: https://neon.com/docs/guides/branching-schema-only.md
 
 ### Steps
 
-1. Settle the tool path first (see [Selection order](#selection-order)): use MCP if it's already available and authenticated, otherwise verify the CLI with `neon --version`.
+1. Settle the tool path first (see [Selection order](#selection-order)): verify the CLI with `neon --version`, and fall back to MCP only if the CLI isn't usable.
 2. Create the schema-only branch:
 
    ```bash
@@ -264,7 +263,7 @@ Common CI/CD use cases for Neon branches:
 
 1. Recommend a normal branch and explain why.
 2. Share docs link: https://neon.com/docs/introduction/branching
-3. Check the available/authenticated tool path first (MCP, otherwise CLI with `neon --version`).
+3. Check the tool path first (CLI with `neon --version`; MCP only if the CLI isn't usable).
 4. Provide commands:
    - `neon branches create --name migration-test --parent main --expires-at 2026-12-15T18:02:16Z`
    - `neon connection-string migration-test`
@@ -277,7 +276,7 @@ Common CI/CD use cases for Neon branches:
 
 1. Recommend schema-only branch and explain why.
 2. Share docs link: https://neon.com/docs/guides/branching-schema-only
-3. Check the available/authenticated tool path first (MCP, otherwise CLI with `neon --version`).
+3. Check the tool path first (CLI with `neon --version`; MCP only if the CLI isn't usable).
 4. Provide command:
    - `neon branches create --name compliance-dev --parent main --schema-only --project-id <your-project-id> --expires-at 2026-12-15T18:02:16Z`
 5. Mention Beta support path:
