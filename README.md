@@ -87,7 +87,7 @@ You can also install the skills as a Claude Code plugin, which bundles the Neon 
 
 After installation, you'll be prompted to authenticate with Neon via OAuth when you first use MCP tools.
 
-The top-level `skills/` directory remains the source of truth. Plugin folders symlink only the skill directories they expose.
+The top-level `skills/` directory remains the source of truth. Plugin folders ship real copies of the skill directories they expose, regenerated with `npm run sync:plugins` — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Cursor Plugin
 
