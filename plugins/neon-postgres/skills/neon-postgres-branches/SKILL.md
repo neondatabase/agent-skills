@@ -4,9 +4,11 @@ description: >-
   Choose and create the right Neon branch type for testing and development.
   Use when users ask about Neon branching, migration testing with real data,
   isolated test environments, schema-only branch workflows for sensitive data,
-  or branch creation via Neon CLI or Neon MCP. Triggers include "Neon branch",
-  "test migrations safely", "branch production data", "schema-only branch",
-  "reset branch" and "sensitive data testing".
+  resetting a branch from its parent, branch expiration and CI/CD branch
+  lifecycles, or branch creation via Neon CLI or Neon MCP. Triggers include
+  "Neon branch", "test migrations safely", "branch production data",
+  "schema-only branch", "reset branch", "branch per PR" and
+  "sensitive data testing".
 metadata:
   parent: neon
 ---
@@ -21,8 +23,7 @@ npx skills add neondatabase/agent-skills --skill neon
 
 # Neon Postgres Branching
 
-The outcome of this skill should be a created Neon branch (or a clear, actionable next step if creation cannot proceed).
-Choose the correct branch type, then execute branch creation via MCP or CLI.
+**Outcome:** a created Neon branch — or a clear, actionable next step if creation cannot proceed. Choose the correct branch type, then execute branch creation via MCP or CLI.
 
 - **Normal branch** for realistic migration and query testing with real data.
 - **Schema-only branch (Beta)** for sensitive data workflows where structure is needed without copying rows.
@@ -41,8 +42,8 @@ If the request is ambiguous, ask one clarifying question:
 
 Always support both Neon CLI and Neon MCP server. Prefer the tool the user already has installed and authenticated.
 
-MCP link: https://neon.com/docs/ai/neon-mcp-server.md
-CLI link: https://neon.com/docs/cli/quickstart.md
+- MCP link: https://neon.com/docs/ai/neon-mcp-server.md
+- CLI link: https://neon.com/docs/cli/quickstart.md
 
 ### Selection order
 
@@ -72,22 +73,22 @@ Link: https://neon.com/docs/introduction/branching.md
 
 ### Steps
 
-1. Use MCP if already available/authenticated; otherwise verify CLI with `neon --version`.
+1. Settle the tool path first (see [Selection order](#selection-order)): use MCP if it's already available and authenticated, otherwise verify the CLI with `neon --version`.
 2. Ensure project context is set (`neon set-context --project-id <your-project-id>`) or include `--project-id` on commands.
-3. Create branch:
+3. Create the branch:
 
-```bash
-neon branches create \
-  --name <branch-name> \
-  --parent <parent-branch-id-or-name> \
-  --expires-at 2026-12-15T18:02:16Z
-```
+   ```bash
+   neon branches create \
+     --name <branch-name> \
+     --parent <parent-branch-id-or-name> \
+     --expires-at 2026-12-15T18:02:16Z
+   ```
 
 4. Optionally fetch a connection string for the new branch:
 
-```bash
-neon connection-string <branch-name>
-```
+   ```bash
+   neon connection-string <branch-name>
+   ```
 
 ## Create a Schema-Only Branch (Beta, Sensitive Data)
 
@@ -97,27 +98,27 @@ Link: https://neon.com/docs/guides/branching-schema-only.md
 
 ### Steps
 
-1. Use MCP if already available/authenticated; otherwise verify CLI with `neon --version`.
-2. Create schema-only branch:
+1. Settle the tool path first (see [Selection order](#selection-order)): use MCP if it's already available and authenticated, otherwise verify the CLI with `neon --version`.
+2. Create the schema-only branch:
 
-```bash
-neon branches create \
-  --name <schema-only-branch-name> \
-  --parent <parent-branch-id-or-name> \
-  --schema-only \
-  --expires-at 2026-12-15T18:02:16Z
-```
+   ```bash
+   neon branches create \
+     --name <schema-only-branch-name> \
+     --parent <parent-branch-id-or-name> \
+     --schema-only \
+     --expires-at 2026-12-15T18:02:16Z
+   ```
 
-If multiple projects exist, include:
+   If multiple projects exist, include `--project-id`:
 
-```bash
-neon branches create \
-  --name <schema-only-branch-name> \
-  --parent <parent-branch-id-or-name> \
-  --schema-only \
-  --project-id <your-project-id> \
-  --expires-at 2026-12-15T18:02:16Z
-```
+   ```bash
+   neon branches create \
+     --name <schema-only-branch-name> \
+     --parent <parent-branch-id-or-name> \
+     --schema-only \
+     --project-id <your-project-id> \
+     --expires-at 2026-12-15T18:02:16Z
+   ```
 
 ### Beta Support Guidance (Mandatory)
 
@@ -128,7 +129,7 @@ Schema-only branching is in Beta. If users report unexpected behavior, errors, o
 2. Recommend opening a support conversation in the Neon Discord:
    - https://discord.gg/92vNTzKDGp
 
-## Reset from parent
+## Reset from Parent
 
 Use this when a child branch has drifted and the user wants a clean refresh from the parent branch's latest schema and data.
 
@@ -159,7 +160,7 @@ Link: https://neon.com/docs/guides/reset-from-parent.md
 neon branches reset <id|name> --parent --preserve-under-name <backup-branch-name>
 ```
 
-If project context is not already set, include project ID:
+If project context is not already set, include the project ID:
 
 ```bash
 neon branches reset <id|name> --parent --preserve-under-name <backup-branch-name> --project-id <project-id>
@@ -283,7 +284,7 @@ Common CI/CD use cases for Neon branches:
    - https://console.neon.tech/app/projects?modal=feedback
    - https://discord.gg/92vNTzKDGp
 
-## Further reading
+## Further Reading
 
 - https://neon.com/docs/guides/branch-expiration.md
 - https://neon.com/docs/guides/neon-github-integration.md
