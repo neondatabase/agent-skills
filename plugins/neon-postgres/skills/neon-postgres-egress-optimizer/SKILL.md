@@ -9,7 +9,17 @@ description: >-
   from their database to their application. Also use when reviewing query
   patterns for cost efficiency, even if the user doesn't explicitly mention
   egress or data transfer.
+metadata:
+  parent: neon
 ---
+
+**FIRST**: Use the parent `neon` skill for a Neon platform overview, getting started with Neon, Neon development best practices, and more.
+
+If the `neon` skill is not installed, fetch it from https://neon.com/docs/ai/skills/neon/SKILL.md or install it with:
+
+```bash
+npx skills add neondatabase/agent-skills --skill neon
+```
 
 # Postgres Egress Optimizer
 

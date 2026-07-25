@@ -11,7 +11,17 @@ description: >-
   an API", "long-running function", "streaming agent", "SSE server",
   "WebSocket server", "webhook handler", "run code next to my database",
   "function that won't time out", "Neon Functions", and "Neon Compute".
+metadata:
+  parent: neon
 ---
+
+**FIRST**: Use the parent `neon` skill for a Neon platform overview, getting started with Neon, Neon development best practices, and more.
+
+If the `neon` skill is not installed, fetch it from https://neon.com/docs/ai/skills/neon/SKILL.md or install it with:
+
+```bash
+npx skills add neondatabase/agent-skills --skill neon
+```
 
 # Neon Functions
 
