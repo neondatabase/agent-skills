@@ -35,3 +35,15 @@ npm run validate:ci
 ```
 
 This runs skill validation (`skills-ref` on every directory under `skills/`) and plugin manifest validation under `plugins/`. See `AGENTS.md` for the full CI/CD picture and the paired **neon-for-agent-platforms** repo.
+
+## Dependency pinning
+
+Every dependency is pinned to an exact version — no `^`, no `~`, no `latest`, and no unpinned `npx` invocations. `.npmrc` sets `save-exact=true`, so `npm install <pkg>` writes the exact version for you. Dependabot proposes the bumps; take them as PRs rather than widening a range.
+
+The same rule covers GitHub Actions, which are pinned to a full commit SHA with the version in a trailing comment:
+
+```yaml
+uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+```
+
+`package-lock.json` must resolve tarballs from `https://registry.npmjs.org`. If your machine installs through a corporate npm mirror, check the diff before committing — a lockfile that points at a private host fails `npm ci` for everyone else and blocks Dependabot.

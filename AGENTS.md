@@ -191,7 +191,7 @@ Shared pipeline shape (both repos):
 - Workflow: `.github/workflows/validate.yml` (job name **Validate**)
 - Install: `npm ci --ignore-scripts` from `package-lock.json`
 - Entry point: `npm run validate:ci`
-- Supply chain: SHA-pinned GitHub Actions, `harden-runner` egress audit, Dependabot for `github-actions` + `npm`
+- Supply chain: SHA-pinned GitHub Actions, exact-pinned npm dependencies (`save-exact=true` in `.npmrc`, no ranges and no unpinned `npx`), `package-lock.json` resolving from `registry.npmjs.org`, `harden-runner` egress audit, Dependabot for `github-actions` + `npm`
 
 **Repo-specific (keep — do not drop when aligning):** this repo also validates the Cursor and Claude **plugin manifests** under `plugins/`. That's why `validate:ci` here is `validate:plugins && validate:skills` (vs. skills-only in `neon-for-agent-platforms`) and why this workflow also filters on `plugins/**`. Alignment means matching the shared shape above, **not** stripping this repo's plugin checks.
 
