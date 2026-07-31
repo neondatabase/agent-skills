@@ -4,7 +4,7 @@
   "groupings": [
     {
       "title": "Core",
-      "description": "Start here for Neon platform and Postgres guidance.",
+      "description": "Start here for Neon and Lakebase Postgres guidance.",
       "skills": [
         "neon",
         "neon-postgres"
@@ -12,7 +12,7 @@
     },
     {
       "title": "Database Workflows",
-      "description": "Provision, branch, and optimize Postgres projects.",
+      "description": "Provision, branch, and optimize Lakebase Postgres projects.",
       "skills": [
         "claimable-postgres",
         "neon-postgres-branches",
@@ -20,8 +20,8 @@
       ]
     },
     {
-      "title": "Neon Platform",
-      "description": "Use Neon services beyond core Postgres.",
+      "title": "Neon Services",
+      "description": "Use Neon services beyond Lakebase Postgres.",
       "skills": [
         "neon-ai-gateway",
         "neon-functions",

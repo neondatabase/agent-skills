@@ -5,7 +5,7 @@
     "email": "andre@neon.tech"
   },
   "metadata": {
-    "description": "Official Neon Serverless Postgres plugins for Cursor",
+    "description": "Official Neon and Lakebase Postgres plugins for Cursor",
     "version": "1.0.0",
     "pluginRoot": "plugins"
   },
