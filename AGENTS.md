@@ -6,7 +6,17 @@ For the complete Agent Skills specification, see: https://agentskills.io/specifi
 
 ## Repository Overview
 
-A collection of skills for coding agents for working with Neon Serverless Postgres. Skills are packaged instructions and documentation that extend the agent's capabilities.
+A collection of skills for coding agents for working with Neon. Skills are packaged instructions and documentation that extend the agent's capabilities.
+
+## Terminology
+
+Public-facing copy in this repo follows the Neon naming rules:
+
+- **Lakebase Postgres** is the database product. Don't call it "Neon Postgres", "Neon Serverless Postgres", or "Neon" — it is the same database whether reached through Neon or through Databricks.
+- **lakebase architecture** (lowercase) is the category: OLTP built directly on cloud object storage, storage decoupled from compute. It replaces "the Neon architecture".
+- **Neon** is the brand and the access path — a complete set of cloud backend primitives built around Lakebase Postgres, for developers, startups, and agent platforms, from Databricks. Never call Neon "a platform" or "the Neon platform"; "platform" may only refer to the Databricks Platform or to the agent platforms we build for.
+
+Skill ids, plugin ids, and CLI flags (`neon-postgres`, `neon-postgres-branches`, …) are identifiers and stay as they are.
 
 ## Downstream Marketplaces — Keep in Sync
 

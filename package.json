@@ -1,7 +1,7 @@
 {
   "name": "@neondatabase/agent-skills",
   "version": "1.0.0",
-  "description": "A collection of Agent Skills for Neon Serverless Postgres",
+  "description": "A collection of Agent Skills for Neon",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
