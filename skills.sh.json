@@ -4,7 +4,7 @@
   "groupings": [
     {
       "title": "Core",
-      "description": "Start here for Neon and Lakebase Postgres guidance.",
+      "description": "Start here: the core skill for all things Neon, plus Neon's Lakebase Postgres offering.",
       "skills": [
         "neon",
         "neon-postgres"

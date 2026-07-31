@@ -6,7 +6,7 @@ For the complete Agent Skills specification, see: https://agentskills.io/specifi
 
 ## Repository Overview
 
-A collection of skills for coding agents for working with Neon and Lakebase Postgres. Skills are packaged instructions and documentation that extend the agent's capabilities.
+A collection of skills for coding agents for working with Neon. Skills are packaged instructions and documentation that extend the agent's capabilities.
 
 ## Terminology
 
