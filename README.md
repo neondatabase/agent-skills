@@ -32,7 +32,7 @@ A comprehensive index of Lakebase Postgres documentation and best practices to s
 
 [![neon-postgres-agent-platforms](https://shieldcn.dev/skills/installs/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms.svg?variant=branded&size=xs&label=neon-postgres-agent-platforms)](https://skills.sh/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms)
 
-For agent platforms, codegen tools, and multi-tenant SaaS products that provision and run Lakebase Postgres for their users. Includes a companion skill and samples in [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms).
+For agent platforms, codegen tools, and multi-tenant SaaS products that provision and run Lakebase Postgres, Object Storage, Functions, Managed Better Auth, and/or AI Gateway access for their users. Includes a companion skill and samples in [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms).
 
 ### Neon Postgres Branches
 
