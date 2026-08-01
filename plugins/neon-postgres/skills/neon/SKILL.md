@@ -85,7 +85,7 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | `claimable-postgres` | Provisioning instant, claimable temporary Postgres databases (for example, one per end user or demo). |
 | `neon-postgres-egress-optimizer` | Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase. |
 
-For guidance on agent platforms that provision and operate Lakebase Postgres at scale, use `neon-postgres-agent-platforms`, which lives in a separate repo: [`neondatabase/neon-for-agent-platforms`](https://github.com/neondatabase/neon-for-agent-platforms).
+For guidance on agent platforms that provision and operate Lakebase Postgres on Neon at scale, use `neon-postgres-agent-platforms`, which lives in a separate repo: [`neondatabase/neon-for-agent-platforms`](https://github.com/neondatabase/neon-for-agent-platforms).
 
 ### Installing the Right Skill
 

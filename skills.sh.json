@@ -12,7 +12,7 @@
     },
     {
       "title": "Database Workflows",
-      "description": "Provision, branch, and optimize Lakebase Postgres projects.",
+      "description": "Provision, branch, and optimize Lakebase Postgres projects on Neon.",
       "skills": [
         "claimable-postgres",
         "neon-postgres-branches",
