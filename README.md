@@ -26,7 +26,7 @@ An overview of Neon for apps and agents — Lakebase Postgres, Auth, Data API, O
 
 [![neon-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres.svg?variant=branded&size=xs&label=neon-postgres)](https://skills.sh/neondatabase/agent-skills/neon-postgres)
 
-A comprehensive index of Lakebase Postgres documentation and best practices to set your agents up for success.
+A comprehensive index of documentation and best practices for Lakebase Postgres on Neon, to set your agents up for success.
 
 ### Neon Postgres Agent Platforms
 
