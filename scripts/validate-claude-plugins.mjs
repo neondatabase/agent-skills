@@ -112,6 +112,31 @@ async function validateReferencedPath(
   }
 }
 
+async function checkNoSymlinks(pluginDir, pluginName) {
+  const stack = [pluginDir];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    let entries;
+    try {
+      entries = await fs.readdir(current, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      const entryPath = path.join(current, entry.name);
+      if (entry.isSymbolicLink()) {
+        addError(
+          `${pluginName}: symlink is not allowed inside a plugin (it is silently dropped on install): ${path.relative(repoRoot, entryPath)}. Commit a real file instead (see scripts/sync-plugin-skills.mjs).`,
+        );
+        continue;
+      }
+      if (entry.isDirectory()) {
+        stack.push(entryPath);
+      }
+    }
+  }
+}
+
 async function main() {
   const marketplacePath = path.join(
     repoRoot,
@@ -206,6 +231,8 @@ async function main() {
         await validateReferencedPath(pluginDir, field, value, entry.name);
       }
     }
+
+    await checkNoSymlinks(pluginDir, entry.name);
 
     const mcpPath = path.join(pluginDir, "mcp.json");
     if (!(await pathExists(mcpPath))) {

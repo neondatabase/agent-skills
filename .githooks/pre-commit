@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+# Keep vendored plugin skills in sync with the top-level source of truth so
+# committed plugins always ship real skill files. See CONTRIBUTING.md.
+node scripts/sync-plugin-skills.mjs
+git add plugins/*/skills

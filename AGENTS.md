@@ -6,7 +6,7 @@ For the complete Agent Skills specification, see: https://agentskills.io/specifi
 
 ## Repository Overview
 
-A collection of skills for coding agents for working with Neon Serverless Postgres. Skills are packaged instructions and documentation that extend the agent's capabilities.
+A collection of skills for coding agents for working with Neon. Skills are packaged instructions and documentation that extend the agent's capabilities.
 
 ## Downstream Marketplaces — Keep in Sync
 
@@ -167,6 +167,16 @@ You can also validate a single skill directly:
 skills-ref validate ./my-skill
 ```
 
+## Plugins vendor real skill copies
+
+The plugins under `plugins/` are distributed as git repositories, and Cursor/Claude silently drop symlinks that escape the plugin root on install. So each plugin ships **real copies** of its skills, not symlinks into the top-level `skills/`.
+
+- The mapping of which skills each plugin vendors lives in the `PLUGIN_SKILLS` map in [`scripts/sync-plugin-skills.mjs`](scripts/sync-plugin-skills.mjs). A value of `"*"` vendors every skill under `skills/` (new skills ship automatically); an array vendors only the named skills.
+- `npm run sync:plugins` regenerates the copies from `skills/`. A git pre-commit hook (wired by the `prepare` script on `npm install`) runs it automatically and stages the result.
+- `npm run validate:plugin-skills` (part of `validate:ci`) fails if the vendored copies drift from the source or if any symlink reappears inside a plugin. The Cursor and Claude plugin validators also hard-error on any in-plugin symlink.
+
+When you add or change a skill that a plugin ships, run `npm run sync:plugins` (or just commit — the hook handles it).
+
 ## CI/CD
 
 Neon maintains **two** agent-skill repositories with a shared, hardened CI pipeline. Keep them aligned when you change CI/CD in either repo.
@@ -181,7 +191,7 @@ Shared pipeline shape (both repos):
 - Workflow: `.github/workflows/validate.yml` (job name **Validate**)
 - Install: `npm ci --ignore-scripts` from `package-lock.json`
 - Entry point: `npm run validate:ci`
-- Supply chain: SHA-pinned GitHub Actions, `harden-runner` egress audit, Dependabot for `github-actions` + `npm`
+- Supply chain: SHA-pinned GitHub Actions, exact-pinned npm dependencies (`save-exact=true` in `.npmrc`, no ranges and no unpinned `npx`), `package-lock.json` resolving from `registry.npmjs.org`, `harden-runner` egress audit, Dependabot for `github-actions` + `npm`
 
 **Repo-specific (keep — do not drop when aligning):** this repo also validates the Cursor and Claude **plugin manifests** under `plugins/`. That's why `validate:ci` here is `validate:plugins && validate:skills` (vs. skills-only in `neon-for-agent-platforms`) and why this workflow also filters on `plugins/**`. Alignment means matching the shared shape above, **not** stripping this repo's plugin checks.
 

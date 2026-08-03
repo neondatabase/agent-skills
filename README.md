@@ -6,7 +6,7 @@
 
 # Agent Skills
 
-A collection of [Agent Skills](https://agentskills.io/) and agent integrations for Neon Serverless Postgres.
+A collection of [Agent Skills](https://agentskills.io/) and agent integrations for Neon — a complete set of cloud backend primitives built around Lakebase Postgres, for developers, startups, and agent platforms, from Databricks.
 
 ## What are Agent Skills?
 
@@ -20,19 +20,19 @@ It all starts with the `SKILL.md` file in the skill's directory. It's the entry 
 
 [![neon](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon.svg?variant=branded&size=xs&label=neon)](https://skills.sh/neondatabase/agent-skills/neon)
 
-An overview of the Neon platform for apps and agents — Postgres, Auth, Data API, Object Storage, Compute Functions, and the AI Gateway — and how to get started.
+An overview of Neon for apps and agents — Lakebase Postgres, Auth, Data API, Object Storage, Compute Functions, and the AI Gateway — and how to get started.
 
 ### Neon Postgres
 
 [![neon-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres.svg?variant=branded&size=xs&label=neon-postgres)](https://skills.sh/neondatabase/agent-skills/neon-postgres)
 
-A comprehensive index of Neon Serverless Postgres documentation and best practices to set your agents up for success.
+A comprehensive index of documentation and best practices for Lakebase Postgres on Neon, to set your agents up for success.
 
 ### Neon Postgres Agent Platforms
 
 [![neon-postgres-agent-platforms](https://shieldcn.dev/skills/installs/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms.svg?variant=branded&size=xs&label=neon-postgres-agent-platforms)](https://skills.sh/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms)
 
-For agent platforms, codegen tools, and multi-tenant SaaS products that provision and run Neon Postgres for their users. Includes a companion skill and samples in [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms).
+For agent platforms, codegen tools, and multi-tenant SaaS products that provision and run Lakebase Postgres, Object Storage, Functions, Managed Better Auth, and/or AI Gateway access for their users. Includes a companion skill and samples in [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms).
 
 ### Neon Postgres Branches
 
@@ -87,7 +87,7 @@ You can also install the skills as a Claude Code plugin, which bundles the Neon 
 
 After installation, you'll be prompted to authenticate with Neon via OAuth when you first use MCP tools.
 
-The top-level `skills/` directory remains the source of truth. Plugin folders symlink only the skill directories they expose.
+The top-level `skills/` directory remains the source of truth. Plugin folders ship real copies of the skill directories they expose, regenerated with `npm run sync:plugins` — see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ### Cursor Plugin
 

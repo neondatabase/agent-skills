@@ -5,7 +5,7 @@
     "email": "andre@neon.tech"
   },
   "metadata": {
-    "description": "Official Neon Serverless Postgres plugins for Claude Code",
+    "description": "Official Neon plugins for Claude Code",
     "version": "1.0.0"
   },
   "plugins": [
