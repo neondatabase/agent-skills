@@ -23,7 +23,7 @@ All three carry the same trace ID, so from an error you can pivot to the logs an
 | `SENTRY_DSN` | Project DSN; keep it configurable through the deployment environment. |
 | `SENTRY_RELEASE` | Optional release identifier such as a commit SHA — unlocks regression detection. |
 | `SENTRY_TRACES_SAMPLE_RATE` | Trace sample rate, default `1`. Agents are low-throughput and every trace is interesting; lower it for high-volume plain HTTP. |
-| `PRODUCTION_BRANCH` | Your default branch's ID, so it reports as environment `production` (see below). |
+| `PRODUCTION_BRANCH` | Your default branch's name, so it reports as environment `production` (see below). |
 
 ### 1. Initialize before anything else
 
@@ -69,7 +69,7 @@ import { Hono } from "hono";
 - **`enableLogs: true`** — the `Sentry.logger.*` API is off by default.
 - **`traceLifecycle: "stream"`** — sends each span as it finishes instead of holding the whole tree until the request ends, so spans that complete after the response (streaming agent calls) aren't lost. `streamGenAiSpans: true` is the default on current SDKs (sends gen_ai spans as standalone items so large prompts aren't truncated); set it to `false` on self-hosted Sentry.
 - **The two integrations:** `vercelAIIntegration({ force: true })` because `neon deploy` bundles your code, which defeats the integration's module detection; `httpIntegration({ disableIncomingRequestSpans: true })` because the request root span comes from the middleware in step 3 (the runtime's internal server would otherwise add a duplicate with an unhelpful name).
-- **Environment:** `NEON_BRANCH` is injected on every branch — including the default — and holds the branch **ID** (e.g. `br-mute-dew-a5tcbaip`), not the name. Compare it against the default branch's ID (passed in as `PRODUCTION_BRANCH`) so the default branch reads as `production` and other branches tag by ID. Pass `SENTRY_ENVIRONMENT` explicitly per deploy if you want friendlier labels.
+- **Environment:** `NEON_BRANCH` is injected on every branch — including the default — and holds the branch **name** (e.g. `main`, `preview/add-auth`). Because it's always present, don't use it as a boolean flag; compare it against your default branch's name (passed in as `PRODUCTION_BRANCH`) so the default branch reads as `production` and other branches tag by name. Pass `SENTRY_ENVIRONMENT` explicitly per deploy to override.
 - **Flush on shutdown:** the runtime sends `SIGTERM`/`SIGINT` before evicting an idle isolate; Sentry buffers logs and batches spans, so flush or the tail gets dropped.
 
 ### 2. Provide the DSN as a deploy-time secret
