@@ -78,7 +78,7 @@ npx skills add neondatabase/agent-skills
 
 ### Claude Code Plugin
 
-You can also install the skills as a Claude Code plugin, which bundles the Neon agent skills (`neon`, `neon-postgres`, `neon-postgres-branches`) and the [Neon MCP Server](https://mcp.neon.tech) for natural language database management:
+You can also install the skills as a Claude Code plugin, which bundles the Neon agent skills and the [Neon MCP Server](https://mcp.neon.tech) for natural language database management:
 
 ```
 /plugin marketplace add neondatabase/agent-skills

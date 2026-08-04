@@ -13,7 +13,7 @@
     {
       "name": "neon-postgres",
       "source": "neon-postgres",
-      "description": "Manage your Neon projects, databases, and branches with the Neon agent skills and the Neon MCP Server"
+      "description": "Manage your Neon backend with the Neon agent skills and the Neon MCP Server: Lakebase Postgres, branching, Object Storage, Functions, and the AI Gateway"
     }
   ]
 }
