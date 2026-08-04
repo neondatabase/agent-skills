@@ -40,12 +40,6 @@ For agent platforms, codegen tools, and multi-tenant SaaS products that provisio
 
 Choose and create the right Neon branch type for migration testing and isolated development workflows, including schema-only branches for sensitive data and reset-from-parent workflows to quickly realign child branches.
 
-### Claimable Postgres
-
-[![claimable-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/claimable-postgres.svg?variant=branded&size=xs&label=claimable-postgres)](https://skills.sh/neondatabase/agent-skills/claimable-postgres)
-
-Provision instant temporary Postgres databases via Claimable Postgres by Neon ([neon.new](https://neon.new)) with no login, signup, or credit card. Supports REST API, CLI, and SDK.
-
 ### Neon Postgres Egress Optimizer
 
 [![neon-postgres-egress-optimizer](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-egress-optimizer.svg?variant=branded&size=xs&label=neon-postgres-egress-optimizer)](https://skills.sh/neondatabase/agent-skills/neon-postgres-egress-optimizer)
