@@ -2,7 +2,7 @@
   "name": "neon-postgres",
   "displayName": "Neon Postgres",
   "version": "1.1.0",
-  "description": "Manage your Neon projects, databases, and branches with the Neon agent skills and the Neon MCP Server",
+  "description": "Manage your Neon backend with the Neon agent skills and the Neon MCP Server: Lakebase Postgres, branching, Object Storage, Functions, and the AI Gateway",
   "author": {
     "name": "Neon",
     "email": "andre@neon.tech"
@@ -10,7 +10,7 @@
   "homepage": "https://neon.tech/docs/ai/neon-mcp-server",
   "repository": "https://github.com/neondatabase/agent-skills",
   "license": "Apache-2.0",
-  "keywords": ["neon", "postgres", "serverless", "database", "mcp", "cursor"],
+  "keywords": ["neon", "lakebase", "postgres", "serverless", "database", "mcp", "cursor"],
   "logo": "assets/logo.svg",
   "skills": "./skills/",
   "mcpServers": "./mcp.json"
