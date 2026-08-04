@@ -44,7 +44,7 @@ Choose and create the right Neon branch type for migration testing and isolated 
 
 [![claimable-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/claimable-postgres.svg?variant=branded&size=xs&label=claimable-postgres)](https://skills.sh/neondatabase/agent-skills/claimable-postgres)
 
-Provision instant temporary Postgres databases via Claimable Postgres by Neon ([neon.new](https://neon.new)) with no login, signup, or credit card. Supports REST API, CLI, and SDK.
+Provision an instant temporary Postgres database, Data API, and Neon Auth with no login, signup, or credit card, over the `auth.md` agent identity protocol at `claimable.neon.tech`. The agent registers itself, exchanges a durable identity assertion for short-lived access tokens, and hands the human a claim URL to keep the project.
 
 ### Neon Postgres Egress Optimizer
 

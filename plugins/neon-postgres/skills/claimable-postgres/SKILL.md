@@ -1,13 +1,17 @@
 ---
 name: claimable-postgres
 description: >-
-  Provision instant temporary Postgres databases via Claimable Postgres by Neon
-  (neon.new) with no login, signup, or credit card. Supports REST API, CLI, and
-  SDK. Use when users ask for a quick Postgres environment, a throwaway
-  DATABASE_URL for prototyping/tests, or "just give me a DB now". Triggers
-  include: "quick postgres", "temporary postgres", "no signup database",
-  "no credit card database", "instant DATABASE_URL", "npx neon-new", "neon.new",
-  "neon.new API", "claimable postgres API".
+  Provision an instant temporary Postgres database, Data API, and Neon Auth with
+  no login, signup, or credit card, over an auth.md-compatible agent identity
+  protocol at claimable.neon.tech. The agent registers itself, receives a durable
+  identity assertion, exchanges it for short-lived access tokens, and hands the
+  human a claim URL to keep the project. Use when a user asks for a quick
+  Postgres environment, a throwaway DATABASE_URL for prototyping or tests, a
+  no-signup backend for a demo, or "just give me a DB now" — and when an agent
+  needs credentials of its own without a human account. Triggers include:
+  "quick postgres", "temporary postgres", "no signup database", "no credit card
+  database", "instant DATABASE_URL", "claimable postgres", "claimable postgres
+  API", "neon.new", "agent identity", "auth.md", "register my agent".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/claimable-postgres
@@ -23,203 +27,220 @@ npx skills add neondatabase/agent-skills --skill neon
 
 # Claimable Postgres
 
-Instant Postgres databases for local development, demos, prototyping, and test environments. No account required. Databases expire after 72 hours unless claimed to a Neon account.
+Instant Postgres for local development, demos, prototyping, and test environments. No account required. A project expires unless a human claims it into a Neon account.
 
-## Quick Start
+The service implements the [`auth.md`](https://claimable.neon.tech/auth.md) protocol: an agent registers itself, gets a durable identity assertion, and exchanges that assertion for short-lived, scoped, revocable access tokens. There is no human signup step anywhere in the provisioning path — the human is only involved when the project is claimed.
 
-```bash
-curl -s -X POST "https://neon.new/api/v1/database" \
-  -H "Content-Type: application/json" \
-  -d '{"ref": "agent-skills"}'
-```
+**Base URL:** `https://claimable.neon.tech/v1`
 
-Parse `connection_string` and `claim_url` from the JSON response. Write `connection_string` to the project's `.env` as `DATABASE_URL`.
+## What It Does
 
-For other methods (CLI, SDK, Vite plugin), see [Which Method?](#which-method) below.
+- **Provisions without an account** — one `POST` returns a live project and the agent's credential.
+- **Gives the agent its own identity** — a service-signed identity assertion, not a shared secret or a human's API key.
+- **Issues short-lived tokens** — access tokens expire and are revocable; the assertion is what persists.
+- **Covers more than Postgres** — `postgres`, `dataapi`, and `auth` capabilities are available before the project is claimed.
+- **Ends in a human claim** — the project becomes a normal Neon project when a human claims it.
 
-## Which Method?
+## Discovery Documents
 
-- **REST API**: Returns structured JSON. No runtime dependency beyond `curl`. Preferred when the agent needs predictable output and error handling.
-- **CLI** (`npx neon-new@latest --yes`): Provisions and writes `.env` in one command. Convenient when Node.js is available and the user wants a simple setup.
-- **SDK** (`neon-new/sdk`): Scripts or programmatic provisioning in Node.js.
-- **Vite plugin** (`vite-plugin-neon-new`): Auto-provisions on `vite dev` if `DATABASE_URL` is missing. Use when the user has a Vite project.
-- **Browser**: User cannot run CLI or API. Direct to https://neon.new.
+Served at the root, **not** under `/v1`:
 
-## Auto-provisioning
+| Document                                                                 | Purpose                                              |
+| ------------------------------------------------------------------------ | ---------------------------------------------------- |
+| `GET https://claimable.neon.tech/auth.md`                                | Human- and agent-readable description of the service |
+| `GET https://claimable.neon.tech/.well-known/oauth-protected-resource`   | Protected resource metadata                          |
+| `GET https://claimable.neon.tech/.well-known/oauth-authorization-server` | Authorization server metadata                        |
+| `GET https://claimable.neon.tech/.well-known/jwks.json`                  | Public keys for verifying issued tokens              |
 
-If the agent needs a database to fulfill a task (e.g. "build me a todo app with a real database") and the user has not provided a connection string, provision one via the API and inform the user. Include the claim URL so they can keep it.
+`auth.md` is the service's own description of the protocol. Read it when protocol details matter.
+
+## Credential Model
+
+Two credentials, with different lifetimes. Confusing them is the most common way to break a flow:
+
+- **`identity_assertion`** — a service-signed JWT returned by registration. This is the durable secret. Store it; it is what every access token is minted from.
+- **`access_token`** — short-lived (`expires_in` seconds, currently 3600), sent as `Authorization: Bearer`. **There are no refresh tokens.** When it expires, exchange the stored assertion again for a new one.
 
 ## Agent Workflow
 
-### API path
+1. **Register.** `POST /v1/agent/identity` with the capabilities the task actually needs.
+2. **Store the assertion.** Persist `identity_assertion` and `project.id`. Treat the assertion like any other secret (see [Safety and UX Notes](#safety-and-ux-notes)).
+3. **Exchange for an access token.** `POST /v1/oauth2/token`.
+4. **Read capability decisions.** Check the `capabilities` array from registration — a requested capability may come back `granted: false`.
+5. **Fetch credentials.** `GET /v1/databases/{id}/credentials` for connection strings and service URLs. Write the Postgres connection string to the project's `.env` as `DATABASE_URL` (do not overwrite an existing key without confirmation).
+6. **Surface the claim URL.** Report `claim.url` and `claim.user_code` to the human, with the expiry.
+7. **Re-exchange on expiry.** On `token_expired`, repeat step 3. Do not re-register.
 
-1. **Confirm intent:** If the request is ambiguous, confirm the user wants a temporary, no-signup database. Skip this if they explicitly asked for a quick or temporary database.
-2. **Provision:** POST to `https://neon.new/api/v1/database` with `{"ref": "agent-skills"}`.
-3. **Parse response:** Extract `connection_string`, `claim_url`, and `expires_at` from the JSON response.
-4. **Write .env:** Write `DATABASE_URL=<connection_string>` to the project's `.env` (or the user's preferred file and key). Do not overwrite an existing key without confirmation.
-5. **Seed (if needed):** If the user has a seed SQL file, run it against the new database:
-   ```bash
-   psql "$DATABASE_URL" -f seed.sql
-   ```
-6. **Report:** Cover every item in the [Output Checklist](#output-checklist).
-7. **Optional:** Offer a quick connection test (e.g. `SELECT 1`).
-
-### CLI path
-
-1. **Check .env:** Check the target `.env` for an existing `DATABASE_URL` (or chosen key). If present, do not run. Offer remove, `--env`, or `--key` and get confirmation (see [Pre-run Check](#pre-run-check)).
-2. **Confirm intent:** If the request is ambiguous, confirm the user wants a temporary, no-signup database. Skip this if they explicitly asked for a quick or temporary database.
-3. **Gather options:** Use defaults unless context suggests otherwise (e.g., user mentions a custom env file, seed SQL, or logical replication).
-4. **Run:** Execute with `@latest --yes` plus the confirmed options. Always use `@latest` to avoid stale cached versions. `--yes` skips interactive prompts that would stall the agent.
-   ```bash
-   npx neon-new@latest --yes --ref agent-skills --env .env.local --seed ./schema.sql
-   ```
-5. **Verify:** Confirm the connection string was written to the intended file.
-6. **Report:** Cover every item in the [Output Checklist](#output-checklist).
-7. **Optional:** Offer a quick connection test (e.g. `SELECT 1`).
-
-### Output Checklist
-
-Always report:
-
-- Where the connection string was written (e.g. `.env`)
-- Which variable key was used (`DATABASE_URL` or custom key)
-- The claim URL (from `.env` or API response)
-- That unclaimed databases are temporary (72 hours): the database works now, and claiming within 72 hours keeps it permanently
-
-## Safety and UX Notes
-
-- Do not overwrite existing env vars. Check first, then use `--env` or `--key` (CLI) or skip writing (API) to avoid conflicts.
-- Ask before running destructive seed SQL (`DROP`, `TRUNCATE`, mass `DELETE`).
-- For production workloads, recommend standard Neon provisioning instead of temporary claimable databases.
-- If users need long-term persistence, instruct them to open the claim URL right away.
-- After writing credentials to an .env file, check that it's covered by .gitignore. If not, warn the user. Do not modify `.gitignore` without confirmation.
-
-## REST API
-
-**Base URL:** `https://neon.new/api/v1`
-
-### Create a database
+### Register
 
 ```bash
-curl -s -X POST "https://neon.new/api/v1/database" \
+curl -s -X POST "https://claimable.neon.tech/v1/agent/identity" \
   -H "Content-Type: application/json" \
-  -d '{"ref": "agent-skills"}'
+  -d '{"type": "anonymous", "capabilities": ["postgres", "dataapi"]}'
 ```
 
-| Parameter                    | Required | Description                                                                                                           |
-| ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------- |
-| `ref`                        | Yes      | Tracking tag that identifies who provisioned the database. Use `"agent-skills"` when provisioning through this skill. |
-| `enable_logical_replication` | No       | Enable logical replication (default: false, cannot be disabled once enabled)                                          |
-
-The `connection_string` returned by the API is a pooled connection URL. For a direct (non-pooled) connection (e.g. Prisma migrations), remove `-pooler` from the hostname. The CLI writes both pooled and direct URLs automatically.
+`type` is one of `anonymous`, `service_auth`, or `identity_assertion`. Use `anonymous` when the agent has no prior credential of its own.
 
 **Response:**
 
-```json
+```jsonc
 {
-  "id": "019beb39-37fb-709d-87ac-7ad6198b89f7",
-  "status": "UNCLAIMED",
-  "neon_project_id": "gentle-scene-06438508",
-  "connection_string": "postgresql://...",
-  "claim_url": "https://neon.new/claim/019beb39-...",
-  "expires_at": "2026-01-26T14:19:14.580Z",
-  "created_at": "2026-01-23T14:19:14.580Z",
-  "updated_at": "2026-01-23T14:19:14.580Z"
+  "registration_id": "...",
+  "identity_assertion": "eyJ...", // durable secret — store this
+  "project": {
+    "id": "...",
+    "expires_at": "..." // project expiry, not token expiry
+  },
+  "capabilities": [
+    // one decision per requested capability
+    { "capability": "postgres", "granted": true },
+    { "capability": "dataapi", "granted": true }
+  ],
+  "claim": {
+    "url": "...", // give this to the human
+    "user_code": "...",
+    "expires_at": "..."
+  }
 }
 ```
 
-### Check status
+### Exchange the assertion for an access token
+
+Form-encoded, using the JWT bearer grant:
 
 ```bash
-curl -s "https://neon.new/api/v1/database/{id}"
+curl -s -X POST "https://claimable.neon.tech/v1/oauth2/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer" \
+  --data-urlencode "assertion=$IDENTITY_ASSERTION" \
+  --data-urlencode "resource=https://claimable.neon.tech/"
 ```
 
-Returns the same response shape. Status transitions: `UNCLAIMED` -> `CLAIMING` -> `CLAIMED`. After the database is claimed, `connection_string` returns `null`.
+**Response:**
 
-### Error responses
+```jsonc
+{
+  "access_token": "...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "..."
+}
+```
 
-| Condition              | HTTP | Message                          |
-| ---------------------- | ---- | -------------------------------- |
-| Missing or empty `ref` | 400  | `Missing referrer`               |
-| Invalid database ID    | 400  | `Database not found`             |
-| Invalid JSON body      | 500  | `Failed to create the database.` |
-
-## CLI
+### Revoke a token
 
 ```bash
-npx neon-new@latest --yes
+curl -s -X POST "https://claimable.neon.tech/v1/oauth2/revoke" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  --data-urlencode "token=$ACCESS_TOKEN"
 ```
 
-Provisions a database and writes the connection string to `.env` in one step. Always use `@latest` and `--yes` (skips interactive prompts that would stall the agent).
+## Capabilities
 
-### Pre-run Check
+Request capabilities as an array at registration. Only `postgres` is on by default; everything else must be asked for.
 
-Check if `DATABASE_URL` (or the chosen key) already exists in the target `.env`. The CLI exits without provisioning if it finds the key.
+| Capability   | Before claiming        | Notes                                                |
+| ------------ | ---------------------- | ---------------------------------------------------- |
+| `postgres`   | Always granted         | The Postgres database itself                         |
+| `dataapi`    | Granted when requested | Off unless listed in the request                     |
+| `auth`       | Granted when requested | Neon Auth; off unless listed in the request          |
+| `storage`    | Not available          | Returns `granted: false`, `reason: "requires_claim"` |
+| `functions`  | Not available          | Returns `granted: false`, `reason: "requires_claim"` |
+| `ai_gateway` | Not available          | Returns `granted: false`, `reason: "requires_claim"` |
 
-If the key exists, offer the user three options:
+Request what the task needs, including the pre-claim-unavailable ones. The service **accepts and records** a request for `storage`, `functions`, or `ai_gateway` rather than rejecting it, and answers with a decision object:
 
-1. Remove or comment out the existing line, then rerun.
-2. Use `--env` to write to a different file (e.g. `--env .env.local`).
-3. Use `--key` to write under a different variable name.
-
-Get confirmation before proceeding.
-
-### Options
-
-| Option                  | Alias | Description                                                           | Default        |
-| ----------------------- | ----- | --------------------------------------------------------------------- | -------------- |
-| `--yes`                 | `-y`  | Skip prompts, use defaults                                            | `false`        |
-| `--env`                 | `-e`  | .env file path                                                        | `./.env`       |
-| `--key`                 | `-k`  | Connection string env var key                                         | `DATABASE_URL` |
-| `--prefix`              | `-p`  | Prefix for generated public env vars                                  | `PUBLIC_`      |
-| `--seed`                | `-s`  | Path to seed SQL file                                                 | none           |
-| `--logical-replication` | `-L`  | Enable logical replication                                            | `false`        |
-| `--ref`                 | `-r`  | Referrer id (use `agent-skills` when provisioning through this skill) | none           |
-
-Alternative package managers: `yarn dlx neon-new@latest`, `pnpm dlx neon-new@latest`, `bunx neon-new@latest`, `deno run -A neon-new@latest`.
-
-### Output
-
-The CLI writes to the target `.env`:
-
-```
-DATABASE_URL=postgresql://...              # pooled (use for application queries)
-DATABASE_URL_DIRECT=postgresql://...       # direct (use for migrations, e.g. Prisma)
-PUBLIC_POSTGRES_CLAIM_URL=https://neon.new/claim/...
+```jsonc
+{
+  "capability": "storage",
+  "granted": false,
+  "reason": "requires_claim",
+  "message": "..."
+}
 ```
 
-## SDK
+That is deliberate — the request is counted so demand can be measured. Do not filter these out client-side to avoid a `granted: false`. Read the decision, tell the user the capability needs a claim first, and continue with what was granted.
 
-Use for scripts and programmatic provisioning flows.
+Registration is not all-or-nothing: a `granted: false` entry for one capability does not fail the others.
 
-```typescript
-import { instantPostgres } from "neon-new";
+## Resources
 
-const { databaseUrl, databaseUrlDirect, claimUrl, claimExpiresAt } =
-  await instantPostgres({
-    referrer: "agent-skills",
-    seed: { type: "sql-script", path: "./init.sql" },
-  });
+All resource routes require `Authorization: Bearer <access_token>`.
+
+| Route                                | Returns                                                 |
+| ------------------------------------ | ------------------------------------------------------- |
+| `GET /v1/databases/{id}`             | Status, expiry, granted capabilities, claim state       |
+| `GET /v1/databases/{id}/credentials` | Connection strings and service URLs                     |
+| `POST /v1/databases/{id}/claim`      | Starts a claim; returns the claim URL and a `user_code` |
+| `GET /v1/databases/{id}/claim`       | Current claim state (poll while the human completes it) |
+| `DELETE /v1/databases/{id}`          | Releases the project early                              |
+
+```bash
+curl -s "https://claimable.neon.tech/v1/databases/$PROJECT_ID/credentials" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
-
-Returns `databaseUrl` (pooled), `databaseUrlDirect` (direct, for migrations), `claimUrl`, and `claimExpiresAt` (Date object). The `referrer` parameter is required.
-
-## Vite Plugin
-
-For Vite projects, `vite-plugin-neon-new` auto-provisions a database on `vite dev` if `DATABASE_URL` is missing. Install with `npm install -D vite-plugin-neon-new`. See the [Claimable Postgres docs](https://neon.com/docs/reference/claimable-postgres#vite-plugin) for configuration.
 
 ## Claiming
 
-Claiming is optional. The database works immediately without it. To optionally claim, the user opens the claim URL in a browser, where they sign in or create a Neon account to claim the database.
+**An agent must not attempt to claim a project itself.** Claiming requires a human proving their identity to Neon. There is no agent-side path around that.
 
-- **API/SDK:** Give the user the `claim_url` from the create response.
-- **CLI:** `npx neon-new@latest claim` reads the claim URL from `.env` and opens the browser automatically.
+The agent's job is to surface the claim details:
 
-Users cannot claim into Vercel-linked orgs; they must choose another Neon org.
+1. Take `claim.url` and `claim.user_code` from the registration response, or start a claim with `POST /v1/databases/{id}/claim`.
+2. Give both to the human, along with the claim expiry, and state plainly that the project goes away unless it is claimed.
+3. Poll `GET /v1/databases/{id}/claim` if the flow needs to react to the claim completing.
+
+Once claimed, the project belongs to a Neon account and is a normal Neon project, which is what the `requires_claim` capabilities are waiting on.
+
+## Errors
+
+Every error carries a structured envelope:
+
+```jsonc
+{
+  "error": {
+    "code": "...",
+    "origin": "...",
+    "message": "...",
+    "retryable": false,
+    "request_id": "..."
+  }
+}
+```
+
+Branch on `code`, not on the HTTP status or the message text. Include `request_id` in any bug report.
+
+| Code                        | Stored assertion is dead | Action                                                                  |
+| --------------------------- | ------------------------ | ----------------------------------------------------------------------- |
+| `capability_requires_claim` | No                       | The capability needs a claim first; tell the human                      |
+| `scope_insufficient`        | No                       | The token does not cover this request                                   |
+| `token_expired`             | No                       | Re-exchange the stored assertion for a new access token                 |
+| `route_not_allowed`         | No                       | Read `message`                                                          |
+| `unauthorized`              | No                       | Read `message`                                                          |
+| `quota_exceeded`            | No                       | Read `message`; check `retryable`                                       |
+| `invalid_grant`             | **Yes**                  | Discard the stored assertion                                            |
+| `project_expired`           | **Yes**                  | Discard the stored assertion; the project is gone                       |
+| `project_claimed`           | **Yes**                  | Discard the stored assertion; the project now belongs to a Neon account |
+
+Only `invalid_grant`, `project_expired`, and `project_claimed` mean the stored credential is dead. Everything else is a live-credential condition — do not throw the assertion away and re-register in response to any other code.
+
+## Auto-provisioning
+
+If a task needs a database and the user has not provided a connection string (for example "build me a todo app with a real database"), register a project, use it, and tell the user. Always include the claim URL and `user_code` so they can keep it.
+
+## Safety and UX Notes
+
+- Store the `identity_assertion` as a secret. It is long-lived and is the only way to mint access tokens.
+- Do not overwrite existing env vars. Check first, and skip writing or use a different key rather than clobbering.
+- After writing credentials to an `.env` file, check that it is covered by `.gitignore`. If not, warn the user. Do not modify `.gitignore` without confirmation.
+- Ask before running destructive seed SQL (`DROP`, `TRUNCATE`, mass `DELETE`).
+- Report where the connection string was written, under which key, the claim URL and `user_code`, and that the project expires at `project.expires_at` unless claimed.
+- For production workloads, recommend standard Neon provisioning instead of a claimable project.
+- Release projects that are no longer needed with `DELETE /v1/databases/{id}` rather than leaving them to expire.
 
 ## Neon Infrastructure as Code (`neon.ts`)
 
-Claimable databases are deliberately throwaway and provisioned through `neon.new` (above), so they aren't managed by `neon.ts`. Once a user **claims** a database into a Neon account it becomes a normal Neon project — at which point `neon.ts`, Neon's infrastructure-as-code file, is how you manage it going forward (see the `neon` skill for the full reference): declare the services its branches should have, program per-branch compute, and get type-safe env vars.
+Claimable projects are deliberately throwaway and are provisioned through the API above, so they are not managed by `neon.ts`. Once a human **claims** one into a Neon account it becomes a normal Neon project — at which point `neon.ts`, Neon's infrastructure-as-code file, is how it is managed going forward (see the `neon` skill for the full reference): declare the services its branches should have, program per-branch compute, and get type-safe env vars.
 
 ```bash
 npm i @neon/config
@@ -230,7 +251,7 @@ npm i @neon/config
 import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
-  auth: true, // Neon Auth, once you outgrow a bare connection string
+  auth: true, // Neon Auth
   dataApi: true, // Data API
   branch: (branch) => (branch.exists ? {} : { ttl: "7d" }), // ephemeral non-default branches
 });
@@ -240,21 +261,4 @@ export default defineConfig({
 neon config apply   # provision the declared services (neon deploy is an alias)
 ```
 
-If a project needs branching, multiple services, or durable infrastructure tracked in version control, recommend claiming first and then adopting `neon.ts` — rather than re-provisioning throwaway claimable databases.
-
-## Defaults and Limits
-
-| Parameter | Value     |
-| --------- | --------- |
-| Provider  | AWS       |
-| Region    | us-east-2 |
-| Postgres  | 17        |
-
-Region cannot be changed for claimable databases. Unclaimed databases have stricter quotas. Claiming resets limits to free plan defaults.
-
-|            | Unclaimed | Claimed (Free plan) |
-| ---------- | --------- | ------------------- |
-| Storage    | 100 MB    | 512 MB              |
-| Transfer   | 1 GB      | ~5 GB               |
-| Branches   | No        | Yes                 |
-| Expiration | 72 hours  | None                |
+If a project needs branching, multiple services, or durable infrastructure tracked in version control, recommend claiming first and then adopting `neon.ts` — rather than re-provisioning throwaway claimable projects.
