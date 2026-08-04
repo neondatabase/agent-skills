@@ -118,6 +118,14 @@ So `${NEON_AI_GATEWAY_BASE_URL}/v1` is the chat-completions endpoint, `${NEON_AI
 
 For typed, validated access to the injected credentials, pass the same `neon.ts` config object to `parseEnv` from `@neon/env` — it returns an `env.aiGateway` namespace (`apiKey`, `baseUrl`) derived from your config.
 
+## Handling Untrusted Input and Model Output
+
+When an app or agent passes **user-supplied text** as prompts or tool inputs through the gateway, validate it at the application boundary — the gateway forwards what it receives and does not sanitize on your behalf:
+
+- **Validate user input before sending it to the model.** Enforce length limits, strip or reject unexpected content, and never interpolate raw user input into system prompts without review.
+- **Treat model output as untrusted.** LLM responses can contain anything — do not insert them into SQL, HTML, or shell commands without sanitization. Use parameterized queries and escape output before rendering.
+- **Scope tool permissions.** When an agent calls tools in a loop (see examples below), ensure each tool validates its own inputs and has the minimum database/API access it needs.
+
 ## Build Agents with the Vercel AI SDK (Recommended)
 
 The [Vercel AI SDK](https://ai-sdk.dev) is the recommended way to call the gateway and build agents from TypeScript: one set of primitives (`generateText`, `streamText`, tool calling, structured output) over every catalog model, with first-class streaming for the long agent responses Neon Functions are built to host.
