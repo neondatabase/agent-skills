@@ -83,11 +83,15 @@ Link: https://neon.com/docs/introduction/branching.md
      --expires-at 2026-12-15T18:02:16Z
    ```
 
-4. Optionally fetch a connection string for the new branch:
+4. Switch to the new branch and pull its credentials into `.env` automatically:
 
    ```bash
-   neon connection-string <branch-name>
+   neon checkout <branch-name>
    ```
+
+   `neon checkout` updates the `.neon` context file and runs `neon env pull`, which writes `DATABASE_URL` (and any other Neon-managed vars) directly into `.env` or `.env.local`. The agent never sees or outputs the connection string.
+
+   If the project is not yet linked, run `neon link` first (one-time setup).
 
 ## Create a Schema-Only Branch (Beta, Sensitive Data)
 
@@ -202,9 +206,11 @@ If the user asks for process recommendations (not just a single command), sugges
 
 After branch creation, ask whether the user wants to update local environment credentials to point at the new branch.
 
-- Ask: "Do you want me to update your `.env` `DATABASE_URL` to this new branch connection string?"
-- If yes, write the new branch connection string to the requested env file/key.
-- If no, leave credentials unchanged and share the connection string for manual use.
+- Ask: "Do you want me to run `neon checkout <branch-name>` to update your `.env` with this branch's connection string?"
+- If yes, run `neon checkout <branch-name>`. The CLI writes `DATABASE_URL` (and other Neon-managed vars) directly into `.env`/`.env.local` via `neon env pull` — the agent never sees or outputs credentials.
+- If the user only needs to refresh env vars without switching branches, use `neon env pull` instead.
+- If no, leave credentials unchanged and tell the user they can run `neon checkout <branch-name>` or `neon env pull` themselves.
+- **Never output, log, or read connection strings in the conversation.** They contain database passwords. Always use CLI commands (`neon checkout`, `neon env pull`) that write credentials to disk directly.
 - Never overwrite an existing env key without explicit confirmation.
 
 ## Neon Infrastructure as Code (`neon.ts`)
@@ -264,9 +270,9 @@ Common CI/CD use cases for Neon branches:
 1. Recommend a normal branch and explain why.
 2. Share docs link: https://neon.com/docs/introduction/branching
 3. Check the tool path first (CLI with `neon --version`; MCP only if the CLI isn't usable).
-4. Provide commands:
+4. Provide the create command and switch to the branch:
    - `neon branches create --name migration-test --parent main --expires-at 2026-12-15T18:02:16Z`
-   - `neon connection-string migration-test`
+   - `neon checkout migration-test` (pulls `DATABASE_URL` into `.env` automatically)
 
 ### Example 2: Sensitive data development workflow
 
