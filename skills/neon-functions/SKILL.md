@@ -65,6 +65,17 @@ Neon (Functions included) is **backend primitives, not full-stack app hosting**.
 
 Either way, secure a Function like any standalone REST API: verify a JWT or API key at the top of the handler (see the WARNING under [Functions as an Agent Backend](#functions-as-an-agent-backend-nextjs-and-similar-frameworks)). Because a Function is just your backend, you can **move pieces between your host and Neon** — relocate an agent or a stateful WebSocket server onto a Function when it needs more runtime, and back if needed.
 
+### Input Validation (important — do not skip)
+
+A Function's public HTTPS endpoint receives **untrusted input** from the internet — HTTP request bodies, WebSocket messages, SSE payloads, and query parameters. Always validate and sanitize incoming data before using it in database queries, business logic, or responses:
+
+- **Validate shape and type** at the handler boundary. Use a schema validation library (e.g. Zod, Valibot, ArkType) to parse request bodies and reject malformed input early. Never trust a TypeScript type assertion alone (e.g. `c.req.json<{ text: string }>()`) — it provides no runtime validation.
+- **Parameterize all SQL.** Use parameterized queries or an ORM (Drizzle, Prisma) — never interpolate user input into SQL strings.
+- **Sanitize before reflecting.** If a response includes any part of the request (error messages, echoed fields), sanitize it to prevent injection into downstream consumers.
+- **Limit payload size.** Reject oversized request bodies early to prevent resource exhaustion (e.g. check `Content-Length` or cap streaming reads).
+
+When generating handler code, always include input validation at the boundary — even in minimal examples.
+
 ## Setup
 
 Functions are declared in `neon.ts` (see the `neon` skill for the branch-first workflow and `neon.ts` basics). Add `@neon/config` and declare functions under `preview.functions`, keyed by **slug**:
@@ -106,7 +117,9 @@ const db = drizzle(pool);
 const app = new Hono();
 app.get("/", (c) => c.text("Neon + Hono + Drizzle"));
 app.post("/todos", async (c) => {
-  const { text } = await c.req.json<{ text: string }>();
+  const body = await c.req.json();
+  const text = typeof body?.text === "string" ? body.text.trim() : "";
+  if (!text || text.length > 500) return c.json({ error: "invalid text" }, 400);
   const [row] = await db.insert(todos).values({ text }).returning();
   return c.json(row, 201);
 });
@@ -316,7 +329,10 @@ export default {
     wss.handleUpgrade(req, socket, head, (ws) => {
       clients.add(ws);
       ws.on("close", () => clients.delete(ws));
-      ws.on("message", (data) => persist(data.toString())); // persist; fan out to every isolate — see below
+      ws.on("message", (data) => {
+          const msg = data.toString().slice(0, 4096); // cap size; validate before use
+          if (msg) persist(msg); // fan out to every isolate — see below
+        });
     });
   },
 };
