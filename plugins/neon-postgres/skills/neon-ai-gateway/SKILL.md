@@ -112,7 +112,7 @@ When `preview.aiGateway` is enabled, Neon injects the gateway credentials as **N
 - `/v1` — unified, OpenAI **Chat Completions**-compatible; recommended default, works with every provider (`/v1/chat/completions`).
 - `/openai/v1` — OpenAI **Responses** API (required for `gpt-5-…-codex` variants and `gpt-5-5-pro`); the `@ai-sdk/openai` provider uses the Responses API by default (`/openai/v1/responses`).
 - `/anthropic/v1` — native Anthropic Messages (extended thinking, prompt caching); mirrors the real Anthropic API path (`/anthropic/v1/messages`).
-- `/gemini/v1beta/...` — native Gemini `generateContent`. The `/v1beta` is Google's own API version, not Neon's.
+- `/gemini/v1beta/...` — native Gemini `generateContent` (`/gemini/v1beta/models/<model>:generateContent`).
 
 So `${NEON_AI_GATEWAY_BASE_URL}/v1` is the chat-completions endpoint, `${NEON_AI_GATEWAY_BASE_URL}/openai/v1` the OpenAI Responses endpoint, and so on.
 
