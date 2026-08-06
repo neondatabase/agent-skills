@@ -1,8 +1,9 @@
 name: Validate
 
-# Skill and plugin validation. Supply-chain hardened: SHA-pinned actions,
-# npm ci --ignore-scripts from package-lock.json, harden-runner egress audit.
-# Keep aligned with neondatabase/neon-for-agent-platforms — see AGENTS.md.
+# Skill and plugin validation, covering the root Agent Plugins v1 package and
+# the Claude/Cursor packaging under plugins/. Supply-chain hardened: SHA-pinned
+# actions, npm ci --ignore-scripts from package-lock.json, harden-runner egress
+# audit. Keep aligned with neondatabase/neon-for-agent-platforms — see AGENTS.md.
 
 on:
   pull_request:
@@ -10,6 +11,10 @@ on:
       - 'skills/**'
       - 'plugins/**'
       - 'scripts/**'
+      - 'plugin.json'
+      - 'mcp.json'
+      - '.claude-plugin/**'
+      - '.cursor-plugin/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/validate.yml'
@@ -21,6 +26,10 @@ on:
       - 'skills/**'
       - 'plugins/**'
       - 'scripts/**'
+      - 'plugin.json'
+      - 'mcp.json'
+      - '.claude-plugin/**'
+      - '.cursor-plugin/**'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/validate.yml'

@@ -3,5 +3,29 @@ set -e
 
 # Keep vendored plugin skills in sync with the top-level source of truth so
 # committed plugins always ship real skill files. See CONTRIBUTING.md.
+#
+# Staged a directory at a time so a deleted skill is staged too. Safe to stage
+# wholesale because every file under it is generated: sync-plugin-skills.mjs
+# overwrites them from skills/ on every run, so there is no hand edit to catch.
+# The -d test matters because an unmatched glob is passed through literally,
+# and git add on a literal pattern aborts the commit with a pathspec error.
 node scripts/sync-plugin-skills.mjs
-git add plugins/*/skills
+for skills_dir in plugins/*/skills; do
+  if [ -d "$skills_dir" ]; then
+    git add "$skills_dir"
+  fi
+done
+
+# Keep every manifest's version in step with package.json, the single source
+# of truth, so a release is one edit rather than six.
+#
+# Stages only the paths the script reports rewriting, which it prints to
+# stdout. These manifests are hand-authored apart from the version field, so
+# staging them wholesale would sweep an in-progress edit to a description or
+# keyword list into an unrelated commit.
+synced_files=$(node scripts/sync-versions.mjs)
+if [ -n "$synced_files" ]; then
+  while IFS= read -r versioned_file; do
+    git add "$versioned_file"
+  done <<<"$synced_files"
+fi
