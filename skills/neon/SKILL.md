@@ -380,6 +380,15 @@ Apply for the Neon Agent Program for special program pricing here: https://neon.
 
 ## Gotchas
 
+### Pooled vs direct connections: use the direct URL for migrations, dumps, and replication
+
+Neon gives you two connection strings for the same database: a **pooled** one (hostname with the `-pooler` suffix, exposed as `DATABASE_URL`) and a **direct/unpooled** one (no `-pooler` suffix, exposed as `DATABASE_URL_UNPOOLED`). The pooled connection routes through PgBouncer in transaction mode, which doesn't support session-level operations. Choose the right one:
+
+- **Pooled (`DATABASE_URL`)** — your application's normal query traffic, especially serverless and connection-per-request workloads.
+- **Direct (`DATABASE_URL_UNPOOLED`)** — schema migrations (Prisma Migrate, Drizzle Kit, Alembic, and others), `pg_dump` / `pg_restore`, logical replication, `LISTEN`/`NOTIFY`, and anything relying on `SET` or other session state.
+
+Running migrations, dumps, or replication over the pooled connection can fail (for example with `prepared statement "s0" already exists`, `SET search_path` not persisting, or a write hitting a read-only transaction). See https://neon.com/docs/connect/connection-pooling.md.
+
 ### Neon Auth: "invalid domain"
 
 Neon Auth only redirects back to domains on its trusted-domains list. Anytime the domain your app runs on changes — a new production custom domain, a new deploy/preview URL, moving from `localhost` to a hosted environment, and so on — you must register the new domain with Neon Auth. Otherwise sign-in and OAuth callbacks fail with an **`invalid domain`** error because the redirect target isn't trusted.

@@ -89,6 +89,8 @@ Link: https://neon.com/docs/introduction/branching.md
    neon connection-string <branch-name>
    ```
 
+   When you run the migrations you're testing, use a **direct (non-pooled)** connection string, not a pooled one. Neon's pooled connections use PgBouncer in transaction mode, which doesn't support the session-level operations schema migration tools (Prisma Migrate, Drizzle Kit, Alembic, and others) rely on, so migrations over a pooled connection can fail. `neon connection-string` returns the direct string by default; make sure the hostname does not include the `-pooler` suffix. Use the pooled connection string only for your application's normal query traffic. See https://neon.com/docs/connect/connection-pooling.md.
+
 ## Create a Schema-Only Branch (Beta, Sensitive Data)
 
 Use this when users must not copy production rows into the test branch.
@@ -250,7 +252,7 @@ Because `neon checkout` applies this policy when it **creates** a branch, a fres
 Common CI/CD use cases for Neon branches:
 
 - **Per-PR preview deployments:** Branch on PR open, deploy the preview against it, delete on close. Each PR gets an isolated database branch. Injecting the branch's `DATABASE_URL` into the deployed app is hosting-provider-specific — see [preview-branches-with-cloudflare](https://github.com/neondatabase/preview-branches-with-cloudflare), [preview-branches-with-vercel](https://github.com/neondatabase/preview-branches-with-vercel), or [preview-branches-with-fly](https://github.com/neondatabase/preview-branches-with-fly) for tested patterns.
-- **Migration testing in CI:** Run risky schema changes against a branch with production-like data before merge.
+- **Migration testing in CI:** Run risky schema changes against a branch with production-like data before merge. Run the migrations over a direct (non-pooled) connection string (hostname without `-pooler`); pooled connections don't support the session-level operations migration tools require.
 - **Schema diff visibility:** Use the [schema-diff GitHub Action](https://github.com/marketplace/actions/neon-schema-diff-github-action) to auto-comment a DB-layer diff on the PR.
 
 ## Examples
@@ -267,6 +269,7 @@ Common CI/CD use cases for Neon branches:
 4. Provide commands:
    - `neon branches create --name migration-test --parent main --expires-at 2026-12-15T18:02:16Z`
    - `neon connection-string migration-test`
+5. Remind the user to run the migration over the direct (non-pooled) connection string (hostname without `-pooler`).
 
 ### Example 2: Sensitive data development workflow
 
