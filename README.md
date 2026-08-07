@@ -76,6 +76,12 @@ Long-running, serverless Node.js HTTP functions deployed onto your Neon branch, 
 npx skills add neondatabase/agent-skills
 ```
 
+### Agent Plugin
+
+The repository root is a portable [Agent Plugins v1](https://agent-plugins.org/specification) package, so any conforming client can install it straight from this repo. The root [`plugin.json`](plugin.json) declares the plugin, [`mcp.json`](mcp.json) declares the [Neon MCP Server](https://mcp.neon.tech), and the skills are the directories under `skills/`.
+
+The Claude Code and Cursor packaging under `plugins/` remains available for clients that expect those formats.
+
 ### Claude Code Plugin
 
 You can also install the skills as a Claude Code plugin, which bundles the Neon agent skills and the [Neon MCP Server](https://mcp.neon.tech) for natural language database management:
