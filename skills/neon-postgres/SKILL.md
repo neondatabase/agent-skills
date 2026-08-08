@@ -10,7 +10,7 @@ description: >-
   "Neon project", "DATABASE_URL", "serverless Postgres", "Neon CLI", "neon", "Neon MCP",
   "Neon Auth", "@neondatabase/serverless", "@neondatabase/neon-js",
   "scale to zero", "Neon autoscaling", "Neon read replica",
-  "Neon connection pooling", or "Neon schema migrations".
+  "Neon connection pooling", or "schema migrations".
 metadata:
   parent: neon
 ---
@@ -89,7 +89,7 @@ npx skills add neondatabase/agent-skills --skill neon-postgres-branches
 
 ## Migrations
 
-Test a migration on a branch before applying it to production: branch production, run the migration there against production-like data, then apply it to production. Use the `neon-postgres-branches` skill for the branch workflow.
+Test a migration on a branch of production, against production-like data, before applying it to production.
 
 Run migrations over the direct connection string — the hostname without `-pooler`, written as `DATABASE_URL_UNPOOLED` by `neon env pull`. Migration tools rely on session-level operations the pooled endpoint does not support.
 
@@ -175,7 +175,7 @@ Schema migration tools — Prisma Migrate, Drizzle Kit, Knex, TypeORM, Flyway, L
 
 Point the tool's migration URL at the direct string and leave the application on the pooled one. Most tools take both — Prisma's `directUrl` alongside `url`, for example.
 
-### Pooled connections don't preserve session state
+### Pooled connections don't preserve session state — `relation "mytable" does not exist`
 
 The pooled endpoint (`-pooler` in the hostname) is PgBouncer in transaction mode: the backend connection returns to the pool after every transaction, so session state is not preserved for a client across transactions and can leak to another client. The resulting failure never mentions pooling — a `SET search_path` applies inside its own transaction, then a later query fails with `relation "mytable" does not exist`. Use the direct connection string for everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections).
 
