@@ -91,7 +91,7 @@ npx skills add neondatabase/agent-skills --skill neon-postgres-branches
 
 Test a migration on a branch of production, against production-like data, before applying it to production.
 
-Run migrations over the direct connection string — the hostname without `-pooler`, written as `DATABASE_URL_UNPOOLED` by `neon env pull`. Migration tools rely on session-level operations the pooled endpoint does not support.
+Use a **direct (non-pooled)** connection string when you run the migration, not a pooled one. Neon's pooled connections use PgBouncer in transaction mode, which doesn't support the session-level operations schema migration tools (Prisma Migrate, Drizzle Kit, Alembic, and others) rely on, so migrations over a pooled connection can fail. `neon connection-string` returns the direct string by default; make sure the hostname does not include the `-pooler` suffix. Use the pooled connection string only for your application's normal query traffic.
 
 ## Autoscaling
 
@@ -166,17 +166,11 @@ Link: https://neon.com/docs/guides/logical-replication-guide.md
 
 ## Gotchas
 
-### A migration, dump, or replication slot fails over a pooled connection
+### Pooled vs direct connections: use the direct URL for migrations, dumps, and replication
 
-Schema migration tools — Prisma Migrate, Drizzle Kit, Knex, TypeORM, Flyway, Liquibase, Aerich — plus `pg_dump` / `pg_restore` and logical replication need the direct connection string. Over a pooled one they fail in ways that don't name pooling as the cause:
+Neon gives you two connection strings for the same database: a **pooled** one (hostname with the `-pooler` suffix) and a **direct/unpooled** one (no `-pooler` suffix). `neon env pull` writes them as `DATABASE_URL` and `DATABASE_URL_UNPOOLED`. The pooled connection routes through PgBouncer in transaction mode, which doesn't support session-level operations. Choose the right one:
 
-- `prepared statement "s0" already exists` — Prisma Migrate over the pooled endpoint.
-- `cannot execute ALTER TABLE in a read-only transaction (SQLSTATE 25006)` — a pooled backend that inherited `default_transaction_read_only` from an earlier client. It's intermittent, so it reads as a flake rather than a connection-type problem.
+- **Pooled (`DATABASE_URL`)** — your application's normal query traffic, especially serverless and connection-per-request workloads.
+- **Direct (`DATABASE_URL_UNPOOLED`)** — schema migrations (Prisma Migrate, Drizzle Kit, Alembic, and others), `pg_dump` / `pg_restore`, logical replication, `LISTEN`/`NOTIFY`, and anything relying on `SET` or other session state.
 
-Point the tool's migration URL at the direct string and leave the application on the pooled one. Most tools take both — Prisma's `directUrl` alongside `url`, for example.
-
-### Pooled connections don't preserve session state — `relation "mytable" does not exist`
-
-The pooled endpoint (`-pooler` in the hostname) is PgBouncer in transaction mode: the backend connection returns to the pool after every transaction, so session state is not preserved for a client across transactions and can leak to another client. The resulting failure never mentions pooling — a `SET search_path` applies inside its own transaction, then a later query fails with `relation "mytable" does not exist`. Use the direct connection string for everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections).
-
-Link: https://neon.com/docs/connect/connection-pooling.md
+Running migrations, dumps, or replication over the pooled connection can fail, and never in a way that names pooling: `prepared statement "s0" already exists` from Prisma Migrate, a `SET search_path` that doesn't persist past its own transaction so the next query reports `relation "mytable" does not exist`, or a write hitting a read-only transaction that a pooled backend inherited from an earlier client. See https://neon.com/docs/connect/connection-pooling.md.
