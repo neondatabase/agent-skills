@@ -3,13 +3,14 @@ name: neon-postgres
 description: >-
   Guides and best practices for working with Lakebase Postgres, the database
   behind Neon. Covers setup, connection methods and drivers, pooled vs direct
-  connections, branching, autoscaling, scale-to-zero, instant restore, read
-  replicas, connection pooling, IP allow lists, and logical replication.
+  connections, branching, schema migrations, autoscaling, scale-to-zero, instant
+  restore, read replicas, connection pooling, IP allow lists, and logical
+  replication.
   Use when users ask about "Lakebase Postgres", "Neon setup", "connect to Neon",
   "Neon project", "DATABASE_URL", "serverless Postgres", "Neon CLI", "neon", "Neon MCP",
   "Neon Auth", "@neondatabase/serverless", "@neondatabase/neon-js",
-  "scale to zero", "Neon autoscaling", "Neon read replica", or
-  "Neon connection pooling".
+  "scale to zero", "Neon autoscaling", "Neon read replica",
+  "Neon connection pooling", or "Neon schema migrations".
 metadata:
   parent: neon
 ---
@@ -90,7 +91,7 @@ npx skills add neondatabase/agent-skills --skill neon-postgres-branches
 
 Test a migration on a branch before applying it to production: branch production, run the migration there against production-like data, then apply it to production. Use the `neon-postgres-branches` skill for the branch workflow.
 
-Run migrations over the direct connection string — `DATABASE_URL_UNPOOLED`, the hostname without `-pooler`. Migration tools depend on session state that the pooled endpoint does not keep.
+Run migrations over the direct connection string — the hostname without `-pooler`, written as `DATABASE_URL_UNPOOLED` by `neon env pull`. Migration tools rely on session-level operations the pooled endpoint does not support.
 
 ## Autoscaling
 
@@ -165,8 +166,8 @@ Link: https://neon.com/docs/guides/logical-replication-guide.md
 
 ## Gotchas
 
-### Pooled connections drop session state
+### Pooled connections don't preserve session state
 
-The pooled endpoint (`-pooler` in the hostname, `DATABASE_URL`) runs through PgBouncer in transaction mode, so nothing a statement sets survives into the next one. Everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections) needs the direct string, `DATABASE_URL_UNPOOLED`. Over a pooled connection those workloads fail without naming pooling as the cause — a migration tool reports `prepared statement "s0" already exists`, or a `SET search_path` silently doesn't apply.
+The pooled endpoint (`-pooler` in the hostname) is PgBouncer in transaction mode: the backend connection returns to the pool after every transaction, so session state doesn't survive into the next transaction and can leak to another client. The resulting failure never mentions pooling — a `SET search_path` applies inside its own transaction, then a later query fails with `relation "mytable" does not exist`. Use the direct connection string for everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections).
 
 Link: https://neon.com/docs/connect/connection-pooling.md
