@@ -86,6 +86,12 @@ For detailed branch creation workflows (normal vs schema-only branches, reset-fr
 npx skills add neondatabase/agent-skills --skill neon-postgres-branches
 ```
 
+## Migrations
+
+Test a migration on a branch before applying it to production: branch production, run the migration there against production-like data, then apply it to production. Use the `neon-postgres-branches` skill for the branch workflow.
+
+Run migrations over the direct connection string — `DATABASE_URL_UNPOOLED`, the hostname without `-pooler`. Migration tools depend on session state that the pooled endpoint does not keep.
+
 ## Autoscaling
 
 Use this when the user needs compute to scale automatically with workload and wants guidance on CU sizing and runtime behavior.
@@ -156,3 +162,11 @@ Key points:
 - Useful for replicating to/from external Postgres systems.
 
 Link: https://neon.com/docs/guides/logical-replication-guide.md
+
+## Gotchas
+
+### Pooled connections drop session state
+
+The pooled endpoint (`-pooler` in the hostname, `DATABASE_URL`) runs through PgBouncer in transaction mode, so nothing a statement sets survives into the next one. Everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections) needs the direct string, `DATABASE_URL_UNPOOLED`. Over a pooled connection those workloads fail without naming pooling as the cause — a migration tool reports `prepared statement "s0" already exists`, or a `SET search_path` silently doesn't apply.
+
+Link: https://neon.com/docs/connect/connection-pooling.md
