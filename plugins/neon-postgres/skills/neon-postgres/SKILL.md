@@ -168,6 +168,6 @@ Link: https://neon.com/docs/guides/logical-replication-guide.md
 
 ### Pooled connections don't preserve session state
 
-The pooled endpoint (`-pooler` in the hostname) is PgBouncer in transaction mode: the backend connection returns to the pool after every transaction, so session state doesn't survive into the next transaction and can leak to another client. The resulting failure never mentions pooling — a `SET search_path` applies inside its own transaction, then a later query fails with `relation "mytable" does not exist`. Use the direct connection string for everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections).
+The pooled endpoint (`-pooler` in the hostname) is PgBouncer in transaction mode: the backend connection returns to the pool after every transaction, so session state is not preserved for a client across transactions and can leak to another client. The resulting failure never mentions pooling — a `SET search_path` applies inside its own transaction, then a later query fails with `relation "mytable" does not exist`. Use the direct connection string for everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections).
 
 Link: https://neon.com/docs/connect/connection-pooling.md
