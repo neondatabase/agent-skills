@@ -166,6 +166,15 @@ Link: https://neon.com/docs/guides/logical-replication-guide.md
 
 ## Gotchas
 
+### A migration, dump, or replication slot fails over a pooled connection
+
+Schema migration tools — Prisma Migrate, Drizzle Kit, Knex, TypeORM, Flyway, Liquibase, Aerich — plus `pg_dump` / `pg_restore` and logical replication need the direct connection string. Over a pooled one they fail in ways that don't name pooling as the cause:
+
+- `prepared statement "s0" already exists` — Prisma Migrate over the pooled endpoint.
+- `cannot execute ALTER TABLE in a read-only transaction (SQLSTATE 25006)` — a pooled backend that inherited `default_transaction_read_only` from an earlier client. It's intermittent, so it reads as a flake rather than a connection-type problem.
+
+Point the tool's migration URL at the direct string and leave the application on the pooled one. Most tools take both — Prisma's `directUrl` alongside `url`, for example.
+
 ### Pooled connections don't preserve session state
 
 The pooled endpoint (`-pooler` in the hostname) is PgBouncer in transaction mode: the backend connection returns to the pool after every transaction, so session state is not preserved for a client across transactions and can leak to another client. The resulting failure never mentions pooling — a `SET search_path` applies inside its own transaction, then a later query fails with `relation "mytable" does not exist`. Use the direct connection string for everything in the Direct rows of [When to use pooled vs direct connections](#when-to-use-pooled-vs-direct-connections).
