@@ -7,7 +7,8 @@ description: >-
   up the CLI or MCP server, and follow the branch-first workflow. Use when "Neon"
   or "Lakebase Postgres" is mentioned, or when any of its individual capabilities
   are the trigger: "object storage" or "S3", "buckets", "serverless functions",
-  "AI gateway", "call an LLM", "postgres", "database", or "backend".
+  "AI gateway", "call an LLM", "branch logs", "query logs", "observability",
+  "telemetry", "postgres", "database", or "backend".
 ---
 
 # Neon
@@ -358,11 +359,11 @@ For reading env you _already_ have on disk (typed and validated against your `ne
 
 ## Observability
 
-Neon exposes branch-scoped service logs through a typed SDK and a Loki-compatible HTTP API. Logs currently require a project enrolled in the beta and located in `us-east-2`; other branches can return `404` with `reason: "telemetry_not_enabled"`.
+Neon exposes branch-scoped service logs through a typed SDK and a Loki-compatible HTTP API. Logs currently require a project enrolled in the beta and located in `us-east-2`. The `@neon/sdk` API returns `404` with `reason: "telemetry_not_enabled"` when a branch cannot serve logs.
 
 ### Query logs with `@neon/sdk`
 
-Use `neon.logs.query()` for bounded log queries. It returns a lazy paginated result:
+When the Neon MCP server is available, use its read-only `query_logs`, `list_log_fields`, and `list_log_field_values` tools for interactive agent work. Use `neon.logs.query()` in application code. It returns a lazy paginated result:
 
 ```typescript
 import { createNeonClient } from "@neon/sdk";
@@ -386,11 +387,27 @@ console.log(page.data.items);
 console.log(page.data.cursor); // pass to query.page(cursor) for the next page
 ```
 
-Use `source` to select `function` or `storage` records. Other structured filters include `service_name`, `scope_name`, severity, message content, and trace ID. `neon.logs.fields(projectId, branchId)` discovers observed fields. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` discovers values and reports whether the result was truncated. For selections the structured filters cannot express, `neon.logs.query()` accepts `logql`; do not combine it with structured content filters.
+`limit` applies to each page. Use `for await (const record of query)` to stream every page with errors thrown, or `query.all()` to collect every page in a `{ data, error }` result.
+
+With default client settings, `neon.logs.fields(projectId, branchId)` returns `{ data: string[], error }`. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` returns `{ data: { values, is_truncated }, error }`. When `is_truncated` is true, narrow `since` or `source` before using the values as filters.
+
+Use `source` to select `function` or `storage` records. The SDK type also accepts `pg_endpoint`, but that source has not been observed emitting records. Other structured filters include `service_name`, `scope_name`, `severity_text`, `minimum_severity`, `body_contains`, and `trace_id`. Some backends reject `minimum_severity`; use `severity_text` when that happens.
+
+The time window defaults to one hour and cannot exceed seven days. Supply either `since` or `start_time`, not both. A raw `logql` expression replaces the structured content filters, but `limit`, `sort_order`, and the time window still apply.
+
+The SDK and Loki-compatible HTTP API name the same selections differently:
+
+| `@neon/sdk` | Loki-compatible HTTP |
+| --- | --- |
+| `source: "function"` | `entity_type="function"` label |
+| `service_name`, `scope_name`, `trace_id`, `severity_text` | Same-named labels |
+| `minimum_severity` | `severity_text=~` regex covering that level and above |
+| `body_contains` | `\|=` line filter |
+| `sort_order: "asc"` / `"desc"` | `direction=forward` / `backward` |
 
 ### Query the Loki-compatible HTTP API
 
-Use the direct HTTP surface when you need LogQL or a raw Loki response:
+Use the direct HTTP surface for non-TypeScript clients or when a raw Loki response is required:
 
 ```bash
 curl --get \
@@ -402,7 +419,7 @@ curl --get \
   --data-urlencode 'direction=backward'
 ```
 
-The response uses the Loki `streams` envelope. This API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
+The response uses the Loki `streams` envelope. Errors use `{ "status": "error", "error": "..." }`. A query needs at least one stream-label matcher. This API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
 
 ## Manage Neon Resources
 
