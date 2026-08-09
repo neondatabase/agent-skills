@@ -511,7 +511,7 @@ Because the function's URL is public, **authenticate before connecting the trans
 neon logs query --source function --since 1h
 ```
 
-Use the CLI first. For field discovery, MCP fallback, `@neon/sdk`, Loki-compatible integration endpoints, and availability, see the parent `neon` skill's **Observability** section.
+Use the CLI first. For the required CLI version, field discovery, MCP fallback, `@neon/sdk`, Loki-compatible integration endpoints, and availability, see the parent `neon` skill's **Observability** section.
 
 ### Application instrumentation
 
