@@ -11,8 +11,7 @@ description: >-
   function", "deploy an API", "long-running function", "streaming agent",
   "SSE server", "WebSocket server", "webhook handler", "MCP server",
   "run code next to my database", "function that won't time out",
-  "function logs", "query logs", "observability", "Neon Functions", and
-  "Neon Compute".
+  "function logs", "Neon Functions", and "Neon Compute".
 metadata:
   parent: neon
 ---
