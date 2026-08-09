@@ -538,7 +538,7 @@ console.log(page.data.cursor); // pass to query.page(cursor) for the next page
 
 With default client settings, `neon.logs.fields(projectId, branchId)` returns `{ data: string[], error }`. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` returns `{ data: { values, is_truncated }, error }`. When `is_truncated` is true, narrow `since` or `source` before using the values as filters.
 
-The time window defaults to one hour and cannot exceed seven days. Supply either `since` or `start_time`, not both. A raw `logql` expression replaces the structured content filters (`source`, service and scope names, severity, message content, and trace ID), but `limit`, `sort_order`, and the time window still apply. Some backends reject `minimum_severity`; use `severity_text` when that happens.
+An SDK query's time window defaults to one hour and cannot exceed seven days. Supply either `since` or `start_time`, not both. A raw `logql` expression replaces the structured content filters (`source`, service and scope names, severity, message content, and trace ID), but `limit`, `sort_order`, and the time window still apply. Some backends reject `minimum_severity`. `severity_text` is the fallback, but it is a case-sensitive exact match for one stored level, typically uppercase such as `ERROR`; it does not include higher levels.
 
 The SDK and Loki-compatible HTTP API name the same selections differently:
 
@@ -547,8 +547,10 @@ The SDK and Loki-compatible HTTP API name the same selections differently:
 | `source: "function"` | `entity_type="function"` label |
 | `service_name`, `scope_name`, `trace_id`, `severity_text` | Same-named labels |
 | `minimum_severity` | `severity_text=~` regex covering that level and above |
-| `body_contains` | `\|=` line filter |
 | `sort_order: "asc"` / `"desc"` | `direction=forward` / `backward` |
+| `since`, `start_time`, `end_time` | `since`, `start`, `end` |
+
+The SDK's `body_contains` filter maps to Loki's `|=` line filter.
 
 Use the Loki-compatible HTTP API for non-TypeScript clients or when a raw Loki response is required:
 
@@ -562,7 +564,9 @@ curl --get \
   --data-urlencode 'direction=backward'
 ```
 
-This endpoint returns the Loki `streams` response envelope. Errors use `{ "status": "error", "error": "..." }`. A query needs at least one stream-label matcher. The API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
+This endpoint returns the Loki `streams` response envelope. Errors use `{ "status": "error", "error": "..." }`. A query needs at least one stream-label matcher. The API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Its `since` parameter uses Go durations such as `1h`; `start` and `end` accept RFC3339 timestamps or Unix nanoseconds.
+
+The HTTP interface has no cursor pagination. `limit` caps one response, and a non-empty `warnings` array means records were dropped. Narrow the time window or filters and query again. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
 
 ### Application instrumentation
 

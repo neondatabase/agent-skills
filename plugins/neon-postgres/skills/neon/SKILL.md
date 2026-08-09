@@ -361,9 +361,11 @@ For reading env you _already_ have on disk (typed and validated against your `ne
 
 Neon exposes branch-scoped service logs through a typed SDK and a Loki-compatible HTTP API. Logs currently require a project enrolled in the beta and located in `us-east-2`. The `@neon/sdk` API returns `404` with `reason: "telemetry_not_enabled"` when a branch cannot serve logs.
 
+When the Neon MCP server is available, use its read-only `query_logs`, `list_log_fields`, and `list_log_field_values` tools for interactive agent work.
+
 ### Query logs with `@neon/sdk`
 
-When the Neon MCP server is available, use its read-only `query_logs`, `list_log_fields`, and `list_log_field_values` tools for interactive agent work. Use `neon.logs.query()` in application code. It returns a lazy paginated result:
+Use `neon.logs.query()` in application code. It returns a lazy paginated result:
 
 ```typescript
 import { createNeonClient } from "@neon/sdk";
@@ -391,9 +393,9 @@ console.log(page.data.cursor); // pass to query.page(cursor) for the next page
 
 With default client settings, `neon.logs.fields(projectId, branchId)` returns `{ data: string[], error }`. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` returns `{ data: { values, is_truncated }, error }`. When `is_truncated` is true, narrow `since` or `source` before using the values as filters.
 
-Use `source` to select `function` or `storage` records. The SDK type also accepts `pg_endpoint`, but that source has not been observed emitting records. Other structured filters include `service_name`, `scope_name`, `severity_text`, `minimum_severity`, `body_contains`, and `trace_id`. Some backends reject `minimum_severity`; use `severity_text` when that happens.
+Use `source` to select `function` or `storage` records. The SDK type also accepts `pg_endpoint`, but that source has not been observed emitting records. Other structured filters include `service_name`, `scope_name`, `severity_text`, `minimum_severity`, `body_contains`, and `trace_id`. Some backends reject `minimum_severity`. `severity_text` is the fallback, but it is a case-sensitive exact match for one stored level, typically uppercase such as `ERROR`; it does not include higher levels.
 
-The time window defaults to one hour and cannot exceed seven days. Supply either `since` or `start_time`, not both. A raw `logql` expression replaces the structured content filters, but `limit`, `sort_order`, and the time window still apply.
+An SDK query's time window defaults to one hour and cannot exceed seven days. Supply either `since` or `start_time`, not both. A raw `logql` expression replaces the structured content filters, but `limit`, `sort_order`, and the time window still apply.
 
 The SDK and Loki-compatible HTTP API name the same selections differently:
 
@@ -402,8 +404,10 @@ The SDK and Loki-compatible HTTP API name the same selections differently:
 | `source: "function"` | `entity_type="function"` label |
 | `service_name`, `scope_name`, `trace_id`, `severity_text` | Same-named labels |
 | `minimum_severity` | `severity_text=~` regex covering that level and above |
-| `body_contains` | `\|=` line filter |
 | `sort_order: "asc"` / `"desc"` | `direction=forward` / `backward` |
+| `since`, `start_time`, `end_time` | `since`, `start`, `end` |
+
+The SDK's `body_contains` filter maps to Loki's `|=` line filter.
 
 ### Query the Loki-compatible HTTP API
 
@@ -419,7 +423,9 @@ curl --get \
   --data-urlencode 'direction=backward'
 ```
 
-The response uses the Loki `streams` envelope. Errors use `{ "status": "error", "error": "..." }`. A query needs at least one stream-label matcher. This API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
+The response uses the Loki `streams` envelope. Errors use `{ "status": "error", "error": "..." }`. A query needs at least one stream-label matcher. This API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Its `since` parameter uses Go durations such as `1h`; `start` and `end` accept RFC3339 timestamps or Unix nanoseconds.
+
+The HTTP interface has no cursor pagination. `limit` caps one response, and a non-empty `warnings` array means records were dropped. Narrow the time window or filters and query again. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
 
 ## Manage Neon Resources
 
