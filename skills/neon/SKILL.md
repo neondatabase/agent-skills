@@ -356,6 +356,54 @@ When an agent should not write a local `.env`, instruct it (for example in your 
 
 For reading env you _already_ have on disk (typed and validated against your `neon.ts`), use `parseEnv` — see [Type-safe env vars with parseEnv](#type-safe-env-vars-with-parseenv) above.
 
+## Observability
+
+Neon exposes branch-scoped service logs through a typed SDK and a Loki-compatible HTTP API. Logs are a beta feature and currently work only for projects in `us-east-2`.
+
+### Query logs with `@neon/sdk`
+
+Use `neon.logs.query()` for bounded log queries. It returns a lazy paginated result:
+
+```typescript
+import { createNeonClient } from "@neon/sdk";
+
+const neon = createNeonClient({ apiKey: process.env.NEON_API_KEY! });
+const query = neon.logs.query(
+  process.env.NEON_PROJECT_ID!,
+  process.env.NEON_BRANCH_ID!,
+  {
+    source: "function",
+    since: "1h",
+    limit: 100,
+    sort_order: "desc",
+  },
+);
+
+const page = await query.page();
+if (page.error) throw page.error;
+
+console.log(page.data.items);
+console.log(page.data.cursor); // pass to query.page(cursor) for the next page
+```
+
+Use `source` to select `function`, `storage`, or `pg_endpoint` records. Other structured filters include `service_name`, `scope_name`, severity, message content, and trace ID. `neon.logs.fields(projectId, branchId)` discovers observed fields. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` discovers values and reports whether the result was truncated. For selections the structured filters cannot express, `neon.logs.query()` accepts `logql`; do not combine it with structured content filters.
+
+### Query the Loki-compatible HTTP API
+
+Use the direct HTTP surface when you need LogQL or a raw Loki response:
+
+```bash
+curl --get \
+  "https://console.neon.tech/telemetry/v1/projects/${NEON_PROJECT_ID}/branches/${NEON_BRANCH_ID}/loki/api/v1/query_range" \
+  --header "Authorization: Bearer ${NEON_API_KEY}" \
+  --data-urlencode 'query={entity_type="function"}' \
+  --data-urlencode 'since=1h' \
+  --data-urlencode 'limit=100' \
+  --data-urlencode 'direction=backward'
+```
+
+The response uses the Loki `streams` envelope. This API accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
+
 ## Manage Neon Resources
 
 Recommended: Use `@neon/sdk` to manage Neon resources programmatically, such as creating projects, branches, and snapshots for dev scripts, CI/CD automations, and platforms building on top of Neon.

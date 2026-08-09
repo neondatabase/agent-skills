@@ -503,7 +503,53 @@ app.all("/mcp", async (c) => {
 
 Because the function's URL is public, **authenticate before connecting the transport** — [Better Auth](https://better-auth.com) covers both OAuth (its MCP plugin makes your app the authorization server so third-party clients self-authorize per the MCP spec) and a simpler API-key / session-JWT check for your own callers. [references/mcp.md](https://neon.com/docs/ai/skills/neon-functions/references/mcp.md) has the full pattern — server with Postgres-backed tools via Drizzle, both Better Auth auth options, and testing with `mcporter` / `add-mcp`.
 
-## Integrations and Observability
+## Observability
+
+### Built-in branch logs
+
+Neon exposes function logs through branch-scoped APIs. Logs are a beta feature and currently work only for projects in `us-east-2`.
+
+Use the typed `@neon/sdk` interface for application code and agents. Keep queries bounded by a time window and page size:
+
+```typescript
+import { createNeonClient } from "@neon/sdk";
+
+const neon = createNeonClient({ apiKey: process.env.NEON_API_KEY! });
+const query = neon.logs.query(
+  process.env.NEON_PROJECT_ID!,
+  process.env.NEON_BRANCH_ID!,
+  {
+    source: "function",
+    since: "1h",
+    limit: 100,
+    sort_order: "desc",
+  },
+);
+
+const page = await query.page();
+if (page.error) throw page.error;
+
+console.log(page.data.items);
+console.log(page.data.cursor); // pass to query.page(cursor) for the next page
+```
+
+`neon.logs.fields(projectId, branchId)` lists fields observed on the branch. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` lists values for one of those fields and returns `is_truncated` with the values. `neon.logs.query()` also accepts a raw `logql` expression when the structured filters cannot express a query. Do not combine `logql` with structured content filters.
+
+The same logs are available through a Loki-compatible HTTP API for direct LogQL access:
+
+```bash
+curl --get \
+  "https://console.neon.tech/telemetry/v1/projects/${NEON_PROJECT_ID}/branches/${NEON_BRANCH_ID}/loki/api/v1/query_range" \
+  --header "Authorization: Bearer ${NEON_API_KEY}" \
+  --data-urlencode 'query={entity_type="function"}' \
+  --data-urlencode 'since=1h' \
+  --data-urlencode 'limit=100' \
+  --data-urlencode 'direction=backward'
+```
+
+This endpoint returns the Loki `streams` response envelope. It accepts stream selectors and line filters, not aggregations, parsers, or formatting stages. Use `/labels` to list stream labels and `/label/{name}/values` to list values for one label. This HTTP surface is separate from the public Neon OpenAPI specification.
+
+### Application instrumentation
 
 A function is a long-lived Node.js process running a web-standard request/response handler, so standard Node integration SDKs work unchanged. Initialize them once at module load, gated on an env var so local dev and unconfigured branches stay a no-op, and pass secrets via `--env` or `neon.ts` `env`.
 
