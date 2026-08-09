@@ -358,7 +358,7 @@ For reading env you _already_ have on disk (typed and validated against your `ne
 
 ## Observability
 
-Neon exposes branch-scoped service logs through a typed SDK and a Loki-compatible HTTP API. Logs are a beta feature and currently work only for projects in `us-east-2`.
+Neon exposes branch-scoped service logs through a typed SDK and a Loki-compatible HTTP API. Logs currently require a project enrolled in the beta and located in `us-east-2`; other branches can return `404` with `reason: "telemetry_not_enabled"`.
 
 ### Query logs with `@neon/sdk`
 
@@ -386,7 +386,7 @@ console.log(page.data.items);
 console.log(page.data.cursor); // pass to query.page(cursor) for the next page
 ```
 
-Use `source` to select `function`, `storage`, or `pg_endpoint` records. Other structured filters include `service_name`, `scope_name`, severity, message content, and trace ID. `neon.logs.fields(projectId, branchId)` discovers observed fields. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` discovers values and reports whether the result was truncated. For selections the structured filters cannot express, `neon.logs.query()` accepts `logql`; do not combine it with structured content filters.
+Use `source` to select `function` or `storage` records. Other structured filters include `service_name`, `scope_name`, severity, message content, and trace ID. `neon.logs.fields(projectId, branchId)` discovers observed fields. `neon.logs.fieldValues(projectId, branchId, fieldName, query?)` discovers values and reports whether the result was truncated. For selections the structured filters cannot express, `neon.logs.query()` accepts `logql`; do not combine it with structured content filters.
 
 ### Query the Loki-compatible HTTP API
 

@@ -507,7 +507,7 @@ Because the function's URL is public, **authenticate before connecting the trans
 
 ### Built-in branch logs
 
-Neon exposes function logs through branch-scoped APIs. Logs are a beta feature and currently work only for projects in `us-east-2`.
+Neon exposes function logs through branch-scoped APIs. Logs currently require a project enrolled in the beta and located in `us-east-2`; other branches can return `404` with `reason: "telemetry_not_enabled"`.
 
 Use the typed `@neon/sdk` interface for application code and agents. Keep queries bounded by a time window and page size:
 
