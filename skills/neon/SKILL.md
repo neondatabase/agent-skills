@@ -359,18 +359,19 @@ For reading env you _already_ have on disk (typed and validated against your `ne
 
 ## Observability
 
-Neon exposes branch-scoped logs from Functions, Object Storage, and Postgres computes. Logs require beta enrollment and a project in `us-east-2`; an unavailable branch returns `404` with reason `telemetry_not_enabled`.
+Neon exposes branch-scoped logs. **Today they cover Neon Functions and Object Storage only.** Postgres computes and the AI Gateway are coming; until then, neither emits records. Logs require beta enrollment and a project in `us-east-2`; an unavailable branch returns `404` with reason `telemetry_not_enabled`.
 
 Use Neon CLI 3.1 or newer first:
 
 ```bash
 neon logs query --since 1h
 neon logs query --source function --since 1h
+neon logs query --source storage --since 1h
 neon logs fields
 neon logs field-values service_name --since 1h
 ```
 
-`--source` accepts `function`, `storage`, or `pg_endpoint`. Use `--logql` instead of the structured filters for a raw stream selector or line filter; run `neon logs --help` for the full filter and pagination interface.
+`--source` accepts `function`, `storage`, and `pg_endpoint`, but only `function` and `storage` return records today — `pg_endpoint` is accepted and comes back empty until Postgres logs ship. Use `--logql` instead of the structured filters for a raw stream selector or line filter; run `neon logs --help` for the full filter and pagination interface.
 
 If the CLI is unavailable, fall back to the Neon MCP server's read-only `query_logs`, `list_log_fields`, and `list_log_field_values` tools. In TypeScript applications, use `@neon/sdk`: `neon.logs.query`, `neon.logs.fields`, and `neon.logs.fieldValues`.
 
