@@ -113,7 +113,7 @@ Kimi Code CLI reads its own manifest at [`kimi.plugin.json`](kimi.plugin.json), 
 /plugins install https://github.com/neondatabase/agent-skills
 ```
 
-Plugin changes apply to new sessions, so run `/reload` or `/new` afterward.
+Plugin changes apply to new sessions, so run `/new` afterward.
 
 ## Usage
 
