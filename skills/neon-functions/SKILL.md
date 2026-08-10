@@ -508,10 +508,10 @@ Because the function's URL is public, **authenticate before connecting the trans
 ### Built-in branch logs
 
 ```bash
-neon logs query --source function --since 1h
+neon logs query --branch production --source function --since 1h
 ```
 
-Use the CLI first. For the required CLI version, field discovery, MCP fallback, `@neon/sdk`, Loki-compatible integration endpoints, and availability, see the parent `neon` skill's **Observability** section.
+Functions is one of the two sources branch logs cover today, alongside Object Storage. Logs are scoped to a single branch, so pass `--branch` when the deployed function isn't on the branch you're checked out on. Everything else about logs — the required CLI version, filters, the SDK, and Loki export — is in the parent `neon` skill's **Observability** section.
 
 ### Application instrumentation
 

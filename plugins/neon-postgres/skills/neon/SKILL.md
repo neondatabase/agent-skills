@@ -7,8 +7,9 @@ description: >-
   up the CLI or MCP server, and follow the branch-first workflow. Use when "Neon"
   or "Lakebase Postgres" is mentioned, or when any of its individual capabilities
   are the trigger: "object storage" or "S3", "buckets", "serverless functions",
-  "AI gateway", "call an LLM", "branch logs", "query logs", "observability",
-  "telemetry", "postgres", "database", or "backend".
+  "AI gateway", "call an LLM", "logs", "branch logs", "query logs",
+  "log export", "Loki", "Grafana", "observability", "telemetry", "postgres",
+  "database", or "backend".
 ---
 
 # Neon
@@ -365,15 +366,37 @@ Use Neon CLI 3.1 or newer first:
 
 ```bash
 neon logs query --since 1h
-neon logs query --source function --since 1h
-neon logs query --source storage --since 1h
+neon logs query --branch production --source function --minimum-severity error --since 6h
+neon logs query --source storage --since 1h --output json
 neon logs fields
 neon logs field-values service_name --since 1h
 ```
 
-`--source` accepts `function`, `storage`, and `pg_endpoint`, but only `function` and `storage` return records today — `pg_endpoint` is accepted and comes back empty until Postgres logs ship. Use `--logql` instead of the structured filters for a raw stream selector or line filter; run `neon logs --help` for the full filter and pagination interface.
+**Decide which branch you are querying.** Without `--branch`, the CLI uses the branch pinned in `.neon`, or the project's default branch when the workspace isn't linked. A deployed function or bucket usually lives on a different branch than the one checked out for development, so an empty result is more often the wrong branch than a missing log.
 
-If the CLI is unavailable, fall back to the Neon MCP server's read-only `query_logs`, `list_log_fields`, and `list_log_field_values` tools. In TypeScript applications, use `@neon/sdk`: `neon.logs.query`, `neon.logs.fields`, and `neon.logs.fieldValues`.
+`--source` accepts `function`, `storage`, and `pg_endpoint`, but only `function` and `storage` return records today — `pg_endpoint` is accepted and comes back empty until Postgres logs ship. The window defaults to 1h and cannot exceed 7d. If Neon reports `--minimum-severity` as unsupported on a branch, use `--severity-text` instead. Run `neon logs --help` for the full filter and pagination interface.
+
+`--logql` replaces the structured filters with a raw stream selector or line filter. Its stream label is `entity_type`, not `source`:
+
+```bash
+neon logs query --since 1h --logql '{entity_type="function"} |= "timeout"'
+```
+
+If the CLI is unavailable, fall back to the Neon MCP server's read-only `query_logs`, `list_log_fields`, and `list_log_field_values` tools.
+
+In TypeScript applications, use `@neon/sdk`. Project and branch are positional, and `query` returns a lazy paginated iterable rather than a promise:
+
+```typescript
+for await (const record of neon.logs.query(projectId, branchId, {
+  since: "1h",
+  source: "function",
+})) {
+  console.log(record.timestamp, record.severity_text, record.message);
+}
+
+const fields = await neon.logs.fields(projectId, branchId);
+const services = await neon.logs.fieldValues(projectId, branchId, "service_name");
+```
 
 ### Loki-compatible read API
 

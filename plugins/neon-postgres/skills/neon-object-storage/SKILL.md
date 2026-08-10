@@ -10,8 +10,8 @@ description: >-
   Supabase Storage. Triggers include "object storage", "bucket", "blob
   storage", "file storage", "store uploads/images/files", "S3-compatible
   storage", "presigned URL", "where do I put files", "storage logs",
-  "Neon Object Storage", "Neon Storage", and "storage that branches with my
-  database".
+  "bucket logs", "Neon Object Storage", "Neon Storage", and "storage that
+  branches with my database".
 metadata:
   parent: neon
 ---
@@ -199,10 +199,10 @@ The canonical pattern: an agent generates an image → `PutObject` into the `ima
 ## Built-in Branch Logs
 
 ```bash
-neon logs query --source storage --since 1h
+neon logs query --branch production --source storage --since 1h
 ```
 
-Storage is one of the two sources branch logs cover today, alongside Neon Functions. Use the CLI first. For the required CLI version, field discovery, MCP fallback, `@neon/sdk`, Loki-compatible integration endpoints, and availability, see the parent `neon` skill's **Observability** section.
+Storage is one of the two sources branch logs cover today, alongside Neon Functions. Logs are scoped to a single branch, so pass `--branch` when the bucket you're debugging isn't on the branch you're checked out on. Everything else about logs — the required CLI version, filters, the SDK, and Loki export — is in the parent `neon` skill's **Observability** section.
 
 ## Neon Documentation
 
