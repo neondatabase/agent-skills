@@ -1,6 +1,6 @@
 {
   "name": "@neondatabase/agent-skills",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A collection of Agent Skills for Neon",
   "license": "Apache-2.0",
   "repository": {

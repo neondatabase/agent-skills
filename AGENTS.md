@@ -18,8 +18,9 @@ Rules to keep in mind when touching these files:
 - `mcp.json` transports are `stdio`, `streamable-http`, or `sse`. Note that this differs from `plugins/neon-postgres/mcp.json`, which uses Claude/Cursor's `http` spelling; the two files are intentionally not identical.
 - Only immediate children of `skills/` are discovered, and each `SKILL.md` frontmatter `name` must match its directory.
 - Hooks, agents, commands, LSP servers, and the `marketplace.json` catalogs are **not** portable v1 components. Hooks and the rest belong inside a plugin under `plugins/`; the catalogs stay at the repo root in `.claude-plugin/` and `.cursor-plugin/`, where Claude Code and Cursor look for them, and point back into `plugins/`. v1 only claims `plugin.json`, `mcp.json`, and `skills/`, so conforming clients ignore those extra root directories.
+- [`kimi.plugin.json`](kimi.plugin.json) is Kimi Code's own manifest and is not a v1 component either, so the closed-schema rule above does not apply to it. It declares `skills` and `mcpServers` inline — nonconforming at the top level of a v1 manifest, but necessary because Kimi does not read `mcp.json` — and it points at the same `skills/` directory, so it needs no vendoring. Conforming v1 clients ignore it, the same way they ignore the catalogs.
 
-`npm run validate:agent-plugin` (part of `validate:ci`) enforces the manifest, MCP, and skill-discovery rules above. The last bullet is a packaging convention, not a checked rule.
+`npm run validate:agent-plugin` (part of `validate:ci`) enforces the manifest, MCP, and skill-discovery rules above. The last two bullets are packaging conventions rather than checked rules, though `validate:versions` does hold `kimi.plugin.json` to the version in `package.json` like every other manifest.
 
 ## Downstream Marketplaces — Keep in Sync
 
@@ -199,6 +200,7 @@ The root Agent Plugins package is the exception: it reads `skills/` directly, so
 | File | Field |
 | --- | --- |
 | [`plugin.json`](plugin.json) | `version` |
+| [`kimi.plugin.json`](kimi.plugin.json) | `version` |
 | [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) | `metadata.version` and `plugins[].version` |
 | [`.cursor-plugin/marketplace.json`](.cursor-plugin/marketplace.json) | `metadata.version` |
 | [`plugins/neon-postgres/.claude-plugin/plugin.json`](plugins/neon-postgres/.claude-plugin/plugin.json) | `version` |
@@ -237,8 +239,8 @@ Shared pipeline shape (both repos):
 - Entry point: `npm run validate:ci`
 - Supply chain: SHA-pinned GitHub Actions, exact-pinned npm dependencies (`save-exact=true` in `.npmrc`, no ranges and no unpinned `npx`), `package-lock.json` resolving from `registry.npmjs.org`, `harden-runner` egress audit, Dependabot for `github-actions` + `npm`
 
-**Repo-specific (keep — do not drop when aligning):** this repo also validates the root **Agent Plugins v1 package** and the Cursor and Claude **plugin manifests** under `plugins/`. That's why `validate:ci` here is `validate:agent-plugin && validate:plugins && validate:versions && validate:skills && validate:references` (vs. skills-only in `neon-for-agent-platforms`) and why this workflow also filters on `plugins/**`, `plugin.json`, `mcp.json`, `.claude-plugin/**`, and `.cursor-plugin/**`. Do not drop the last two: the catalogs hold three of the synced version fields, so losing that filter would let a catalog change skip `validate:versions`. Alignment means matching the shared shape above, **not** stripping this repo's plugin checks.
+**Repo-specific (keep — do not drop when aligning):** this repo also validates the root **Agent Plugins v1 package** and the Cursor and Claude **plugin manifests** under `plugins/`. That's why `validate:ci` here is `validate:agent-plugin && validate:plugins && validate:versions && validate:skills && validate:references` (vs. skills-only in `neon-for-agent-platforms`) and why this workflow also filters on `plugins/**`, `plugin.json`, `mcp.json`, `kimi.plugin.json`, `.claude-plugin/**`, and `.cursor-plugin/**`. Do not drop the last three: the Kimi manifest and the two catalogs hold four of the synced version fields between them, so losing one of those filters would let a version-bearing change skip `validate:versions`. Alignment means matching the shared shape above, **not** stripping this repo's plugin checks.
 
 **When you change CI/CD here** — workflow triggers, install hardening, `skills-ref` pinning, Dependabot config, or validate scripts — **apply the same change to [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms)**, preserving each repo's intentional differences (this repo's plugin validation and `plugins/**` path filter).
 
-`neon-for-agent-platforms` has no `plugins/` directory and no root `plugin.json` yet, so `validate:agent-plugin`, `validate:versions`, and the `plugin.json`/`mcp.json` path filters do **not** port over as-is. Giving that repo its own portable manifest is a follow-up; until then, this is an intentional difference rather than drift.
+`neon-for-agent-platforms` has no `plugins/` directory and no root `plugin.json` yet, so `validate:agent-plugin`, `validate:versions`, and the `plugin.json`/`mcp.json`/`kimi.plugin.json` path filters do **not** port over as-is. Giving that repo its own portable manifest is a follow-up; until then, this is an intentional difference rather than drift.
