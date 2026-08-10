@@ -105,6 +105,16 @@ Run this command in chat:
 /add-plugin neon-postgres
 ```
 
+### Kimi Code Plugin
+
+Kimi Code CLI reads its own manifest at [`kimi.plugin.json`](kimi.plugin.json), which points at the skills under `skills/` and declares the [Neon MCP Server](https://mcp.neon.tech). Install it from this repo in chat:
+
+```text
+/plugins install https://github.com/neondatabase/agent-skills
+```
+
+Plugin changes apply to new sessions, so run `/reload` or `/new` afterward.
+
 ## Usage
 
 Example prompts:
