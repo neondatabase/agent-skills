@@ -360,7 +360,7 @@ For reading env you _already_ have on disk (typed and validated against your `ne
 
 ## Observability
 
-Neon exposes branch-scoped logs. **Today they cover Neon Functions and Object Storage only.** Postgres computes and the AI Gateway are coming; until then, neither emits records. Logs are region-gated like the other services above — only `us-east-2` is enabled today, and a branch in any other region answers `404` with reason `telemetry_not_enabled` rather than an empty result.
+Neon exposes branch-scoped logs. **Today they cover Neon Functions and Object Storage only.** Postgres computes and the AI Gateway are coming; until then, neither emits records. Logs are region-gated like the other beta services above — only `us-east-2` is enabled today, and a branch in any other region answers `404` with reason `telemetry_not_enabled` rather than an empty result.
 
 Use Neon CLI 3.1 or newer first. **Decide which branch you are querying.** Without `--branch`, the CLI uses the branch pinned in `.neon`, or the project's default branch when the workspace isn't linked. A deployed function or bucket usually lives on a different branch than the one checked out for development, so an empty result is more often the wrong branch than a missing log.
 

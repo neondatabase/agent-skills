@@ -202,7 +202,7 @@ The canonical pattern: an agent generates an image → `PutObject` into the `ima
 neon logs query --branch production --source storage --since 1h
 ```
 
-Storage is one of the two sources branch logs cover today, alongside Neon Functions. Logs are scoped to a single branch, so pass `--branch` when the bucket you're debugging isn't on the branch you're checked out on. Everything else about logs — the required CLI version, filters, the SDK, and Loki export — is in the parent `neon` skill's **Observability** section.
+Storage is one of the two sources branch logs cover today, alongside Neon Functions. Logs are scoped to a single branch, so pass `--branch` when the bucket you're debugging isn't on the branch you're checked out on. Everything else about logs — the required CLI version, filters, the SDK, and the Loki-compatible read API — is in the parent `neon` skill's **Observability** section.
 
 ## Neon Documentation
 
