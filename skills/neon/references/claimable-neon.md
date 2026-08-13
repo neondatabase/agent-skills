@@ -21,7 +21,7 @@ https://claimable.neon.tech/llms.txt
 https://claimable.neon.tech/auth.md
 ```
 
-`https://claimable.neon.tech/auth.md` is the protocol file. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. neon.com holds the product page and a pointer. If that page still describes neon.new, still follow `auth.md` on this origin.
+`https://claimable.neon.tech/auth.md` is the protocol file. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. neon.com holds the product page and a pointer.
 
 From the service origin:
 
@@ -85,7 +85,7 @@ The response contains:
 
 Registration does not create a claim. Possession of the registration response is not possession of the project.
 
-Do not call `POST https://neon.new/api/v1/database`. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
+The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
 
 ## Exchange for an access token
 
