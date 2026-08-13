@@ -33,12 +33,13 @@ The same pre-commit hook runs `npm run sync:versions` and stages the rewritten m
 
 The Neon skills are also published as plugins in external marketplaces that **vendor their own copies** of the skill files. Changes here do **not** propagate automatically. Whenever you add or change a skill, open a PR in each downstream marketplace to mirror the change:
 
-| Marketplace | Repo | Neon plugin path | Our fork |
+| Marketplace | Repo | Neon plugin / skill path | Our fork |
 | --- | --- | --- | --- |
 | OpenAI | [`openai/plugins`](https://github.com/openai/plugins) | `plugins/neon-postgres/` | `andrelandgraf/plugins` |
 | Grok (xAI) | [`xai-org/plugin-marketplace`](https://github.com/xai-org/plugin-marketplace) | `external_plugins/neon/` | `andrelandgraf/plugin-marketplace` |
+| JetBrains | [`JetBrains/skills`](https://github.com/JetBrains/skills) | Top-level skill dirs (e.g. `neon/`, `neon-postgres/`) | — |
 
-Each marketplace has its own packaging and validation steps — follow that repo's contributing guide when opening the mirror PR.
+Each marketplace has its own packaging and validation steps — follow that repo's contributing guide when opening the mirror PR. For JetBrains, copy each skill directory from `skills/` into a flat top-level directory in their catalog (include any `references/`), keep `metadata.source` pointing back here, and optionally add a README table row.
 
 ## Validation
 

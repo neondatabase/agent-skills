@@ -28,6 +28,7 @@ This repo (`skills/`) is the source of truth. The Neon skills are also published
 
 - **OpenAI** — [`openai/plugins`](https://github.com/openai/plugins), Neon plugin at `plugins/neon-postgres/` (fork: `andrelandgraf/plugins`)
 - **Grok (xAI)** — [`xai-org/plugin-marketplace`](https://github.com/xai-org/plugin-marketplace), Neon plugin at `external_plugins/neon/` (fork: `andrelandgraf/plugin-marketplace`)
+- **JetBrains** — [`JetBrains/skills`](https://github.com/JetBrains/skills), top-level skill dirs (e.g. `neon/`, `neon-postgres/`); keep `metadata.source` pointing back here
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full sync checklist.
 
