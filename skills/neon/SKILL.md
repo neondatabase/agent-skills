@@ -9,7 +9,9 @@ description: >-
   are the trigger: "object storage" or "S3", "buckets", "serverless functions",
   "AI gateway", "call an LLM", "logs", "branch logs", "query logs",
   "log export", "Loki", "Grafana", "observability", "telemetry", "postgres",
-  "database", or "backend".
+  "database", or "backend". Also use when there is no Neon account yet, or the
+  user asks for a throwaway DATABASE_URL, Claimable Neon, Claimable Postgres,
+  neon.new, claimable.neon.tech, instant Postgres, or a no-signup database.
 metadata:
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon
 ---
@@ -79,15 +81,14 @@ Neon provides a set of agent skills in addition to the official documentation. W
 
 The skills below live in the [`neondatabase/agent-skills`](https://github.com/neondatabase/agent-skills) repo:
 
-| Skill | Use it for |
-| --- | --- |
-| `neon-postgres` | Working with databases, including connections, schemas, queries, and autoscaling: SQL development, schema design, performance optimization, and scaling decisions. |
-| `neon-postgres-branches` | Choosing or creating the right branch type for dev, preview, test, or CI workflows. Use this skill as a slash command. |
-| `neon-object-storage` | Storing and serving files (uploads, images, blobs), including branching them with the database. |
-| `neon-functions` | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers. |
-| `neon-ai-gateway` | Calling an LLM or routing across model providers with one credential, including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint. |
-| `claimable-postgres` | Provisioning instant, claimable temporary Postgres databases (for example, one per end user or demo). |
-| `neon-postgres-egress-optimizer` | Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase. |
+| Skill                            | Use it for                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `neon-postgres`                  | Working with databases, including connections, schemas, queries, and autoscaling: SQL development, schema design, performance optimization, and scaling decisions.                   |
+| `neon-postgres-branches`         | Choosing or creating the right branch type for dev, preview, test, or CI workflows. Use this skill as a slash command.                                                               |
+| `neon-object-storage`            | Storing and serving files (uploads, images, blobs), including branching them with the database.                                                                                      |
+| `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers.                                                                                      |
+| `neon-ai-gateway`                | Calling an LLM or routing across model providers with one credential, including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint. |
+| `neon-postgres-egress-optimizer` | Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase.                                                                                          |
 
 For guidance on agent platforms that provision and operate Lakebase Postgres on Neon at scale, use `neon-postgres-agent-platforms`, which lives in a separate repo: [`neondatabase/neon-for-agent-platforms`](https://github.com/neondatabase/neon-for-agent-platforms).
 
@@ -118,6 +119,16 @@ If you don't have access to the `skills` CLI, you can visit https://neon.com/.we
 Keep the skills up to date: for every new session, update them so you are working with the latest best practices.
 
 Use the same method that was used to install them. With the `skills` CLI, run the install command above with `update` in place of `add`, or run `npx skills update` to update all Neon skills. If the skills were installed via a plugin, they are updated automatically.
+
+## Starting without a Neon account
+
+If the user has no Neon account, or the task is a throwaway / demo / no-signup database, do not run `npx neon@latest init --agent` or `neon auth`. Those need a human Neon account.
+
+Follow [Claimable Neon](references/claimable-neon.md): install the Neon CLI, add `neon` and `neon-postgres`, write an ordinary `neon.ts`, and let the CLI register and pull env. Then use `neon-postgres` for connections, schemas, and queries.
+
+```bash
+npx skills add neondatabase/agent-skills -s neon -s neon-postgres
+```
 
 ## Getting Started with Neon
 
@@ -208,12 +219,8 @@ export default defineConfig({
   auth: true,
   dataApi: true,
   preview: {
-    functions: {
-      /* ... */
-    }, // see the neon-functions skill
-    buckets: {
-      /* ... */
-    }, // see the neon-object-storage skill
+    functions: {/* ... */}, // see the neon-functions skill
+    buckets: {/* ... */}, // see the neon-object-storage skill
     aiGateway: true, // see the neon-ai-gateway skill
   },
 });
@@ -395,7 +402,11 @@ for await (const record of neon.logs.query(projectId, branchId, {
 }
 
 const { data: fields } = await neon.logs.fields(projectId, branchId);
-const { data: serviceNames } = await neon.logs.fieldValues(projectId, branchId, "service_name");
+const { data: serviceNames } = await neon.logs.fieldValues(
+  projectId,
+  branchId,
+  "service_name",
+);
 ```
 
 `query`'s iterator always throws on error, but `fields` and `fieldValues` follow the client's `throwOnError`, which defaults to `false` and hands back `{ data, error }`. `fieldValues` resolves to the whole response, not a bare array: read `serviceNames.values`, and treat them as an arbitrary subset whenever `serviceNames.is_truncated` is true.

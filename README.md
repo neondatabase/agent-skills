@@ -20,7 +20,7 @@ It all starts with the `SKILL.md` file in the skill's directory. It's the entry 
 
 [![neon](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon.svg?variant=branded&size=xs&label=neon)](https://skills.sh/neondatabase/agent-skills/neon)
 
-An overview of Neon for apps and agents — Lakebase Postgres, Auth, Data API, Object Storage, Compute Functions, and the AI Gateway — and how to get started.
+An overview of Neon for apps and agents — Lakebase Postgres, Auth, Data API, Object Storage, Compute Functions, and the AI Gateway — and how to get started. Includes Claimable Neon for starting without a human account.
 
 ### Neon Postgres
 
@@ -39,12 +39,6 @@ For agent platforms, codegen tools, and multi-tenant SaaS products that provisio
 [![neon-postgres-branches](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-branches.svg?variant=branded&size=xs&label=neon-postgres-branches)](https://skills.sh/neondatabase/agent-skills/neon-postgres-branches)
 
 Choose and create the right Neon branch type for migration testing and isolated development workflows, including schema-only branches for sensitive data and reset-from-parent workflows to quickly realign child branches.
-
-### Claimable Postgres
-
-[![claimable-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/claimable-postgres.svg?variant=branded&size=xs&label=claimable-postgres)](https://skills.sh/neondatabase/agent-skills/claimable-postgres)
-
-Provision an instant temporary Postgres database, Data API, and Neon Auth with no login, signup, or credit card, over the `auth.md` agent identity protocol at `claimable.neon.tech`. The agent registers itself, exchanges a durable identity assertion for short-lived access tokens, and hands the human a claim URL to keep the project.
 
 ### Neon Postgres Egress Optimizer
 
