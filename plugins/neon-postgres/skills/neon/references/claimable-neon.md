@@ -57,110 +57,37 @@ export default defineConfig({
 ```bash
 neon claim create
 neon branches list
-neon claim accept --no-open
+neon claim accept
 neon claim status
 neon claim delete --yes
 ```
 
-`neon claim create` reads `neon.ts` and writes `.env` by default. Use `--no-env-pull` to skip the env file. `neon claim accept --no-open` prints the URL; give that to the human. Do not run `neon auth`. The identity assertion is the pre-claim credential.
+`neon claim create` reads `neon.ts` and writes `.env` by default. Use `--no-env-pull` to skip the env file.
 
-The HTTP below is a snapshot of the protocol the CLI speaks. `https://claimable.neon.tech/auth.md` is authoritative.
+`neon claim accept` opens the verification URL in a browser. Use `--no-open` to print the URL and give it to the human. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data. Do not run `neon auth`. The identity assertion is the pre-claim credential.
 
-## Register anonymously
+`neon claim status` polls until the transfer is `reconciled`.
 
-Request `postgres` and any optional services the app needs. `data_api` and `auth` are available before claim. `functions`, `storage`, and `ai_gateway` return a recorded `reason: "requires_claim"` decision. Calling a protected operation for one of those capabilities returns the `capability_requires_claim` error code.
+`neon claim delete --yes` permanently deletes the unclaimed project. It does not cancel a claim.
 
-```http
-POST https://claimable.neon.tech/v1/agent/identity
-Content-Type: application/json
+Unset `NEON_API_KEY` and `NEON_PROFILE` on this path. Those credentials send later commands to the regular Neon API, which has no record of the unclaimed project. `--api-key` and `--profile` are refused.
 
-{"type":"anonymous","capabilities":["postgres","data_api","auth"],"source":"your-agent"}
+## Protocol the CLI speaks
+
+`https://claimable.neon.tech/auth.md` is authoritative for request and response fields. Fetch it before calling anything. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
+
+```text
+POST /v1/agent/identity
+POST /v1/oauth2/token
+GET  /v1/projects/{id}/credentials
+GET|PATCH|POST /v1/projects/{id}/…
+POST /v1/projects/{id}/claim
+GET  /v1/projects/{id}/claim
+DELETE /v1/projects/{id}
 ```
 
-The response contains:
-
-- `identity_assertion`: the durable secret. Store it like an API key.
-- `project.id`, `project.branch_id`, and `project.expires_at`. Read `expires_at`; do not hard-code a lifetime.
-- One decision for every requested capability. Check `granted` before using a service.
-
-Registration does not create a claim.
-
-The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
-
-## Exchange for an access token
-
-```http
-POST https://claimable.neon.tech/v1/oauth2/token
-Content-Type: application/x-www-form-urlencoded
-
-grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=<identity_assertion>&resource=https://claimable.neon.tech/
-```
-
-The response contains a short-lived bearer `access_token` and no refresh token. Re-exchange the identity assertion when the access token expires.
-
-## Pull credentials
-
-```http
-GET https://claimable.neon.tech/v1/projects/<project_id>/credentials
-Authorization: Bearer <access_token>
-```
-
-The response contains `database_url`, the project and branch IDs, `expires_at`, and credentials for granted services:
-
-- `services.data_api.url`
-- `services.auth.base_url`
-- `services.auth.jwks_url`
-
-Write `database_url` to the project's `.env` as `DATABASE_URL`. Do not overwrite an existing key without confirmation. The project-scoped Neon API key stays inside Claimable Neon and is never returned.
-
-## Use the project
-
-Use `database_url` with any Postgres client. Supported Neon Management API operations are available through the scoped proxy:
-
-```http
-GET https://claimable.neon.tech/v1/projects/<project_id>/...
-Authorization: Bearer <access_token>
-```
-
-Then follow `neon-postgres` for schemas, queries, and drivers.
-
-## Claim the project
-
-An agent must not complete the claim. Claiming requires a human proving identity to Neon. Create a short-lived human claim code when the project is ready to keep:
-
-```http
-POST https://claimable.neon.tech/v1/projects/<project_id>/claim
-Authorization: Bearer <access_token>
-```
-
-The response contains `user_code`, `verification_uri`, `verification_uri_complete`, `expires_in`, and `interval`. Open `verification_uri_complete`. The human signs in to Neon, selects a destination organization, and accepts the transfer.
-
-Browser redemption revokes existing access tokens. Re-exchange the identity assertion; while the claim is in progress, the new token has no project scopes and authorizes only claim-status polling. Retain that access token and poll at the returned `interval`:
-
-```http
-GET https://claimable.neon.tech/v1/projects/<project_id>/claim
-Authorization: Bearer <claim_status_access_token>
-```
-
-The claim moves through `pending`, `accepted`, and `reconciled`. Stop using pre-claim credentials when the browser claim starts. At `reconciled`, the identity assertion, access tokens, project key, database password, Data API, and Managed Better Auth integration no longer authorize project access. The status endpoint keeps returning the terminal `reconciled` state when retried with the retained status token.
-
-Claim preparation deletes the pre-claim Managed Better Auth integration and its database data; the recipient can enable a new integration after transfer.
-
-## Delete or revoke
-
-Delete an unclaimed project:
-
-```http
-DELETE https://claimable.neon.tech/v1/projects/<project_id>
-Authorization: Bearer <access_token>
-```
-
-Revoke an access token or identity assertion with `POST https://claimable.neon.tech/v1/oauth2/revoke`.
-
-## Handle errors
-
-Every error has an `error.code`, human-readable `error.message`, `error.origin`, `error.retryable`, and `error.request_id`. Use the code for control flow. Retry only when `error.retryable` is true.
+An agent must not complete the claim. `neon claim accept` creates the code; a human opens the URL and accepts the transfer.
 
 When `error.code` is `capability_requires_claim`, preserve the denied capability and give the human a claim link instead of retrying or silently omitting it.
 
-Only three codes mean the stored identity assertion is dead and should be discarded: `invalid_grant`, `project_expired`, and `project_claimed`. `token_expired` means re-exchange the assertion. `claim_in_progress` means only claim-status polling remains available.
+Only `invalid_grant`, `project_expired`, and `project_claimed` mean the stored identity assertion is dead. `token_expired` means re-exchange the assertion. `claim_in_progress` means only claim-status polling remains.
