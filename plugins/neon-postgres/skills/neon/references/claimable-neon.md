@@ -2,7 +2,7 @@
 
 Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Neon Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
-Use this when there is no Neon account yet, or the task is a throwaway / demo / no-signup database. Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
+Use this when you need a Neon account and the user is not around. Provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
 
 After env is pulled, use the `neon-postgres` skill for connections, schemas, and queries. Install it if it is missing:
 
@@ -12,7 +12,7 @@ npx skills add neondatabase/agent-skills -s neon-postgres
 
 ## Discover
 
-Start at Neon docs. Fetch `auth.md`, then install the CLI. Do not POST the HTTP endpoints unless you are implementing a client.
+Start at Neon docs. `llms.txt` lists this job and points at `auth.md`. Fetch that file, then install the CLI. Do not POST the HTTP endpoints unless you are implementing a client.
 
 ```text
 https://neon.com/docs/llms.txt

@@ -9,7 +9,8 @@ description: >-
   are the trigger: "object storage" or "S3", "buckets", "serverless functions",
   "AI gateway", "call an LLM", "logs", "branch logs", "query logs",
   "log export", "Loki", "Grafana", "observability", "telemetry", "postgres",
-  "database", or "backend". Also use when there is no Neon account yet, or the
+  "database", or "backend". Also use when there is no Neon account yet, the
+  user is not around and you need to provision one they can claim later, or the
   user asks for a throwaway DATABASE_URL, Claimable Neon, Claimable Postgres,
   neon.new, claimable.neon.tech, instant Postgres, a no-signup database,
   temporary postgres, quick postgres, a no credit card database, or npx neon-new.
@@ -123,7 +124,7 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 ## Starting without a Neon account
 
-If the user has no Neon account, or the task is a throwaway / demo / no-signup database, do not run `npx neon@latest init --agent` or `neon auth`. Those need a human Neon account.
+If you need a Neon account and the user is not around, provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth`. Those need a human Neon account.
 
 Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres, or a no-signup database are the same path. Follow [Claimable Neon](https://neon.com/docs/ai/skills/neon/references/claimable-neon.md): install the Neon CLI, add `neon-postgres` if it is missing, write an ordinary `neon.ts`, and let the CLI register and pull env. Then use `neon-postgres` for connections, schemas, and queries.
 
