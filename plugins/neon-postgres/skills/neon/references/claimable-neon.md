@@ -1,6 +1,6 @@
 # Claimable Neon
 
-Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Neon Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
+Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Managed Better Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
 Use this when you need a Neon account and the user is not around. Provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
 
@@ -53,7 +53,9 @@ neon branches list
 
 `neon claim create` reads `neon.ts` and writes provisioned vars to an existing `.env`, otherwise `.env.local`. It replaces Neon-managed keys already in that file, including `DATABASE_URL`. If those keys are already set, pass `--file` or `--no-env-pull`. The CLI gitignores the file it writes. Do not run `neon auth`. The identity assertion is the pre-claim credential.
 
-When a human is ready to claim, print the claim URL. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data.
+After create, report the `project_id` and `expires_at` the CLI printed. An unclaimed project expires; do not invent the window. Do not run `neon claim accept` until the human is ready to claim. Accept mints a short-lived claim URL and puts the project in `claim_in_progress`, after which only claim-status polling remains.
+
+When the human is ready, print the claim URL from `neon claim accept --no-open`. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data.
 
 ```bash
 neon claim accept --no-open
@@ -69,16 +71,6 @@ neon claim delete --yes
 ## Protocol the CLI speaks
 
 `https://claimable.neon.tech/auth.md` is authoritative for request and response fields. Client implementers also read the origin's `.well-known` documents. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
-
-```text
-POST /v1/agent/identity
-POST /v1/oauth2/token
-GET  /v1/projects/{id}/credentials
-GET|PATCH|POST /v1/projects/{id}/…
-POST /v1/projects/{id}/claim
-GET  /v1/projects/{id}/claim
-DELETE /v1/projects/{id}
-```
 
 An agent must not complete the claim. `neon claim accept` creates the code; a human opens the URL and accepts the transfer.
 

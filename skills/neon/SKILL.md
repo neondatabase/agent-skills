@@ -10,7 +10,7 @@ description: >-
   "AI gateway", "call an LLM", "logs", "branch logs", "query logs",
   "log export", "Loki", "Grafana", "observability", "telemetry", "postgres",
   "database", or "backend". Also use when there is no Neon account yet, the
-  user is not around and you need to provision one they can claim later, or the
+  user is not around and you need to provision a Neon project they can claim later, or the
   user asks for a throwaway DATABASE_URL, Claimable Neon, Claimable Postgres,
   neon.new, claimable.neon.tech, instant Postgres, a no-signup database,
   temporary postgres, quick postgres, a no credit card database, or npx neon-new.
