@@ -12,7 +12,7 @@ npx skills add neondatabase/agent-skills -s neon-postgres
 
 ## Discover
 
-Start at Neon docs, then install the CLI. Fetch `auth.md` to learn the origin. Do not POST the HTTP endpoints unless you are implementing a client.
+Start at Neon docs. Fetch `auth.md`, then install the CLI. Do not POST the HTTP endpoints unless you are implementing a client.
 
 ```text
 https://neon.com/docs/llms.txt
@@ -44,25 +44,27 @@ export default defineConfig({
 ```
 
 ```bash
+unset NEON_API_KEY NEON_PROFILE
 neon claim create
 neon branches list
+```
+
+`NEON_API_KEY` and `NEON_PROFILE` send later commands to the regular Neon API, which has no record of the unclaimed project. `--api-key` and `--profile` are refused.
+
+`neon claim create` reads `neon.ts` and writes `.env` by default. The CLI gitignores `.env` when it writes it. Do not overwrite existing env vars. Use `--no-env-pull` to skip the env file. Do not run `neon auth`. The identity assertion is the pre-claim credential.
+
+When a human is ready to claim, print the claim URL. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data.
+
+```bash
 neon claim accept --no-open
 neon claim status
 ```
-
-`neon claim create` reads `neon.ts` and writes `.env` by default. The CLI gitignores `.env` when it writes it. Do not overwrite existing env vars. Use `--no-env-pull` to skip the env file.
-
-`neon claim accept --no-open` prints the claim URL for the human. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data. Do not run `neon auth`. The identity assertion is the pre-claim credential.
-
-`neon claim status` polls until the transfer is `reconciled`.
 
 Permanently delete the unclaimed project (this does not cancel a claim):
 
 ```bash
 neon claim delete --yes
 ```
-
-Unset `NEON_API_KEY` and `NEON_PROFILE` on this path. Those credentials send later commands to the regular Neon API, which has no record of the unclaimed project. `--api-key` and `--profile` are refused.
 
 ## Protocol the CLI speaks
 
