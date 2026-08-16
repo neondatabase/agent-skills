@@ -51,7 +51,7 @@ neon branches list
 
 `NEON_API_KEY` and `NEON_PROFILE` send later commands to the regular Neon API, which has no record of the unclaimed project. `--api-key` and `--profile` are refused.
 
-`neon claim create` reads `neon.ts` and writes `.env` by default. The CLI gitignores `.env` when it writes it. Do not overwrite existing env vars. Use `--no-env-pull` to skip the env file. Do not run `neon auth`. The identity assertion is the pre-claim credential.
+`neon claim create` reads `neon.ts` and writes provisioned vars to an existing `.env`, otherwise `.env.local`. It replaces Neon-managed keys already in that file, including `DATABASE_URL`. If those keys are already set, pass `--file` or `--no-env-pull`. The CLI gitignores the file it writes. Do not run `neon auth`. The identity assertion is the pre-claim credential.
 
 When a human is ready to claim, print the claim URL. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data.
 
