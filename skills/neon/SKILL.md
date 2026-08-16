@@ -124,10 +124,10 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 If the user has no Neon account, or the task is a throwaway / demo / no-signup database, do not run `npx neon@latest init --agent` or `neon auth`. Those need a human Neon account.
 
-Follow [Claimable Neon](references/claimable-neon.md): install the Neon CLI, add `neon` and `neon-postgres`, write an ordinary `neon.ts`, and let the CLI register and pull env. Then use `neon-postgres` for connections, schemas, and queries.
+Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres, or a no-signup database are the same path. Follow [Claimable Neon](references/claimable-neon.md): install the Neon CLI, add `neon-postgres` if it is missing, write an ordinary `neon.ts`, and let the CLI register and pull env. Then use `neon-postgres` for connections, schemas, and queries.
 
 ```bash
-npx skills add neondatabase/agent-skills -s neon -s neon-postgres
+npx skills add neondatabase/agent-skills -s neon-postgres
 ```
 
 ## Getting Started with Neon

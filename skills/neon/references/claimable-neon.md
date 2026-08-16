@@ -7,12 +7,12 @@ Use this when there is no Neon account yet, or the task is a throwaway / demo / 
 After env is pulled, use the `neon-postgres` skill for connections, schemas, and queries. Install it if it is missing:
 
 ```bash
-npx skills add neondatabase/agent-skills -s neon -s neon-postgres
+npx skills add neondatabase/agent-skills -s neon-postgres
 ```
 
 ## Discover
 
-Start at Neon docs. Do not guess `POST /v1/agent/identity`.
+Start at Neon docs. Fetch `auth.md` before calling anything.
 
 ```text
 https://neon.com/docs/llms.txt
@@ -38,7 +38,6 @@ The Neon CLI is the client. Do not start from the HTTP examples unless you are i
 
 ```bash
 npm i -g neon@latest
-npx skills add neondatabase/agent-skills -s neon -s neon-postgres
 ```
 
 https://neon.com/docs/cli/install.md
@@ -56,13 +55,16 @@ export default defineConfig({
 ```
 
 ```bash
-neon claim create --service data-api --service auth --env-pull
+neon claim create
 neon branches list
+neon claim accept --no-open
+neon claim status
+neon claim delete --yes
 ```
 
-Do not run `neon auth`. The identity assertion is the pre-claim credential.
+`neon claim create` reads `neon.ts` and writes `.env` by default. Use `--no-env-pull` to skip the env file. `neon claim accept --no-open` prints the URL; give that to the human. Do not run `neon auth`. The identity assertion is the pre-claim credential.
 
-The HTTP below is the protocol the CLI speaks.
+The HTTP below is a snapshot of the protocol the CLI speaks. `https://claimable.neon.tech/auth.md` is authoritative.
 
 ## Register anonymously
 
@@ -81,7 +83,7 @@ The response contains:
 - `project.id`, `project.branch_id`, and `project.expires_at`. Read `expires_at`; do not hard-code a lifetime.
 - One decision for every requested capability. Check `granted` before using a service.
 
-Registration does not create a claim. Possession of the registration response is not possession of the project.
+Registration does not create a claim.
 
 The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
 
@@ -131,7 +133,7 @@ POST https://claimable.neon.tech/v1/projects/<project_id>/claim
 Authorization: Bearer <access_token>
 ```
 
-Open the returned `verification_uri_complete`. The human signs in to Neon, selects a destination organization, and accepts the transfer.
+The response contains `user_code`, `verification_uri`, `verification_uri_complete`, `expires_in`, and `interval`. Open `verification_uri_complete`. The human signs in to Neon, selects a destination organization, and accepts the transfer.
 
 Browser redemption revokes existing access tokens. Re-exchange the identity assertion; while the claim is in progress, the new token has no project scopes and authorizes only claim-status polling. Retain that access token and poll at the returned `interval`:
 
