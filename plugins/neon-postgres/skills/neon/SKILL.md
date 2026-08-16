@@ -11,7 +11,8 @@ description: >-
   "log export", "Loki", "Grafana", "observability", "telemetry", "postgres",
   "database", or "backend". Also use when there is no Neon account yet, or the
   user asks for a throwaway DATABASE_URL, Claimable Neon, Claimable Postgres,
-  neon.new, claimable.neon.tech, instant Postgres, or a no-signup database.
+  neon.new, claimable.neon.tech, instant Postgres, a no-signup database,
+  temporary postgres, quick postgres, a no credit card database, or npx neon-new.
 metadata:
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon
 ---
@@ -124,7 +125,7 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 If the user has no Neon account, or the task is a throwaway / demo / no-signup database, do not run `npx neon@latest init --agent` or `neon auth`. Those need a human Neon account.
 
-Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres, or a no-signup database are the same path. Follow [Claimable Neon](references/claimable-neon.md): install the Neon CLI, add `neon-postgres` if it is missing, write an ordinary `neon.ts`, and let the CLI register and pull env. Then use `neon-postgres` for connections, schemas, and queries.
+Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres, or a no-signup database are the same path. Follow [Claimable Neon](https://neon.com/docs/ai/skills/neon/references/claimable-neon.md): install the Neon CLI, add `neon-postgres` if it is missing, write an ordinary `neon.ts`, and let the CLI register and pull env. Then use `neon-postgres` for connections, schemas, and queries.
 
 ```bash
 npx skills add neondatabase/agent-skills -s neon-postgres

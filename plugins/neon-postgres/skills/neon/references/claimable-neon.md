@@ -12,7 +12,7 @@ npx skills add neondatabase/agent-skills -s neon-postgres
 
 ## Discover
 
-Start at Neon docs. Fetch `auth.md` before calling anything.
+Start at Neon docs, then install the CLI. Fetch `auth.md` to learn the origin. Do not POST the HTTP endpoints unless you are implementing a client.
 
 ```text
 https://neon.com/docs/llms.txt
@@ -21,20 +21,9 @@ https://claimable.neon.tech/auth.md
 
 `https://claimable.neon.tech/auth.md` is the protocol file. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. neon.com/docs/llms.txt holds that pointer. The Claimable Postgres docs page may also appear in that index for humans and SEO. It is not on the agent path.
 
-From the service origin:
-
-```text
-https://claimable.neon.tech/llms.txt
-https://claimable.neon.tech/auth.md
-https://claimable.neon.tech/.well-known/oauth-protected-resource
-https://claimable.neon.tech/.well-known/oauth-authorization-server
-```
-
-The authorization-server document's `agent_auth.skill` is `auth.md`. `identity_endpoint` is where you register. `claim_endpoint` starts a claim with the identity assertion.
-
 ## Install the Neon CLI
 
-The Neon CLI is the client. Do not start from the HTTP examples unless you are implementing a client. Install it, declare services in `neon.ts`, and let the CLI register, store the identity assertion, and pull env.
+The Neon CLI is the client. Install it, declare services in `neon.ts`, and let the CLI register, store the identity assertion, and pull env.
 
 ```bash
 npm i -g neon@latest
@@ -43,7 +32,7 @@ npm i -g neon@latest
 https://neon.com/docs/cli/install.md
 https://neon.com/docs/reference/neon-ts.md
 
-`neon.ts` is ordinary Neon config. There are no claimable-specific fields. Request the services the app needs; denied capabilities come back as `requires_claim` rather than being stripped client-side.
+`neon.ts` is ordinary Neon config. There are no claimable-specific fields. Request the services the app needs; denied capabilities come back on the registration as `capabilities[].reason: "requires_claim"` rather than being stripped client-side.
 
 ```typescript
 import { defineConfig } from "@neon/config/v1";
@@ -57,24 +46,27 @@ export default defineConfig({
 ```bash
 neon claim create
 neon branches list
-neon claim accept
+neon claim accept --no-open
 neon claim status
-neon claim delete --yes
 ```
 
-`neon claim create` reads `neon.ts` and writes `.env` by default. Use `--no-env-pull` to skip the env file.
+`neon claim create` reads `neon.ts` and writes `.env` by default. The CLI gitignores `.env` when it writes it. Do not overwrite existing env vars. Use `--no-env-pull` to skip the env file.
 
-`neon claim accept` opens the verification URL in a browser. Use `--no-open` to print the URL and give it to the human. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data. Do not run `neon auth`. The identity assertion is the pre-claim credential.
+`neon claim accept --no-open` prints the claim URL for the human. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data. Do not run `neon auth`. The identity assertion is the pre-claim credential.
 
 `neon claim status` polls until the transfer is `reconciled`.
 
-`neon claim delete --yes` permanently deletes the unclaimed project. It does not cancel a claim.
+Permanently delete the unclaimed project (this does not cancel a claim):
+
+```bash
+neon claim delete --yes
+```
 
 Unset `NEON_API_KEY` and `NEON_PROFILE` on this path. Those credentials send later commands to the regular Neon API, which has no record of the unclaimed project. `--api-key` and `--profile` are refused.
 
 ## Protocol the CLI speaks
 
-`https://claimable.neon.tech/auth.md` is authoritative for request and response fields. Fetch it before calling anything. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
+`https://claimable.neon.tech/auth.md` is authoritative for request and response fields. Client implementers also read the origin's `.well-known` documents. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
 
 ```text
 POST /v1/agent/identity
