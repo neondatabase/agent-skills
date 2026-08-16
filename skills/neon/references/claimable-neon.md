@@ -16,12 +16,10 @@ Start at Neon docs. Do not guess `POST /v1/agent/identity`.
 
 ```text
 https://neon.com/docs/llms.txt
-https://neon.com/docs/reference/claimable-postgres.md
-https://claimable.neon.tech/llms.txt
 https://claimable.neon.tech/auth.md
 ```
 
-`https://claimable.neon.tech/auth.md` is the protocol file. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. neon.com holds the product page and a pointer.
+`https://claimable.neon.tech/auth.md` is the protocol file. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. neon.com/docs/llms.txt holds that pointer. The Claimable Postgres docs page may also appear in that index for humans and SEO. It is not on the agent path.
 
 From the service origin:
 
