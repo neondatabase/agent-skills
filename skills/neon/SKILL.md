@@ -183,7 +183,9 @@ neon profile list -o json
 
 An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
 
-If an account exists, do not start Claimable Neon. Use [Getting Started](#getting-started-with-neon) with those credentials. If authentication fails, ask the user to sign in (`neon auth`) or mint an API key. Prefer that over Claimable Neon unless they say otherwise.
+If an account exists, do not start Claimable Neon. Use those credentials. Prefer [Getting Started](#getting-started-with-neon). `npx neon@latest init --agent` refuses `NEON_PROFILE`; if that env var is set, run `neon --profile <name> link --agent` instead.
+
+If a command waits on a browser (`Awaiting authentication in web browser`) or authentication fails, stop and ask the user to sign in (`neon auth`) or mint an API key. Prefer that over Claimable Neon unless they say otherwise.
 
 If they cannot sign in or provide a key right now, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
 
