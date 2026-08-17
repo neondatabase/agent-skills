@@ -55,7 +55,7 @@ neon branches list
 
 After create, report the `project_id` and `expires_at` the CLI printed. An unclaimed project expires; do not invent the window. Do not run `neon claim accept` until the human is ready to claim. Accept mints a short-lived claim URL and puts the project in `claim_in_progress`, after which only claim-status polling remains.
 
-When the human is ready, print the claim URL from `neon claim accept --no-open`. Bare `neon claim accept` opens a browser. Claiming transfers Postgres; it disables Data API and deletes Managed Better Auth and its data.
+When the human is ready, print the claim URL from `neon claim accept --no-open`. Bare `neon claim accept` opens a browser. Claiming transfers the project and rotates `DATABASE_URL`. Auth and the Data API stay enabled.
 
 ```bash
 neon claim accept --no-open
