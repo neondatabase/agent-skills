@@ -125,7 +125,7 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 ## Getting Started with Neon
 
-Before `npx neon@latest init --agent`, run `npx neon@latest profile list -o json`. Stay on this path if `NEON_API_KEY` is set, or if DEFAULT has `account` other than `-` and `NEON_PROFILE` is unset. Otherwise follow [Starting without a Neon account](#starting-without-a-neon-account).
+Before `npx neon@latest init --agent`, run `npx neon@latest profile list -o json`. Stay on this path if `NEON_PROFILE` is unset and (`NEON_API_KEY` is set or DEFAULT has `account` other than `-`). Otherwise follow [Starting without a Neon account](#starting-without-a-neon-account).
 
 The easiest way to get started with Neon is to use our CLI and the project bootstrap wizard:
 
