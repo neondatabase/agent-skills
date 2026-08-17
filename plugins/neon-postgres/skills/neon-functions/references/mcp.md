@@ -133,7 +133,7 @@ Either way it's one check at the top of the `/mcp` route — reject anything tha
 app.all("/mcp", async (c) => {
   const auth = c.req.header("authorization");
   if (!(await isValidApiKey(auth)))
-    return c.json({ error: "unauthorized" }, 401); // your check
+    return c.json({ error: "unauthorized" }, 401);
   if (!mcpServer.isConnected()) await mcpServer.connect(transport);
   return transport.handleRequest(c);
 });

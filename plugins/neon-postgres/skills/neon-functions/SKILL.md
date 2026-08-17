@@ -484,9 +484,8 @@ async function connect() {
   const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
   ws.onopen = () => {
     retry = 0;
-  }; // reset backoff on success
+  };
   ws.onmessage = (e) => {
-    /* apply the event */
   };
   ws.onclose = () => {
     if (!closed)

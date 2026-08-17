@@ -139,7 +139,7 @@ Send `data:` with no `event:` field to deliver the default `message` event, whic
 
 ```typescript
 const source = new EventSource(`${FUNCTION_URL}/events`); // GET only
-source.onmessage = (e) => console.log("update", e.data); // default "message" events
+source.onmessage = (e) => console.log("update", e.data);
 source.onerror = () => {
   /* EventSource auto-reconnects; nothing to do */
 };
