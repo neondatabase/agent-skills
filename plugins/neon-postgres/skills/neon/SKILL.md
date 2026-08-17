@@ -174,7 +174,14 @@ Useful MCP tools to initialize a project:
 
 ## Starting without a Neon account
 
-Check for an existing Neon account before this path. Look at `NEON_API_KEY` and `NEON_PROFILE`, then run `neon profile list`. Any row means an account exists, even if the credential is expired.
+Install the CLI, then check for an existing Neon account:
+
+```bash
+npm i -g neon@latest
+neon profile list -o json
+```
+
+An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
 
 If an account exists, do not start Claimable Neon. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer [Getting Started](#getting-started-with-neon) unless they say otherwise.
 
