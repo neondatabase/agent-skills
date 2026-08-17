@@ -242,7 +242,7 @@ pool.on("error", (err) => {
 const db = drizzle(pool);
 ```
 
-node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and Node exits the isolate. Expected idle drops — TCP reset (`ECONNRESET` / `EPIPE` / `ETIMEDOUT`), Postgres admin shutdown (`57P01`, compute scale-to-zero), and pg's `Connection terminated unexpectedly` — are silent. Anything else is logged.
+node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and Node exits the isolate. pg's own idle timer (`idleTimeoutMillis`, default 10s) closes idle clients cleanly and does not emit `error`. This listener is for the server or an intermediary closing a client that is still in the pool. Expected idle drops — TCP reset (`ECONNRESET` / `EPIPE` / `ETIMEDOUT`), Postgres admin shutdown (`57P01`, compute scale-to-zero), and pg's `Connection terminated unexpectedly` — are silent. Anything else is logged.
 
 **Pooling is recommended because an isolate is reused across many requests** (and several requests can be in flight on the same isolate at once — see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits)). A module-scope pool is opened once on cold start and then shared by every subsequent request that isolate serves, so you amortize connection setup instead of paying it on every request and you avoid exhausting Postgres connections under load.
 
@@ -470,6 +470,9 @@ const CHANNEL = "chat_events";
 // One dedicated DIRECT connection per isolate, just to receive events.
 // Use DATABASE_URL_UNPOOLED — LISTEN needs a real session, not a pooled one.
 const listener = new Client({ connectionString: process.env.DATABASE_URL_UNPOOLED });
+listener.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 listener.connect().then(() => listener.query(`LISTEN ${CHANNEL}`));
 listener.on("notification", (msg) => {
   if (!msg.payload) return;

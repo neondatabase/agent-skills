@@ -100,6 +100,9 @@ const CHANNEL = "events";
 // One dedicated DIRECT connection per isolate to receive events (LISTEN needs a
 // real session — use DATABASE_URL_UNPOOLED, not the pooled URL).
 const listener = new Client({ connectionString: process.env.DATABASE_URL_UNPOOLED });
+listener.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 listener.connect().then(() => listener.query(`LISTEN ${CHANNEL}`));
 listener.on("notification", (msg) => {
   if (!msg.payload) return;
