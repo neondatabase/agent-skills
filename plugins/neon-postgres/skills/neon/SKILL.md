@@ -131,7 +131,6 @@ Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres
 ```bash
 npx skills add neondatabase/agent-skills -s neon-postgres
 npm i -g neon@latest
-npm i @neon/config
 NEON_API_KEY= NEON_PROFILE= neon claim create
 ```
 

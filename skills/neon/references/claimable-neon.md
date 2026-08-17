@@ -24,23 +24,22 @@ https://neon.com/docs/llms.txt
 
 ```bash
 npm i -g neon@latest
-npm i @neon/config
 ```
 
 https://neon.com/docs/cli/install.md
 https://neon.com/docs/reference/neon-ts.md
 
-Prefix every claimable command so ambient account credentials do not win. `--api-key` and `--profile` are refused.
+## Create
+
+Prefix every claimable command so ambient account credentials do not win. `--api-key` and `--profile` are refused. `NEON_API_KEY` and `NEON_PROFILE` send later commands to the regular Neon API, which has no record of the unclaimed project.
+
+Postgres-only create works without a `neon.ts`:
 
 ```bash
 NEON_API_KEY= NEON_PROFILE= neon claim create
 ```
 
-`NEON_API_KEY` and `NEON_PROFILE` send later commands to the regular Neon API, which has no record of the unclaimed project.
-
-## Create
-
-Postgres-only create works without a `neon.ts`. For Auth or the Data API, write ordinary `neon.ts` first, or pass `--service`. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
+For Auth or the Data API, install `@neon/config`, write ordinary `neon.ts` first, or pass `--service`. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
 
 If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file` or `--no-env-pull`. `neon claim create` otherwise replaces those keys.
 
@@ -54,6 +53,7 @@ export default defineConfig({
 ```
 
 ```bash
+npm i @neon/config
 NEON_API_KEY= NEON_PROFILE= neon claim create
 NEON_API_KEY= NEON_PROFILE= neon branches list
 ```
