@@ -2,7 +2,7 @@
 
 Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Managed Better Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
-Use this when there is no Neon account yet. If this machine already has a Neon account — `NEON_API_KEY`, `NEON_PROFILE`, or a CLI login, even if that login is expired — stop. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer that over Claimable Neon unless they say otherwise.
+Use this when there is no Neon account yet. Check `NEON_API_KEY` and `NEON_PROFILE`, then run `neon profile list`. Any row means an account exists, even if the credential is expired. If an account exists, stop. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer that over Claimable Neon unless they say otherwise.
 
 If they cannot sign in or provide a key right now, ask before continuing. Continue only after they say yes. That is a temporary workaround.
 
@@ -16,13 +16,13 @@ npx skills add neondatabase/agent-skills -s neon-postgres
 
 ## Discover
 
-Start at Neon docs. `llms.txt` lists this job and points at `auth.md`. Use the CLI next. If `neon claim` is not a command, or `neon claim --help` does not list `create`, use the REST API below. Do not guess `POST /v1/agent/identity`.
+Start at Neon docs, then use the CLI. If `neon claim` is not a command, or `neon claim --help` does not list `create`, use the REST API below. Do not guess `POST /v1/agent/identity`.
 
 ```text
 https://neon.com/docs/llms.txt
 ```
 
-`https://claimable.neon.tech/auth.md` is the protocol file for the REST fallback. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. neon.com/docs/llms.txt holds that pointer. The Claimable Postgres docs page may also appear in that index for humans and SEO. It is not on the agent path.
+`https://claimable.neon.tech/auth.md` is the protocol file for the REST fallback. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. The Claimable Postgres docs page may appear in `llms.txt` for humans and SEO. It is not on the agent path.
 
 ## Install the Neon CLI
 
@@ -43,9 +43,9 @@ Postgres-only create works without a `neon.ts`:
 neon claim create
 ```
 
-For Auth or the Data API, install `@neon/config`, write ordinary `neon.ts` first, or pass `--service`. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
+For Auth or the Data API, install `@neon/config` and write ordinary `neon.ts` first, or pass `--service`. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
 
-If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file` or `--no-env-pull`. `neon claim create` otherwise replaces those keys.
+If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file <path>` or `--no-env-pull`. `neon claim create` otherwise replaces those keys.
 
 ```typescript
 import { defineConfig } from "@neon/config/v1";
@@ -93,7 +93,6 @@ Use the REST API when `neon claim` is missing, or when `neon claim --help` does 
 POST https://claimable.neon.tech/v1/agent/identity
 POST https://claimable.neon.tech/v1/oauth2/token
 GET  https://claimable.neon.tech/v1/projects/{id}/credentials
-GET|PATCH|POST https://claimable.neon.tech/v1/projects/{id}/…
 POST https://claimable.neon.tech/v1/projects/{id}/claim
 GET  https://claimable.neon.tech/v1/projects/{id}/claim
 DELETE https://claimable.neon.tech/v1/projects/{id}
