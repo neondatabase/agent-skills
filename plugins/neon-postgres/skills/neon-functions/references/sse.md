@@ -90,6 +90,7 @@ const CHANNEL = "events";
 
 // One dedicated DIRECT connection per isolate to receive events (LISTEN needs a
 // real session — use DATABASE_URL_UNPOOLED, not the pooled URL).
+// Don't call attachDatabasePool here: it would silence the idle drop that killed the feed.
 // An error listener keeps the isolate alive; the feed stays down until the isolate restarts.
 const listener = new Client({
   connectionString: process.env.DATABASE_URL_UNPOOLED,
