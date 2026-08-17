@@ -469,6 +469,7 @@ const CHANNEL = "chat_events";
 
 // One dedicated DIRECT connection per isolate, just to receive events.
 // Use DATABASE_URL_UNPOOLED — LISTEN needs a real session, not a pooled one.
+// An error listener keeps the isolate alive; the feed stays down until the isolate restarts.
 const listener = new Client({ connectionString: process.env.DATABASE_URL_UNPOOLED });
 listener.on("error", (err) => {
   if (!isIdleDisconnect(err)) console.error(err);
