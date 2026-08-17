@@ -4,7 +4,7 @@ Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and op
 
 Use this when there is no Neon account yet. If this machine already has a Neon account — `NEON_API_KEY`, `NEON_PROFILE`, or a CLI login, even if that login is expired — stop. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer that over Claimable Neon unless they say otherwise.
 
-If they cannot sign in or provide a key because they are not around, ask before continuing. Continue only after they say yes. That is a temporary workaround.
+If they cannot sign in or provide a key right now, ask before continuing. Continue only after they say yes. That is a temporary workaround.
 
 Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
 

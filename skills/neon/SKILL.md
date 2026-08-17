@@ -126,7 +126,7 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 If this machine already has a Neon account — `NEON_API_KEY`, `NEON_PROFILE`, or a CLI login, even if that login is expired — do not start Claimable Neon. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer [Getting Started](#getting-started-with-neon) unless they say otherwise.
 
-If they cannot sign in or provide a key because they are not around, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
+If they cannot sign in or provide a key right now, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
 
 If there is no Neon account yet, provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth` on this path. Those need a human Neon account.
 
