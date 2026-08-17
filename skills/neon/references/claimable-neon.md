@@ -12,7 +12,7 @@ npx skills add neondatabase/agent-skills -s neon-postgres
 
 ## Discover
 
-Start at Neon docs. `llms.txt` lists this job and points at `auth.md`. Fetch that file, then install the CLI. Do not POST the HTTP endpoints unless you are implementing a client.
+Start at Neon docs. `llms.txt` lists this job and points at `auth.md`. Fetch that file, then use the CLI. If the CLI is not available, use the REST API below. Do not guess `POST /v1/agent/identity`.
 
 ```text
 https://neon.com/docs/llms.txt
@@ -73,11 +73,28 @@ Permanently delete the unclaimed project (this does not cancel a claim):
 neon claim delete --yes
 ```
 
-## Protocol the CLI speaks
+## If the CLI is not available
 
-`https://claimable.neon.tech/auth.md` is authoritative for request and response fields. Client implementers also read the origin's `.well-known` documents. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
+Use the REST API. `https://claimable.neon.tech/auth.md` is authoritative for request and response fields. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
 
-An agent must not complete the claim. `neon claim accept` creates the code; a human opens the URL and accepts the transfer.
+```http
+POST https://claimable.neon.tech/v1/agent/identity
+POST https://claimable.neon.tech/v1/oauth2/token
+GET  https://claimable.neon.tech/v1/projects/{id}/credentials
+GET|PATCH|POST https://claimable.neon.tech/v1/projects/{id}/…
+POST https://claimable.neon.tech/v1/projects/{id}/claim
+GET  https://claimable.neon.tech/v1/projects/{id}/claim
+DELETE https://claimable.neon.tech/v1/projects/{id}
+```
+
+| CLI | REST |
+| --- | --- |
+| `neon claim create` | `POST /v1/agent/identity`, then `POST /v1/oauth2/token`, then `GET /v1/projects/{id}/credentials` |
+| `neon claim accept --no-open` | `POST /v1/projects/{id}/claim` |
+| `neon claim status` | `GET /v1/projects/{id}/claim` |
+| `neon claim delete --yes` | `DELETE /v1/projects/{id}` |
+
+An agent must not complete the claim. The human opens `verification_uri_complete` and accepts the transfer. If the claim code expires, `POST /v1/projects/{id}/claim` again.
 
 When `error.code` is `capability_requires_claim`, preserve the denied capability and give the human a claim link instead of retrying or silently omitting it.
 

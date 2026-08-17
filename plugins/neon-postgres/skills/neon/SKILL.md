@@ -136,7 +136,7 @@ unset NEON_API_KEY NEON_PROFILE
 neon claim create
 ```
 
-Do not run `neon claim accept` until the human is ready. The reference has env-file flags, `neon claim accept --no-open`, and the post-claim `DATABASE_URL` pull. Then use `neon-postgres` for connections, schemas, and queries.
+Do not run `neon claim accept` until the human is ready. The reference has env-file flags, `neon claim accept --no-open`, the post-claim `DATABASE_URL` pull, and the REST API if the CLI is not available. Then use `neon-postgres` for connections, schemas, and queries.
 
 ## Getting Started with Neon
 
