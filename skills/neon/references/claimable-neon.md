@@ -33,7 +33,9 @@ npm i @neon/config
 https://neon.com/docs/cli/install.md
 https://neon.com/docs/reference/neon-ts.md
 
-`neon.ts` is ordinary Neon config. There are no claimable-specific fields. Request the services the app needs; denied capabilities come back on the registration as `capabilities[].reason: "requires_claim"` rather than being stripped client-side.
+`neon.ts` is ordinary Neon config. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
+
+If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file` or `--no-env-pull`. `neon claim create` otherwise replaces those keys.
 
 ```typescript
 import { defineConfig } from "@neon/config/v1";
@@ -52,18 +54,18 @@ neon branches list
 
 `NEON_API_KEY` and `NEON_PROFILE` send later commands to the regular Neon API, which has no record of the unclaimed project. `--api-key` and `--profile` are refused.
 
-`neon claim create` reads `neon.ts` and writes provisioned vars to an existing `.env`, otherwise `.env.local`. It replaces Neon-managed keys already in that file, including `DATABASE_URL`. If those keys are already set, pass `--file` or `--no-env-pull`. The CLI gitignores the file it writes. Do not run `neon auth`. The identity assertion is the pre-claim credential.
+`neon claim create` reads `neon.ts` and writes provisioned vars to an existing `.env`, otherwise `.env.local`. The CLI gitignores the file it writes. Do not run `neon auth`. The identity assertion is the pre-claim credential.
 
-After create, report the `project_id` and `expires_at` the CLI printed. An unclaimed project expires; do not invent the window. Do not run `neon claim accept` until the human is ready to claim. Accept mints a short-lived claim URL and puts the project in `claim_in_progress`, after which only claim-status polling remains.
+After create, report the `project_id`, `expires_at`, and `denied_capabilities` the CLI printed. Do not invent the window. Do not run `neon claim accept` until the human is ready to claim. Accept mints a claim URL and puts the project in `claim_in_progress`, after which only claim-status polling remains.
 
-When the human is ready, print the claim URL from `neon claim accept --no-open`. Bare `neon claim accept` opens a browser. Claiming transfers the project and rotates `DATABASE_URL`. Auth and the Data API stay enabled.
+When the human is ready, run `neon claim accept --no-open`. Bare `neon claim accept` opens a browser. Report the `verification_url`, `user_code`, and `expires_in_seconds` the CLI printed. If the code expires, run `neon claim accept --no-open` again. Claiming transfers the project and rotates `DATABASE_URL`. Auth and the Data API stay enabled.
 
 ```bash
 neon claim accept --no-open
 neon claim status
 ```
 
-When `neon claim status` reports `reconciled: true`, the pre-claim `DATABASE_URL` no longer works. Auth and Data API URLs stay. The next command needs `neon auth` or `neon link` against the destination organization, then `neon env pull` to write the new `DATABASE_URL`.
+When `neon claim status` reports `reconciled: true`, the pre-claim `DATABASE_URL` no longer works. Auth and Data API URLs stay. The human signs in with `neon auth`. Then the agent runs `neon link --agent` against the destination organization and `neon env pull` to write the new `DATABASE_URL`.
 
 Permanently delete the unclaimed project (this does not cancel a claim):
 
