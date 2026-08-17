@@ -62,7 +62,24 @@ export { Sentry };
 import "./instrument"; // MUST be the first import, before the framework/agent
 import { Sentry } from "./instrument";
 import { Hono } from "hono";
+import { Pool } from "pg";
 // ... rest of the function
+
+const PG_ADMIN_SHUTDOWN = "57P01";
+const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
+
+function isIdleDisconnect(err: Error): boolean {
+  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
+  return (
+    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
+    err.message === "Connection terminated unexpectedly"
+  );
+}
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+pool.on("error", (err) => {
+  if (!isIdleDisconnect(err)) Sentry.captureException(err);
+});
 ```
 
 - **Gate `enabled` on the DSN.** Local dev (`neon dev`) and any branch where you haven't configured the secret then become a no-op — no init, no noise — without changing code.
@@ -71,6 +88,7 @@ import { Hono } from "hono";
 - **The two integrations:** `vercelAIIntegration({ force: true })` because `neon deploy` bundles your code, which defeats the integration's module detection; `httpIntegration({ disableIncomingRequestSpans: true })` because the request root span comes from the middleware in step 3 (the runtime's internal server would otherwise add a duplicate with an unhelpful name).
 - **Environment:** `NEON_BRANCH` is injected on every branch — including the default — and holds the branch **name** (e.g. `main`, `preview/add-auth`). Because it's always present, don't use it as a boolean flag; compare it against your default branch's name (passed in as `PRODUCTION_BRANCH`) so the default branch reads as `production` and other branches tag by name. Pass `SENTRY_ENVIRONMENT` explicitly per deploy to override.
 - **Flush on shutdown:** the runtime sends `SIGTERM`/`SIGINT` before evicting an idle isolate; Sentry buffers logs and batches spans, so flush or the tail gets dropped.
+- **Idle `pg` pool errors:** node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and the isolate exits before Sentry flushes. Expected idle drops (`ECONNRESET` / `EPIPE` / `ETIMEDOUT`, Postgres `57P01`, pg's `Connection terminated unexpectedly`) stay silent; anything else is `Sentry.captureException`. Don't `pool.end()` on SIGINT — Neon's pooler reclaims those connections. See [Connecting to Postgres](../SKILL.md#connecting-to-postgres).
 
 ### 2. Provide the DSN as a deploy-time secret
 

@@ -78,9 +78,23 @@ The fan-out rule is identical to WebSockets ([Keeping clients in sync across iso
 ```typescript
 import { Pool, Client } from "pg";
 
+const PG_ADMIN_SHUTDOWN = "57P01";
+const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
+
+function isIdleDisconnect(err: Error): boolean {
+  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
+  return (
+    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
+    err.message === "Connection terminated unexpectedly"
+  );
+}
+
 const encoder = new TextEncoder();
 const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+pool.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 const CHANNEL = "events";
 
 // One dedicated DIRECT connection per isolate to receive events (LISTEN needs a

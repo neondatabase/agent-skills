@@ -100,8 +100,22 @@ import { parseEnv } from "@neon/env";
 import config from "../neon";
 import { todos } from "./db/schema";
 
+const PG_ADMIN_SHUTDOWN = "57P01";
+const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
+
+function isIdleDisconnect(err: Error): boolean {
+  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
+  return (
+    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
+    err.message === "Connection terminated unexpectedly"
+  );
+}
+
 const env = parseEnv(config);
 const pool = new Pool({ connectionString: env.postgres.databaseUrl, max: 5 });
+pool.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 const db = drizzle(pool);
 
 const app = new Hono();
@@ -116,13 +130,16 @@ app.get("/todos", async (c) => c.json(await db.select().from(todos)));
 export default app;
 ```
 
-Create the `pg` pool at module scope (reused across requests on the same isolate) and keep `max` small (e.g. 5), since each isolate keeps its own pool.
+Create the `pg` pool at module scope (reused across requests on the same isolate) and keep `max` small (e.g. 5), since each isolate keeps its own pool. Attach a pool `error` listener so an idle disconnect is not an `uncaughtException` — see [Connecting to Postgres](#connecting-to-postgres).
 
 `parseEnv(config)` requires _every_ variable the config implies. A function that only talks to Postgres over the pooled URL can scope it to just that key — `parseEnv` then validates and returns only what you asked for (the keys autocomplete from your `neon.ts`):
 
 ```typescript
 const { postgres } = parseEnv(config, ["DATABASE_URL"]); // not the unpooled URL, auth, etc.
 const pool = new Pool({ connectionString: postgres.databaseUrl, max: 5 });
+pool.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 ```
 
 ## Develop Locally and Deploy
@@ -206,10 +223,26 @@ Create the connection pool **once at module scope** and reuse it across requests
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
+const PG_ADMIN_SHUTDOWN = "57P01";
+const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
+
+function isIdleDisconnect(err: Error): boolean {
+  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
+  return (
+    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
+    err.message === "Connection terminated unexpectedly"
+  );
+}
+
 // Created once per isolate; reused by every request that isolate handles.
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+pool.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 const db = drizzle(pool);
 ```
+
+node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and Node exits the isolate. Expected idle drops — TCP reset (`ECONNRESET` / `EPIPE` / `ETIMEDOUT`), Postgres admin shutdown (`57P01`, compute scale-to-zero), and pg's `Connection terminated unexpectedly` — are silent. Anything else is logged.
 
 **Pooling is recommended because an isolate is reused across many requests** (and several requests can be in flight on the same isolate at once — see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits)). A module-scope pool is opened once on cold start and then shared by every subsequent request that isolate serves, so you amortize connection setup instead of paying it on every request and you avoid exhausting Postgres connections under load.
 
@@ -418,6 +451,9 @@ poller.unref?.();
 import { Pool, Client } from "pg";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+pool.on("error", (err) => {
+  if (!isIdleDisconnect(err)) console.error(err);
+});
 const CHANNEL = "chat_events";
 
 // One dedicated DIRECT connection per isolate, just to receive events.
