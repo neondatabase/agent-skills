@@ -124,14 +124,18 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 ## Starting without a Neon account
 
-If you need a Neon account and the user is not around, provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth`. Those need a human Neon account.
+If this machine already has a Neon account — `NEON_API_KEY`, `NEON_PROFILE`, or a CLI login, even if that login is expired — do not start Claimable Neon. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer [Getting Started](#getting-started-with-neon) unless they say otherwise.
+
+If they cannot sign in or provide a key because they are not around, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
+
+If there is no Neon account yet, provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth` on this path. Those need a human Neon account.
 
 Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres, or a no-signup database are the same path. Follow [references/claimable-neon.md](https://neon.com/docs/ai/skills/neon/references/claimable-neon.md). Install `neon-postgres` if it is missing, then:
 
 ```bash
 npx skills add neondatabase/agent-skills -s neon-postgres
 npm i -g neon@latest
-NEON_API_KEY= NEON_PROFILE= neon claim create
+neon claim create
 ```
 
 Do not run `neon claim accept` until the human is ready. The reference has env-file flags, `neon claim accept --no-open`, the post-claim `DATABASE_URL` pull, and the REST API if `neon claim` is not a command or `neon claim --help` does not list `create`. Then use `neon-postgres` for connections, schemas, and queries.

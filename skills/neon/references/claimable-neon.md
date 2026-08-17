@@ -2,7 +2,11 @@
 
 Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Managed Better Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
-Use this when you need a Neon account and the user is not around. Provision a project now; they claim it later. Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
+Use this when there is no Neon account yet. If this machine already has a Neon account — `NEON_API_KEY`, `NEON_PROFILE`, or a CLI login, even if that login is expired — stop. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer that over Claimable Neon unless they say otherwise.
+
+If they cannot sign in or provide a key because they are not around, ask before continuing. Continue only after they say yes. That is a temporary workaround.
+
+Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
 
 After env is pulled, use the `neon-postgres` skill for connections, schemas, and queries. Install it if it is missing:
 
@@ -31,12 +35,12 @@ https://neon.com/docs/reference/neon-ts.md
 
 ## Create
 
-Prefix every claimable command so ambient account credentials do not win. `--api-key` and `--profile` are refused. `NEON_API_KEY` and `NEON_PROFILE` send later commands to the regular Neon API, which has no record of the unclaimed project.
+`--api-key` and `--profile` are refused. Claimable Neon does not use a Neon account credential.
 
 Postgres-only create works without a `neon.ts`:
 
 ```bash
-NEON_API_KEY= NEON_PROFILE= neon claim create
+neon claim create
 ```
 
 For Auth or the Data API, install `@neon/config`, write ordinary `neon.ts` first, or pass `--service`. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
@@ -54,8 +58,8 @@ export default defineConfig({
 
 ```bash
 npm i @neon/config
-NEON_API_KEY= NEON_PROFILE= neon claim create
-NEON_API_KEY= NEON_PROFILE= neon branches list
+neon claim create
+neon branches list
 ```
 
 `neon claim create` reads `neon.ts` when it is present and writes provisioned vars to an existing `.env`, otherwise `.env.local`. The CLI gitignores the file it writes. Do not run `neon auth`. The identity assertion is the pre-claim credential.
@@ -69,8 +73,8 @@ Do not run `neon claim accept` until the human is ready. Accept mints a claim UR
 When the human is ready, run `neon claim accept --no-open`. Bare `neon claim accept` opens a browser. Report the `verification_url`, `user_code`, and `expires_in_seconds` the CLI printed. If the code expires, run `neon claim accept --no-open` again. Claiming transfers the project and rotates `DATABASE_URL`. Auth and the Data API stay enabled.
 
 ```bash
-NEON_API_KEY= NEON_PROFILE= neon claim accept --no-open
-NEON_API_KEY= NEON_PROFILE= neon claim status
+neon claim accept --no-open
+neon claim status
 ```
 
 When `neon claim status` reports `reconciled: true`, the pre-claim `DATABASE_URL` no longer works. Auth and Data API URLs stay. The human signs in with `neon auth`. Then the agent runs `neon link --agent` and `neon env pull` to write the new `DATABASE_URL`. `neon link --agent` discovers the project after that sign-in.
@@ -78,7 +82,7 @@ When `neon claim status` reports `reconciled: true`, the pre-claim `DATABASE_URL
 Permanently delete the unclaimed project (this does not cancel a claim):
 
 ```bash
-NEON_API_KEY= NEON_PROFILE= neon claim delete --yes
+neon claim delete --yes
 ```
 
 ## If `neon claim` is not a command
