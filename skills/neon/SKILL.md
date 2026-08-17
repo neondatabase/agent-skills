@@ -221,8 +221,8 @@ export default defineConfig({
   auth: true,
   dataApi: true,
   preview: {
-    functions: {/* ... */}, // see the neon-functions skill
-    buckets: {/* ... */}, // see the neon-object-storage skill
+    functions: {},
+    buckets: {},
     aiGateway: true, // see the neon-ai-gateway skill
   },
 });
