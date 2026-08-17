@@ -83,7 +83,7 @@ NEON_API_KEY= NEON_PROFILE= neon claim delete --yes
 
 ## If `neon claim` is not a command
 
-Use the REST API. Fetch `https://claimable.neon.tech/auth.md` for request and response fields. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
+Use the REST API when `neon claim` is missing, or when `neon claim --help` does not list `create`. Fetch `https://claimable.neon.tech/auth.md` for request and response fields. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
 
 ```http
 POST https://claimable.neon.tech/v1/agent/identity

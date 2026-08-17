@@ -134,7 +134,7 @@ npm i -g neon@latest
 NEON_API_KEY= NEON_PROFILE= neon claim create
 ```
 
-Do not run `neon claim accept` until the human is ready. The reference has env-file flags, `neon claim accept --no-open`, the post-claim `DATABASE_URL` pull, and the REST API if `neon claim` is not a command. Then use `neon-postgres` for connections, schemas, and queries.
+Do not run `neon claim accept` until the human is ready. The reference has env-file flags, `neon claim accept --no-open`, the post-claim `DATABASE_URL` pull, and the REST API if `neon claim` is not a command or `neon claim --help` does not list `create`. Then use `neon-postgres` for connections, schemas, and queries.
 
 ## Getting Started with Neon
 
