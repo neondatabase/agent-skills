@@ -27,6 +27,7 @@ The Neon CLI is the client. Install it, declare services in `neon.ts`, and let t
 
 ```bash
 npm i -g neon@latest
+npm i @neon/config
 ```
 
 https://neon.com/docs/cli/install.md
@@ -62,7 +63,7 @@ neon claim accept --no-open
 neon claim status
 ```
 
-When status is `reconciled`, the pre-claim `DATABASE_URL` no longer works. Auth and Data API URLs stay. The next command needs `neon auth` or `neon link` against the destination organization, then `neon env pull` to write the new `DATABASE_URL`.
+When `neon claim status` reports `reconciled: true`, the pre-claim `DATABASE_URL` no longer works. Auth and Data API URLs stay. The next command needs `neon auth` or `neon link` against the destination organization, then `neon env pull` to write the new `DATABASE_URL`.
 
 Permanently delete the unclaimed project (this does not cancel a claim):
 
