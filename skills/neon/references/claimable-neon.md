@@ -62,6 +62,8 @@ neon claim accept --no-open
 neon claim status
 ```
 
+When status is `reconciled`, the pre-claim `DATABASE_URL` no longer works. Auth and Data API URLs stay. The next command needs `neon auth` or `neon link` against the destination organization, then `neon env pull` to write the new `DATABASE_URL`.
+
 Permanently delete the unclaimed project (this does not cancel a claim):
 
 ```bash
