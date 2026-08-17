@@ -215,7 +215,7 @@ attachDatabasePool(pool);
 const db = drizzle(pool);
 ```
 
-node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and Node exits the isolate. Call `attachDatabasePool(pool)` once after `new Pool`. Expected idle disconnects (`ECONNRESET`, `EPIPE`, `ETIMEDOUT`, Postgres `57P01`, node-postgres's `Connection terminated unexpectedly`) are silent. Anything else is `console.error`, or `onUnexpectedError` if you pass it on the first call. The first call wins; a later call that passes `onUnexpectedError` is ignored and warns. This does not close the pool.
+node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and Node exits the isolate. Call `attachDatabasePool(pool)` once after `new Pool`. Requires `@neon/functions` ≥ 0.8.0. Expected idle disconnects (`ECONNRESET`, `EPIPE`, `ETIMEDOUT`, Postgres `57P01`, node-postgres's `Connection terminated unexpectedly`) are silent. Anything else is `console.error`, or `onUnexpectedError` if you pass it on the first call. The first call wins; a later call that passes `onUnexpectedError` is ignored and warns. This does not close the pool.
 
 **Pooling is recommended because an isolate is reused across many requests** (and several requests can be in flight on the same isolate at once — see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits)). A module-scope pool is opened once on cold start and then shared by every subsequent request that isolate serves, so you amortize connection setup instead of paying it on every request and you avoid exhausting Postgres connections under load.
 
@@ -483,9 +483,10 @@ async function connect() {
   const token = await getToken(); // re-mint each attempt; short-lived
   const ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
   ws.onopen = () => {
-    retry = 0;
+    retry = 0; // reset backoff on success
   };
   ws.onmessage = (e) => {
+    /* apply the event */
   };
   ws.onclose = () => {
     if (!closed)
