@@ -17,24 +17,11 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPTransport } from "@hono/mcp";
+import { attachDatabasePool } from "@neon/functions";
 import { contacts } from "./db/schema";
 
-const PG_ADMIN_SHUTDOWN = "57P01";
-const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
-
-function isIdleDisconnect(err: Error): boolean {
-  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
-  return (
-    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
-    err.message === "Connection terminated unexpectedly"
-  );
-}
-
-// One pool per isolate, reused across requests.
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
-pool.on("error", (err) => {
-  if (!isIdleDisconnect(err)) console.error(err);
-});
+attachDatabasePool(pool);
 const db = drizzle(pool);
 
 const mcpServer = new McpServer({ name: "contacts", version: "1.0.0" });
@@ -66,8 +53,15 @@ mcpServer.registerTool(
     inputSchema: { id: z.number().int().positive() },
   },
   async ({ id }) => {
-    const [row] = await db.delete(contacts).where(eq(contacts.id, id)).returning();
-    return { content: [{ type: "text", text: JSON.stringify(row ?? { error: "not found" }) }] };
+    const [row] = await db
+      .delete(contacts)
+      .where(eq(contacts.id, id))
+      .returning();
+    return {
+      content: [
+        { type: "text", text: JSON.stringify(row ?? { error: "not found" }) },
+      ],
+    };
   },
 );
 
@@ -138,7 +132,8 @@ Either way it's one check at the top of the `/mcp` route — reject anything tha
 ```typescript
 app.all("/mcp", async (c) => {
   const auth = c.req.header("authorization");
-  if (!(await isValidApiKey(auth))) return c.json({ error: "unauthorized" }, 401); // your check
+  if (!(await isValidApiKey(auth)))
+    return c.json({ error: "unauthorized" }, 401); // your check
   if (!mcpServer.isConnected()) await mcpServer.connect(transport);
   return transport.handleRequest(c);
 });

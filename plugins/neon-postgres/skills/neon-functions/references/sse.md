@@ -64,7 +64,10 @@ app.get("/events", (c) => {
     },
   });
   return new Response(stream, {
-    headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache, no-transform" },
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+    },
   });
 });
 
@@ -76,33 +79,23 @@ export default app;
 The fan-out rule is identical to WebSockets ([Keeping clients in sync across isolates](../SKILL.md#keeping-clients-in-sync-across-isolates-do-not-skip-this)): each isolate keeps its **own** set of open streams, so broadcasting in-process only reaches the clients on that isolate. Hold a `Set` of stream controllers and pick a strategy there — **poll Postgres** by default (keeps Scale to Zero), or `LISTEN`/`NOTIFY` (shown below) for lowest latency on always-on compute. Keep the source-of-truth state in Postgres — module state doesn't survive eviction.
 
 ```typescript
+import { attachDatabasePool } from "@neon/functions";
 import { Pool, Client } from "pg";
-
-const PG_ADMIN_SHUTDOWN = "57P01";
-const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
-
-function isIdleDisconnect(err: Error): boolean {
-  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
-  return (
-    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
-    err.message === "Connection terminated unexpectedly"
-  );
-}
 
 const encoder = new TextEncoder();
 const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
-pool.on("error", (err) => {
-  if (!isIdleDisconnect(err)) console.error(err);
-});
+attachDatabasePool(pool);
 const CHANNEL = "events";
 
 // One dedicated DIRECT connection per isolate to receive events (LISTEN needs a
 // real session — use DATABASE_URL_UNPOOLED, not the pooled URL).
 // An error listener keeps the isolate alive; the feed stays down until the isolate restarts.
-const listener = new Client({ connectionString: process.env.DATABASE_URL_UNPOOLED });
+const listener = new Client({
+  connectionString: process.env.DATABASE_URL_UNPOOLED,
+});
 listener.on("error", (err) => {
-  if (!isIdleDisconnect(err)) console.error(err);
+  console.error(err);
 });
 listener.connect().then(() => listener.query(`LISTEN ${CHANNEL}`));
 listener.on("notification", (msg) => {
@@ -119,7 +112,10 @@ listener.on("notification", (msg) => {
 
 // Anywhere you mutate state, NOTIFY so every isolate pushes to its own streams.
 function publish(payload: unknown) {
-  return pool.query("SELECT pg_notify($1, $2)", [CHANNEL, JSON.stringify(payload)]);
+  return pool.query("SELECT pg_notify($1, $2)", [
+    CHANNEL,
+    JSON.stringify(payload),
+  ]);
 }
 ```
 
@@ -143,8 +139,10 @@ Send `data:` with no `event:` field to deliver the default `message` event, whic
 
 ```typescript
 const source = new EventSource(`${FUNCTION_URL}/events`); // GET only
-source.onmessage = (e) => console.log("update", e.data);  // default "message" events
-source.onerror = () => {/* EventSource auto-reconnects; nothing to do */};
+source.onmessage = (e) => console.log("update", e.data); // default "message" events
+source.onerror = () => {
+  /* EventSource auto-reconnects; nothing to do */
+};
 // source.close() to stop.
 ```
 

@@ -32,27 +32,15 @@ The function's default export is a web-standard `{ fetch }` handler. The `@neon/
 ```typescript
 // src/index.ts
 import { neon } from "@neon/ai-sdk-provider";
+import { attachDatabasePool } from "@neon/functions";
 import { streamText, tool, stepCountIs, type ModelMessage } from "ai";
 import { z } from "zod";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { todos } from "./db/schema";
 
-const PG_ADMIN_SHUTDOWN = "57P01";
-const IDLE_DISCONNECT_CODES = new Set(["ECONNRESET", "EPIPE", "ETIMEDOUT", PG_ADMIN_SHUTDOWN]);
-
-function isIdleDisconnect(err: Error): boolean {
-  const code = "code" in err && typeof err.code === "string" ? err.code : undefined;
-  return (
-    (code !== undefined && IDLE_DISCONNECT_CODES.has(code)) ||
-    err.message === "Connection terminated unexpectedly"
-  );
-}
-
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
-pool.on("error", (err) => {
-  if (!isIdleDisconnect(err)) console.error(err);
-});
+attachDatabasePool(pool);
 const db = drizzle(pool);
 
 export default {
@@ -82,7 +70,8 @@ export default {
     });
 
     return result.toUIMessageStreamResponse({
-      onError: (error) => (error instanceof Error ? error.message : String(error)),
+      onError: (error) =>
+        error instanceof Error ? error.message : String(error),
     });
   },
 };
@@ -105,7 +94,8 @@ const files = new Files({ adapter: neonFiles({ bucket: "images" }) });
 
 const result = streamText({
   model: neon("gpt-5-mini"),
-  system: "Use image_generation when the user asks for a picture, then describe it.",
+  system:
+    "Use image_generation when the user asks for a picture, then describe it.",
   messages,
   tools: {
     image_generation: neon.tools.imageGeneration({
@@ -120,7 +110,9 @@ const result = streamText({
       const base64 = imageResultBase64(tr.output);
       if (!base64) continue;
       const key = `generated/${randomUUID()}.jpg`;
-      await files.upload(key, Buffer.from(base64, "base64"), { contentType: "image/jpeg" });
+      await files.upload(key, Buffer.from(base64, "base64"), {
+        contentType: "image/jpeg",
+      });
       // …insert a row keyed by `key` into Postgres; serve later via files.url(key)
     }
   },
