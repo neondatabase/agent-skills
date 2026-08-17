@@ -2,7 +2,7 @@
 
 Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Managed Better Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
-Use this when there is no Neon account yet. Install the CLI (`npm i -g neon@latest`), then run `neon profile list -o json`. An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account. If an account exists, stop. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer that over Claimable Neon unless they say otherwise.
+Use this when there is no Neon account yet. Install the CLI (`npm i -g neon@latest`), then run `neon profile list -o json`. An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account. If an account exists, stop. Use Getting Started with those credentials. If authentication fails, ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer that over Claimable Neon unless they say otherwise.
 
 If they cannot sign in or provide a key right now, ask before continuing. Continue only after they say yes. That is a temporary workaround.
 

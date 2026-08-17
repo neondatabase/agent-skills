@@ -183,7 +183,7 @@ neon profile list -o json
 
 An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
 
-If an account exists, do not start Claimable Neon. Ask the user to sign in (`neon auth`) or mint an API key, then create a project on that account. Prefer [Getting Started](#getting-started-with-neon) unless they say otherwise.
+If an account exists, do not start Claimable Neon. Use [Getting Started](#getting-started-with-neon) with those credentials. If authentication fails, ask the user to sign in (`neon auth`) or mint an API key. Prefer that over Claimable Neon unless they say otherwise.
 
 If they cannot sign in or provide a key right now, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
 
