@@ -4,10 +4,11 @@ Thanks for contributing to the Neon Agent Skills!
 
 ## Source of truth
 
-The top-level `skills/` directory is the source of truth. It is consumed three different ways:
+The top-level `skills/` directory is the source of truth. It is consumed four different ways:
 
 - The root [`plugin.json`](plugin.json) and [`mcp.json`](mcp.json) make the repository root a portable [Agent Plugins v1](https://agent-plugins.org/specification) package that reads `skills/` in place. No vendoring, no sync step.
 - The root [`kimi.plugin.json`](kimi.plugin.json) makes the repository installable as a Kimi Code plugin, also reading `skills/` in place. It declares the Neon MCP Server inline, because Kimi does not read the root `mcp.json`.
+- The `pi` block in [`package.json`](package.json) points [Pi](https://pi.dev) at `skills/`, also in place. Pi installs this repo from git, so it tracks `main` like the others.
 - Plugin folders under `plugins/` ship **real copies** of the skill directories they expose (not symlinks — Cursor and Claude silently drop symlinks that escape the plugin root when a plugin is installed from git).
 
 Which skills each plugin vendors is declared in the `PLUGIN_SKILLS` map in [`scripts/sync-plugin-skills.mjs`](scripts/sync-plugin-skills.mjs). A value of `"*"` means "all skills under `skills/`", so new skills are vendored automatically without editing the map; you can also list specific skill names instead. To regenerate the copies after editing a skill or the map:
