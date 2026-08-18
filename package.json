@@ -1,7 +1,7 @@
 {
   "name": "@neondatabase/agent-skills",
   "version": "1.1.2",
-  "description": "A collection of Agent Skills for Neon",
+  "description": "Agent Skills for Neon: Lakebase Postgres, branching, Object Storage, Functions, and the AI Gateway",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -17,8 +17,22 @@
     "serverless",
     "agent-skills",
     "claude-code",
-    "mcp"
+    "mcp",
+    "pi-package"
   ],
+  "files": [
+    "skills/",
+    "plugin.json",
+    "mcp.json"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  },
   "scripts": {
     "prepare": "git config core.hooksPath .githooks || true",
     "fmt": "prettier --write .",
