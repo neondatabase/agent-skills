@@ -99,7 +99,13 @@ Use a **direct (non-pooled)** connection string when you run the migration, not 
 
 Use Neon's predefined, read-only diagnostics before writing catalog queries by hand. The Neon CLI `neon inspect db` subcommands and the Neon MCP server's `inspect_database` tool run the same checks.
 
-This section covers Neon-specific diagnostic tools, compute cache behavior, and platform signals. When the evidence points to generic Postgres work such as rewriting a query, choosing an index, changing a schema, or interpreting plan nodes, use a dedicated Postgres best-practices skill before making that change.
+This section covers Neon-specific diagnostic tools, compute cache behavior, and platform signals. When the evidence points to generic Postgres work such as rewriting a query, choosing an index, changing a schema, or interpreting plan nodes, load the [`postgres-best-practices`](https://github.com/neondatabase/postgres-skills/tree/main/skills/postgres-best-practices) skill and carry the diagnostic evidence into that workflow.
+
+If the skill is not installed, install it from the `neondatabase/postgres-skills` repository:
+
+```bash
+npx skills add neondatabase/postgres-skills
+```
 
 Docs:
 
@@ -174,7 +180,7 @@ Because `ANALYZE` executes the statement, use it only when execution is safe; do
 1. Reproduce the symptom and note its time window.
 2. Run the smallest relevant `inspect` checks from the table above.
 3. Identify a specific query before changing schema or compute. Use MCP `explain_sql_statement` for a standard plan, or the Neon-specific `EXPLAIN` above when LFC or prefetch behavior matters.
-4. If the bottleneck is query shape, indexing, schema, locking, or vacuum behavior, hand the evidence to a Postgres best-practices skill. Keep Neon compute, cache, connection, and platform decisions in this skill.
+4. If the bottleneck is query shape, indexing, schema, locking, or vacuum behavior, load `postgres-best-practices` and carry forward the inspection results and query plan. Keep Neon compute, cache, connection, and platform decisions in this skill.
 5. Re-run the same check and workload to verify the change.
 
 Use MCP `list_slow_queries` instead of `inspect_database` when the user specifically needs queries ranked by average execution time with a custom threshold and limit. Outside the explicit `EXPLAIN` case above, use `run_sql` only for read-only diagnostic SQL when the predefined checks do not answer the question.
