@@ -95,15 +95,18 @@ Test a migration on a branch of production, against production-like data, before
 
 Use a **direct (non-pooled)** connection string when you run the migration, not a pooled one. `neon connection-string` returns the direct string by default; make sure the hostname does not include the `-pooler` suffix.
 
-## Troubleshooting and Postgres Performance
+## Troubleshooting and Neon-Specific Performance
 
 Use Neon's predefined, read-only diagnostics before writing catalog queries by hand. The Neon CLI `neon inspect db` subcommands and the Neon MCP server's `inspect_database` tool run the same checks.
+
+This section covers Neon-specific diagnostic tools, compute cache behavior, and platform signals. When the evidence points to generic Postgres work such as rewriting a query, choosing an index, changing a schema, or interpreting plan nodes, use a dedicated Postgres best-practices skill before making that change.
 
 Docs:
 
 - CLI: https://neon.com/docs/cli/inspect.md
 - Query performance: https://neon.com/docs/postgresql/query-performance.md
 - `pg_stat_statements`: https://neon.com/docs/extensions/pg_stat_statements.md
+- Neon Local File Cache: https://neon.com/docs/extensions/neon.md
 
 ### Choose CLI or MCP
 
@@ -123,7 +126,7 @@ When using Neon MCP, call `inspect_database` with `projectId` and one `check`. P
 | ---------------------------------------------- | ------------------------------------ |
 | Which relations consume storage?               | `table-sizes`, `index-sizes`         |
 | Is an index unused or a table scanned heavily? | `unused-indexes`, `seq-scans`        |
-| What is slow right now?                        | `long-running-queries`, `locks`      |
+| What has run for 5+ minutes or holds locks?    | `long-running-queries`, `locks`      |
 | Which queries consume the most total time?     | `outliers`                           |
 | Which queries run most often?                  | `calls`                              |
 | Does the active data fit in compute cache?     | `lfc-hit-rate`, `working-set`        |
@@ -147,15 +150,34 @@ Do not confuse these checks:
 - Compute-wide checks (`lfc-hit-rate`, `working-set`, and `replication-slots`) run once even when inspecting every database.
 - One failing database can fail an all-databases inspection; retry the relevant check with an explicit `databaseName` to isolate it.
 
+### Inspect Neon Cache Behavior Per Query
+
+Standard `EXPLAIN (ANALYZE, BUFFERS)` reports Postgres shared-buffer activity, but it does not show Neon's Local File Cache (LFC) or page prefetching. For a safe read-only query, add Neon's `FILECACHE` and `PREFETCH` options:
+
+```sql
+EXPLAIN (ANALYZE, BUFFERS, PREFETCH, FILECACHE)
+SELECT ...;
+```
+
+- `File cache: hits` counts pages found in the compute's LFC.
+- `File cache: misses` counts pages not found in the LFC and fetched from database storage.
+- `Prefetch: hits`, `misses`, `expired`, and `duplicates` show how effectively Neon fetched pages before the executor requested them.
+
+`FILECACHE` and `PREFETCH` provide metrics for this query and do not require the `neon` extension. By contrast, `neon inspect db lfc-hit-rate` and `working-set` provide compute-wide statistics and do require the extension.
+
+The MCP `explain_sql_statement` tool can produce a standard plan but does not expose `FILECACHE` or `PREFETCH` options. To collect those Neon-specific metrics through MCP, use `run_sql` with the explicit, read-only `EXPLAIN` statement above.
+
+Because `ANALYZE` executes the statement, use it only when execution is safe; do not run it autonomously for mutating SQL. Compare cold- and warm-cache runs carefully because the first execution can populate the cache and materially change later results.
+
 ### Performance Workflow
 
 1. Reproduce the symptom and note its time window.
 2. Run the smallest relevant `inspect` checks from the table above.
-3. Identify a specific query before changing schema or compute. Use MCP `explain_sql_statement` or Postgres `EXPLAIN` for a plan; use `EXPLAIN (ANALYZE, BUFFERS)` only when executing the statement is safe.
-4. Fix the measured bottleneck: query shape, result size, indexing, lock duration, vacuum health, connection use, or compute/cache sizing.
+3. Identify a specific query before changing schema or compute. Use MCP `explain_sql_statement` for a standard plan, or the Neon-specific `EXPLAIN` above when LFC or prefetch behavior matters.
+4. If the bottleneck is query shape, indexing, schema, locking, or vacuum behavior, hand the evidence to a Postgres best-practices skill. Keep Neon compute, cache, connection, and platform decisions in this skill.
 5. Re-run the same check and workload to verify the change.
 
-Use MCP `list_slow_queries` instead of `inspect_database` when the user specifically needs queries ranked by average execution time with a custom threshold and limit. Use `run_sql` only when the predefined diagnostics do not answer the question.
+Use MCP `list_slow_queries` instead of `inspect_database` when the user specifically needs queries ranked by average execution time with a custom threshold and limit. Outside the explicit `EXPLAIN` case above, use `run_sql` only for read-only diagnostic SQL when the predefined checks do not answer the question.
 
 ## Autoscaling
 
