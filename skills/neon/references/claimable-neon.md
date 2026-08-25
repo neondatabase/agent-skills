@@ -98,12 +98,12 @@ GET  https://claimable.neon.tech/v1/projects/{id}/claim
 DELETE https://claimable.neon.tech/v1/projects/{id}
 ```
 
-| CLI | REST |
-| --- | --- |
-| `neon claim create` | `POST /v1/agent/identity`, then `POST /v1/oauth2/token`, then `GET /v1/projects/{id}/credentials` |
-| `neon claim accept --no-open` | `POST /v1/projects/{id}/claim` |
-| `neon claim status` | `GET /v1/projects/{id}/claim` |
-| `neon claim delete --yes` | `DELETE /v1/projects/{id}` |
+| CLI                           | REST                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------- |
+| `neon claim create`           | `POST /v1/agent/identity`, then `POST /v1/oauth2/token`, then `GET /v1/projects/{id}/credentials` |
+| `neon claim accept --no-open` | `POST /v1/projects/{id}/claim`                                                                    |
+| `neon claim status`           | `GET /v1/projects/{id}/claim`                                                                     |
+| `neon claim delete --yes`     | `DELETE /v1/projects/{id}`                                                                        |
 
 An agent must not complete the claim. The human opens `verification_uri_complete` and accepts the transfer. If the claim code expires, `POST /v1/projects/{id}/claim` again.
 
