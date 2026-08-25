@@ -121,52 +121,69 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 ## Getting Started with Neon
 
-The easiest way to get started with Neon is to use our CLI and the project bootstrap wizard:
-
-```bash
-npx neon@latest init --agent
-```
-
-Use the `--agent` flag to run in a non-interactive, state-machine mode.
-
-This init command will guide you through installation of suggested Neon development tools. Everything is customizable. The defaults are:
-
-- Neon CLI installed globally
-- Neon MCP server installed globally
-- Neon Agent skills installed into the project
-
-If `init` is run in an empty project, it will run the `bootstrap` command, offering to install one of our project templates.
-
-### Getting Started with the Neon CLI
+### 1. Install the Neon CLI
 
 **Prefer the CLI over the MCP server** unless the user instructs otherwise, the CLI is unavailable or blocked in your environment, or it is not authenticated, since it provides more capabilities, including deploying Neon Functions.
 
-The above `init` command will install the Neon CLI, but the CLI can also be installed manually with `npm i -g neon` or `bun i -g neon`. For full CLI installation options, see https://neon.com/docs/cli/install.md
+First, check whether the Neon CLI is already installed:
 
-#### Useful CLI Commands
+```bash
+neon --version
+```
 
-These commands are included in the `init` command but can be run manually as needed.
+If it isn't installed, use your preferred package manager:
 
-1. `neon link` — Interactively links the workspace to a Neon org, project, and branch, writing the IDs to a git-ignored `.neon` file. Run once per project. Once linked, project- and branch-scoped commands no longer need `--project-id` or `--branch` (for example, `neon branch list`). `neon link --agent` can be used to run in a non-interactive, state-machine mode.
-2. `neon checkout <branch-name>` — Pins a different branch in `.neon`, creating it if it doesn't exist yet, and pulls that branch's env. It drives the [Branch-First Dev Flow](#branch-first-dev-flow) described below.
-3. `neon config init` — Initializes a `neon.ts` file, which declares how you provision and manage Neon services, in the root of the project.
-4. `neon env pull` — Fetches the current branch's Neon environment variables (`DATABASE_URL`, …) into your existing `.env`, or `.env.local` if you don't have one (override the target with `--file`). No branch ID needed; it reads `.neon`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
+```bash
+npm i -g neon       # npm
+bun add -g neon     # bun
+pnpm add -g neon    # pnpm
+```
 
-   Without `neon.ts` it pulls the vars of every service the branch actually has (Postgres, plus Neon Auth, the Data API, and bucket `AWS_*` once provisioned); with `neon.ts` it pulls only the services declared there and errors if the branch is missing one — and the AI Gateway vars are never pulled unless `neon.ts` declares `aiGateway`.
+For full CLI installation options, see https://neon.com/docs/cli/install.md
 
-### Getting Started with the Neon MCP Server
+Once installed, authenticate:
 
-The above `init` command will install the Neon MCP server globally, but it can also be installed manually using: `npx -y add-mcp https://mcp.neon.tech/mcp -g -n Neon -y -a <agent-name>` or through your IDE plugin.
+```bash
+neon auth
+```
 
-For all available plugins, see: https://neon.com/docs/ai/ai-agents-tools.md
+### 2. Install the Neon MCP Server
+
+With the CLI installed, set up the Neon MCP server using the `neon mcp` command:
+
+```bash
+neon mcp install
+```
+
+For all available plugins and IDE integrations, see: https://neon.com/docs/ai/ai-agents-tools.md
 
 For full MCP server installation options, see https://neon.com/docs/ai/connect-mcp-clients-to-neon.md
 
-Useful MCP tools to initialize a project:
+### 3. Install Neon Agent Skills
 
-- `list_projects` — Lists the first 10 Neon projects in your account, providing a summary of each project. If you can't find a specific project, increase the limit by passing a higher value to the `limit` parameter.
-- `create_project` — Creates a new Neon project in your Neon account. A project acts as a container for branches, databases, roles, and computes.
-- `get_connection_string` — Returns your database connection string.
+Install the Neon agent skills into your project:
+
+```bash
+npx skills add neondatabase/agent-skills
+```
+
+To install a specific skill only:
+
+```bash
+npx skills add neondatabase/agent-skills -s <skill-name>
+```
+
+### 4. Link Your Project and Get Started
+
+With setup complete, run `neon link` to connect your workspace to a Neon org, project, and branch. Then consult the skill for each Neon feature your app requires — each skill provides detailed guidance on configuration and how to connect that feature to your project. See [Choosing the Right Skill](#choosing-the-right-skill) above for the full list.
+
+### Bootstrap a New Project
+
+If you are starting on a new project, `neon bootstrap` is a great way to quickly scaffold from one of Neon's available project templates. These templates let you explore the full range of what Neon offers — Lakebase Postgres, Object Storage, Functions, Auth, and the AI Gateway — so you can get hands-on with each capability without building from scratch:
+
+```bash
+neon bootstrap
+```
 
 ## Neon Infrastructure as Code
 
@@ -333,7 +350,7 @@ Neon branches enable a branch-first development flow, which we recommend when us
 Create a Neon branch any time you would create a git branch. Use the following commands if you have CLI access:
 
 - `neon checkout <branch-name>` — Creates the branch if it doesn't exist, or checks out the existing one, by updating only the branch pointer in `.neon`. Run without a name for an interactive picker. It does not touch code or local Postgres.
-- `neon env pull` — Fetches the current branch's Neon environment variables into your `.env` (see [Useful CLI Commands](#useful-cli-commands) above). **`link` and `checkout` run this for you by default**, so you rarely call it directly.
+- `neon env pull` — Fetches the current branch's Neon environment variables into your `.env`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
 - `neon diff` — Shows the schema diff between the child branch and its parent. Run this to see what changes have been made to the schema since the last branch was created and before you commit your changes.
 
 ```bash
