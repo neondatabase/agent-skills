@@ -10,8 +10,8 @@ description: >-
   Supabase Storage. Triggers include "object storage", "bucket", "blob
   storage", "file storage", "store uploads/images/files", "S3-compatible
   storage", "presigned URL", "where do I put files", "storage logs",
-  "bucket logs", "Neon Object Storage", "Neon Storage", and "storage that
-  branches with my database".
+  "bucket logs", "CDN in front of object storage", "Neon Object Storage",
+  "Neon Storage", and "storage that branches with my database".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-object-storage
@@ -35,14 +35,14 @@ Use this skill to help the user store and serve files that branch alongside thei
 
 ## When to Use
 
-Reach for Neon Object Storage when the user needs to store files (images, uploads, generated assets, documents, backups) and any of the following are true:
+Reach for Neon Object Storage for the files an app and its users produce — uploads, attachments, avatars, images, documents, generated assets, backups. It is the default place to put them when the app is already on Neon:
 
 - **They already use Lakebase Postgres and don't want a second provider.** One backend, one bill, one CLI, one set of branches — instead of standing up and wiring a separate AWS S3 / R2 / Supabase Storage account. The same Neon credential that backs the database backs storage.
 - **Files must stay in sync with the database across environments.** Storage branches _together with_ your Postgres data. Fork a branch and the child instantly inherits the parent's buckets and objects at that point in time — copy-on-write, so no data is duplicated. This is what makes agent, dev, preview, and test environments seamless: a preview branch gets a consistent snapshot of _both_ the rows and the files they reference, and writes on the child never touch the parent.
 - **They want safe, throwaway environments.** Upload, overwrite, and delete files in a preview/CI branch without any risk to production data, then drop the branch.
 - **They want standard S3 tooling.** It's built on S3 semantics and speaks the S3 API, so the AWS SDKs, `boto3`, the AWS CLI, and presigned URLs all work — reliable and familiar, with no proprietary client.
 
-If the user has no Neon project, isn't on Postgres, and just needs a standalone CDN-backed asset store, a dedicated object store may fit better — but the moment branch-consistent files + rows matter, this is the reason to use it.
+If the files in question are the app's own build output — HTML, JS bundles, CSS — that's static web hosting and belongs on Vercel, Netlify, or Cloudflare instead. Public assets that are served from a bucket want a CDN in front of them (see [Architecture: Where Object Storage Fits](#architecture-where-object-storage-fits)).
 
 ## What It Does
 
@@ -54,6 +54,13 @@ If the user has no Neon project, isn't on Postgres, and just needs a standalone 
 ## Availability
 
 Check this precondition before setting anything up: Neon Object Storage is a public beta feature available in the `us-east-2` region. Confirm the user's Neon project is in `us-east-2` before proceeding.
+
+## Architecture: Where Object Storage Fits
+
+Neon (Object Storage included) is **backend primitives, not full-stack app hosting**. Object Storage holds the files the app and its users produce — uploads, attachments, avatars, documents, generated images, backups — keyed from Postgres rows on the same branch. Two boundaries follow from that:
+
+- **Put a CDN in front of public assets.** A `public_read` object is fetched straight from the branch's storage endpoint, `https://<branch-id>.storage.c-<N>.us-east-2.aws.neon.tech/<bucket>/<object-key>`, and Neon runs no CDN in front of it. For assets a browser loads on every page view — avatars, product images, anything hot — front that endpoint with Cloudflare or Vercel as the origin and set `Cache-Control` on `PutObject` so the edge knows how long to hold each object. The hostname carries the branch id, so point a production CDN at the production branch and give preview branches their own origin (or let them read the Neon endpoint directly) rather than sharing one cache across branches. Private buckets stay on presigned URLs: the signature is part of the URL, so a regenerated URL is a new cache key and the edge has little to reuse.
+- **Host the app itself elsewhere.** HTML, JS bundles, and CSS build output belong on Vercel, Netlify, or Cloudflare, along with the index documents, SPA fallbacks, and custom domains that go with them. Neon has no website mode to serve them through — `PutBucketWebsite` returns `501 Not Implemented`. Object Storage is for the files the app reads and writes, not the files it is built from.
 
 ## Setup
 
