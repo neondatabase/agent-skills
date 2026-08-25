@@ -2,7 +2,9 @@
 
 Claimable Neon provisions a temporary Neon project — Lakebase Postgres, and optionally the Data API and Managed Better Auth — before a human creates an account. The agent holds an identity assertion, not a Neon API key. A human can later claim the project into their organization.
 
-Use this when there is no Neon account yet. Install the CLI (`npm i -g neon@latest`). The CLI is already authenticated if any of these is true:
+This flow follows the [auth.md](https://neon.com/auth.md) protocol. Fetch that file for request and response fields. REST is on `https://claimable.neon.tech`. Do not guess `POST /v1/agent/identity`.
+
+Use this when there is no Neon account yet. The CLI is already authenticated if any of these is true:
 
 - `NEON_API_KEY` is set
 - `NEON_PROFILE` is set
@@ -14,48 +16,15 @@ If the CLI is authenticated, stop and use those credentials. If a command waits 
 
 If they cannot sign in or provide a key right now, ask before continuing. Continue only after they say yes. That is a temporary workaround.
 
-Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account.
+## Path
 
-After env is pulled, use the `neon-postgres` skill for connections, schemas, and queries. Install it if it is missing:
+1. Install the CLI: `npm i -g neon@latest`
+2. Write a `neon.ts` that declares the services you need, or skip the file and pass `--service` on create. Postgres is always requested.
+3. Create the project: `neon claim create --env-pull` (add `--service data-api --service auth` if there is no `neon.ts`)
+4. Pull env if create did not write it: `neon env pull`
+5. Use the `neon-postgres` skill for connections, schemas, and queries. Install it if it is missing: `npx skills add neondatabase/agent-skills -s neon-postgres`
 
-```bash
-npx skills add neondatabase/agent-skills -s neon-postgres
-```
-
-## Discover
-
-Start at Neon docs, then use the CLI. If `neon claim` is not a command, or `neon claim --help` does not list `create`, use the REST API below. Do not guess `POST /v1/agent/identity`.
-
-```text
-https://neon.com/docs/llms.txt
-https://neon.com/auth.md
-https://neon.com/.well-known/oauth-authorization-server/claimable
-```
-
-`https://neon.com/auth.md` is the protocol file. REST stays on `https://claimable.neon.tech`. Issuer is `https://neon.com/claimable`. Protected-resource metadata and JWKS stay on `claimable.neon.tech`.
-
-## Install the Neon CLI
-
-```bash
-npm i -g neon@latest
-```
-
-https://neon.com/docs/cli/install.md
-https://neon.com/docs/reference/neon-ts.md
-
-## Create
-
-`--api-key` and `--profile` are refused. Claimable Neon does not use a Neon account credential.
-
-Postgres-only create works without a `neon.ts`. Pass `--service` for Auth or the Data API. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
-
-If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file <path>` or `--no-env-pull`. `neon claim create` otherwise replaces those keys.
-
-```bash
-neon claim create --service data-api --service auth --env-pull
-```
-
-Or declare the same services in `neon.ts`, then create without `--service`:
+Do not run `npx neon@latest init --agent` or `neon auth` on this path; those need a human Neon account. `--api-key` and `--profile` are refused on `neon claim`.
 
 ```typescript
 import { defineConfig } from "@neon/config/v1";
@@ -68,11 +37,13 @@ export default defineConfig({
 
 ```bash
 npm i @neon/config
-neon claim create
-neon branches list
+neon claim create --env-pull
+neon env pull
 ```
 
-`neon claim create` reads `neon.ts` when it is present and writes provisioned vars to an existing `.env`, otherwise `.env.local`. The CLI gitignores the file it writes. Do not run `neon auth`. The identity assertion is the pre-claim credential.
+`neon claim create` reads `neon.ts` when it is present. It writes provisioned vars to an existing `.env`, otherwise `.env.local`, and gitignores that file. If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file <path>` or `--no-env-pull`. The identity assertion is the pre-claim credential.
+
+Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
 
 After create, report the `project_id`, `expires_at`, and `denied_capabilities` the CLI printed. Do not invent the window.
 
@@ -95,9 +66,9 @@ Permanently delete the unclaimed project (this does not cancel a claim):
 neon claim delete --yes
 ```
 
-## If `neon claim` is not a command
+## If the Neon CLI cannot be used
 
-Use the REST API when `neon claim` is missing, or when `neon claim --help` does not list `create`. Fetch `https://neon.com/auth.md` for request and response fields. The claimable resource is `/v1/projects/{id}` on `https://claimable.neon.tech`, not `/v1/databases/{id}`.
+Fall back to the REST API. Fetch `https://neon.com/auth.md` for request and response fields. The claimable resource is `/v1/projects/{id}` on `https://claimable.neon.tech`, not `/v1/databases/{id}`.
 
 ```http
 POST https://claimable.neon.tech/v1/agent/identity
