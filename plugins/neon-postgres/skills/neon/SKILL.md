@@ -125,7 +125,13 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 ## Getting Started with Neon
 
-Before `npx neon@latest init --agent`, run `npx neon@latest profile list -o json`. Stay on this path if `NEON_API_KEY` is set, or if `NEON_PROFILE` is unset and DEFAULT has `account` other than `-`. If `NEON_PROFILE` is set, or a listed profile other than DEFAULT has `account` other than `-`, run `neon --profile <name> link --agent` with that profile's `name`. Otherwise follow [Starting without a Neon account](#starting-without-a-neon-account).
+Before `npx neon@latest init --agent`, check whether the CLI is already authenticated:
+
+- `NEON_API_KEY` is set
+- `NEON_PROFILE` is set
+- `npx neon@latest profile list -o json` lists a profile whose `account` is not `-`
+
+If none of those hold, follow [Starting without a Neon account](#starting-without-a-neon-account).
 
 The easiest way to get started with Neon is to use our CLI and the project bootstrap wizard:
 
@@ -176,18 +182,22 @@ Useful MCP tools to initialize a project:
 
 ## Starting without a Neon account
 
-Install the CLI, then check for an existing Neon account:
+Install the CLI, then check whether it is already authenticated:
 
 ```bash
 npm i -g neon@latest
 neon profile list -o json
 ```
 
-An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
+The CLI is authenticated if any of these is true:
 
-If `NEON_API_KEY` is set, or DEFAULT has `account` other than `-`, use those credentials and [Getting Started](#getting-started-with-neon). If `NEON_PROFILE` is set, or a listed profile other than DEFAULT has `account` other than `-`, run `neon --profile <name> link --agent` with that profile's `name`. `npx neon@latest init --agent` uses DEFAULT and refuses `NEON_PROFILE`.
+- `NEON_API_KEY` is set
+- `NEON_PROFILE` is set
+- a listed profile has `account` other than `-`
 
-If a command waits on a browser (`Awaiting authentication in web browser`) or authentication fails, stop and ask the user to sign in (`neon auth`) or mint an API key. Prefer that over Claimable Neon unless they say otherwise.
+A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
+
+If it is authenticated, use those credentials and [Getting Started](#getting-started-with-neon). If a command waits on a browser (`Awaiting authentication in web browser`) or authentication fails, stop and ask the user to sign in (`neon auth`) or mint an API key. Prefer that over Claimable Neon unless they say otherwise.
 
 If they cannot sign in or provide a key right now, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
 
