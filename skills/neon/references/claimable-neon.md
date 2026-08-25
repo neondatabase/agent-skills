@@ -47,6 +47,8 @@ If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed ke
 neon claim create --service data-api --service auth --env-pull
 ```
 
+Or declare the same services in `neon.ts`, then create without `--service`:
+
 ```typescript
 import { defineConfig } from "@neon/config/v1";
 

@@ -125,7 +125,7 @@ Use the same method that was used to install them. With the `skills` CLI, run th
 
 ## Getting Started with Neon
 
-Before `npx neon@latest init --agent`, run `npx neon@latest profile list -o json`. Stay on this path if `NEON_PROFILE` is unset and (`NEON_API_KEY` is set or DEFAULT has `account` other than `-`). Otherwise follow [Starting without a Neon account](#starting-without-a-neon-account).
+Before `npx neon@latest init --agent`, run `npx neon@latest profile list -o json`. Stay on this path if `NEON_PROFILE` is unset and (`NEON_API_KEY` is set or DEFAULT has `account` other than `-`). If `NEON_PROFILE` is set, run `neon --profile <name> link --agent` with that profile's `name`. Otherwise follow [Starting without a Neon account](#starting-without-a-neon-account).
 
 The easiest way to get started with Neon is to use our CLI and the project bootstrap wizard:
 
@@ -185,7 +185,7 @@ neon profile list -o json
 
 An account exists if `NEON_API_KEY` or `NEON_PROFILE` is set, or if a listed profile has `account` other than `-`. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
 
-If an account exists, do not start Claimable Neon. Use those credentials. Prefer [Getting Started](#getting-started-with-neon). `npx neon@latest init --agent` uses DEFAULT and refuses `NEON_PROFILE`. If a listed profile has `account` other than `-`, run `neon --profile <name> link --agent` with that profile's `name`.
+If `NEON_PROFILE` is set, run `neon --profile <name> link --agent` with that profile's `name`. If `NEON_API_KEY` is set or a listed profile has `account` other than `-`, use those credentials and [Getting Started](#getting-started-with-neon). `npx neon@latest init --agent` uses DEFAULT and refuses `NEON_PROFILE`.
 
 If a command waits on a browser (`Awaiting authentication in web browser`) or authentication fails, stop and ask the user to sign in (`neon auth`) or mint an API key. Prefer that over Claimable Neon unless they say otherwise.
 
