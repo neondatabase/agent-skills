@@ -43,7 +43,7 @@ Once the agent is running through Guard, follow the existing Neon skills for the
 - keep credentials out of chat and logs; prefer Neon CLI flows that write credentials to the intended local environment file
 - use the correct Neon project and branch, and prefer isolated development or preview branches before production
 - use Neon-native read-only inspection, status, plan, or dry-run behavior before applying changes when the command supports it
-- preserve Elastic-style least privilege? No. Use Neon roles, API keys, project access, and branch controls as documented by Neon
+- use Neon roles, API keys, project access, and branch controls with the least privilege required for the task
 - never treat a Guard allow decision as permission to skip Neon authorization, confirmations, backups, or application-level validation
 
 For infrastructure declared in `neon.ts`, inspect before apply:
