@@ -198,7 +198,7 @@ Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres
 ```bash
 npx skills add neondatabase/agent-skills -s neon-postgres
 npm i -g neon@latest
-neon claim create
+neon claim create --service data-api --service auth --env-pull
 ```
 
 Do not run `neon claim accept` until the human is ready. The reference has env-file flags, `neon claim accept --no-open`, the post-claim `DATABASE_URL` pull, and the REST API if `neon claim` is not a command or `neon claim --help` does not list `create`. Then use `neon-postgres` for connections, schemas, and queries.

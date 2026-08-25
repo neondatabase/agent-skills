@@ -20,9 +20,11 @@ Start at Neon docs, then use the CLI. If `neon claim` is not a command, or `neon
 
 ```text
 https://neon.com/docs/llms.txt
+https://neon.com/auth.md
+https://neon.com/.well-known/oauth-authorization-server/claimable
 ```
 
-`https://neon.com/auth.md` is the protocol file. REST stays on `https://claimable.neon.tech`. Authorization-server metadata is `https://neon.com/.well-known/oauth-authorization-server/claimable` (issuer `https://neon.com/claimable`). Protected-resource metadata and JWKS stay on `claimable.neon.tech`. The Claimable Postgres docs page may appear in `llms.txt` for humans and SEO. It is not on the agent path.
+`https://neon.com/auth.md` is the protocol file. REST stays on `https://claimable.neon.tech`. Issuer is `https://neon.com/claimable`. Protected-resource metadata and JWKS stay on `claimable.neon.tech`.
 
 ## Install the Neon CLI
 
@@ -37,15 +39,13 @@ https://neon.com/docs/reference/neon-ts.md
 
 `--api-key` and `--profile` are refused. Claimable Neon does not use a Neon account credential.
 
-Postgres-only create works without a `neon.ts`:
-
-```bash
-neon claim create
-```
-
-For Auth or the Data API, install `@neon/config` and write ordinary `neon.ts` first, or pass `--service`. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
+Postgres-only create works without a `neon.ts`. Pass `--service` for Auth or the Data API. There are no claimable-specific fields. Before claim, Postgres is always granted; Auth and the Data API are granted when requested. Functions, Object Storage, and AI Gateway are recorded as `denied_capabilities` with reason `requires_claim`. Report that field. Do not retry or strip them.
 
 If `.env` or `.env.local` already has a `DATABASE_URL` (or other Neon-managed keys), pass `--file <path>` or `--no-env-pull`. `neon claim create` otherwise replaces those keys.
+
+```bash
+neon claim create --service data-api --service auth --env-pull
+```
 
 ```typescript
 import { defineConfig } from "@neon/config/v1";
