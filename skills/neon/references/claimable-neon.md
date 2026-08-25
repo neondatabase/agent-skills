@@ -22,7 +22,7 @@ Start at Neon docs, then use the CLI. If `neon claim` is not a command, or `neon
 https://neon.com/docs/llms.txt
 ```
 
-`https://claimable.neon.tech/auth.md` is the protocol file for the REST fallback. It lives on the service origin, next to the OAuth well-known documents — not on neon.com. The Claimable Postgres docs page may appear in `llms.txt` for humans and SEO. It is not on the agent path.
+`https://neon.com/auth.md` is the protocol file. REST issue stays on `https://claimable.neon.tech`. Authorization-server metadata is `https://neon.com/.well-known/oauth-authorization-server/claimable` (issuer `https://neon.com/claimable`). Protected-resource metadata and JWKS stay on `claimable.neon.tech`. The Claimable Postgres docs page may appear in `llms.txt` for humans and SEO. It is not on the agent path.
 
 ## Install the Neon CLI
 
@@ -87,7 +87,7 @@ neon claim delete --yes
 
 ## If `neon claim` is not a command
 
-Use the REST API when `neon claim` is missing, or when `neon claim --help` does not list `create`. Fetch `https://claimable.neon.tech/auth.md` for request and response fields. The claimable resource is `/v1/projects/{id}`, not `/v1/databases/{id}`.
+Use the REST API when `neon claim` is missing, or when `neon claim --help` does not list `create`. Fetch `https://neon.com/auth.md` for request and response fields. The claimable resource is `/v1/projects/{id}` on `https://claimable.neon.tech`, not `/v1/databases/{id}`.
 
 ```http
 POST https://claimable.neon.tech/v1/agent/identity
