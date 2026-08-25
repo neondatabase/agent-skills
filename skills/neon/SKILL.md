@@ -177,6 +177,15 @@ npx skills add neondatabase/agent-skills -s <skill-name>
 
 With setup complete, run `neon link` to connect your workspace to a Neon org, project, and branch. Then consult the skill for each Neon feature your app requires — each skill provides detailed guidance on configuration and how to connect that feature to your project. See [Choosing the Right Skill](#choosing-the-right-skill) above for the full list.
 
+#### Useful CLI Commands
+
+1. `neon link` — Interactively links the workspace to a Neon org, project, and branch, writing the IDs to a git-ignored `.neon` file. Run once per project. Once linked, project- and branch-scoped commands no longer need `--project-id` or `--branch` (for example, `neon branch list`). `neon link --agent` can be used to run in a non-interactive, state-machine mode.
+2. `neon checkout <branch-name>` — Pins a different branch in `.neon`, creating it if it doesn't exist yet, and pulls that branch's env. It drives the [Branch-First Dev Flow](#branch-first-dev-flow) described below.
+3. `neon config init` — Initializes a `neon.ts` file, which declares how you provision and manage Neon services, in the root of the project.
+4. `neon env pull` — Fetches the current branch's Neon environment variables (`DATABASE_URL`, …) into your existing `.env`, or `.env.local` if you don't have one (override the target with `--file`). No branch ID needed; it reads `.neon`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
+
+   Without `neon.ts` it pulls the vars of every service the branch actually has (Postgres, plus Neon Auth, the Data API, and bucket `AWS_*` once provisioned); with `neon.ts` it pulls only the services declared there and errors if the branch is missing one — and the AI Gateway vars are never pulled unless `neon.ts` declares `aiGateway`.
+
 ### Bootstrap a New Project
 
 If you are starting on a new project, `neon bootstrap` is a great way to quickly scaffold from one of Neon's available project templates. These templates let you explore the full range of what Neon offers — Lakebase Postgres, Object Storage, Functions, Auth, and the AI Gateway — so you can get hands-on with each capability without building from scratch:
