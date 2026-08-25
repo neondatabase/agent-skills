@@ -93,31 +93,31 @@ For guidance on agent platforms that provision and operate Lakebase Postgres on 
 
 ### Installing the Right Skill
 
-First check whether the target skill is already installed and accessible (for example, it appears in the available skills list or its `SKILL.md` is present). If it is, use it directly. If it is not installed, install it via the `skills` CLI, if available, with `npx`/`bunx`:
+First check whether the target skill is already installed and accessible (for example, it appears in the available skills list or its `SKILL.md` is present). If it is, use it directly. If it is not installed, install it with `neon skills`:
 
 ```bash
-npx skills add neondatabase/agent-skills -s <skill-name>
+neon skills -s <skill-name>
 ```
 
 Replace `<skill-name>` with the skill you need (for example, `neon-object-storage`, `neon-functions`, or `neon-ai-gateway`). Useful flags:
 
-- `-g` — install globally instead of into the current project.
+- `--global` — install globally instead of into the current project.
 - `-y` — non-interactive mode (skip prompts).
-- `-a <agent-name>` — pick the target agent(s) for non-interactive mode.
+- `--agent <agent-name>` — pick the target agent(s) for non-interactive mode.
 
 For example, to install the object storage skill globally for a specific agent without prompts:
 
 ```bash
-npx skills add neondatabase/agent-skills -s neon-object-storage -g -y -a <agent-name>
+neon skills -s neon-object-storage --global -y --agent <agent-name>
 ```
 
-If you don't have access to the `skills` CLI, you can visit https://neon.com/.well-known/agent-skills for a registry of all available Neon skills and fetch them manually.
+If the Neon CLI is not available, you can visit https://neon.com/.well-known/agent-skills for a registry of all available Neon skills and fetch them manually.
 
 ### Updating Skills
 
 Keep the skills up to date: for every new session, update them so you are working with the latest best practices.
 
-Use the same method that was used to install them. With the `skills` CLI, run the install command above with `update` in place of `add`, or run `npx skills update` to update all Neon skills. If the skills were installed via a plugin, they are updated automatically.
+Run `neon skills update` to update all installed Neon skills, or `neon skills update -y` to skip prompts. If the skills were installed via a plugin, they are updated automatically.
 
 ## Getting Started with Neon
 
@@ -164,13 +164,13 @@ For full MCP server installation options, see https://neon.com/docs/ai/connect-m
 Install the Neon agent skills into your project:
 
 ```bash
-npx skills add neondatabase/agent-skills
+neon skills
 ```
 
 To install a specific skill only:
 
 ```bash
-npx skills add neondatabase/agent-skills -s <skill-name>
+neon skills -s <skill-name>
 ```
 
 ### 4. Link Your Project and Get Started
