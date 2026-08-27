@@ -1,5 +1,5 @@
 {
-  "name": "@neondatabase/agent-skills",
+  "name": "@neon/skills",
   "version": "1.1.2",
   "description": "Agent Skills for Neon: Lakebase Postgres, branching, Object Storage, Functions, and the AI Gateway",
   "license": "Apache-2.0",
