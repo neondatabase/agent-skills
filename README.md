@@ -111,7 +111,13 @@ Plugin changes apply to new sessions, so run `/new` afterward.
 
 ### Pi
 
-You can also install the skills in [Pi](https://pi.dev), straight from this repo:
+You can also install the skills in [Pi](https://pi.dev) from npm:
+
+```bash
+pi install npm:@neon/skills
+```
+
+Or straight from this repo:
 
 ```bash
 pi install git:github.com/neondatabase/agent-skills
