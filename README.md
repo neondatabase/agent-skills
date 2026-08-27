@@ -64,12 +64,6 @@ One API and one Neon credential for frontier and open-source LLMs from multiple 
 
 Long-running, serverless Node.js HTTP functions deployed onto your Neon branch, with `DATABASE_URL` injected automatically and compute that runs next to your data.
 
-### Lakebase Search
-
-[![lakebase-search](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/lakebase-search.svg?variant=branded&size=xs&label=lakebase-search)](https://skills.sh/neondatabase/agent-skills/lakebase-search)
-
-Build semantic vector search, full-text search with BM25 ranking, and hybrid search on Lakebase Postgres.
-
 ## Installation
 
 ```bash

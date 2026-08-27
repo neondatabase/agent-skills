@@ -3,6 +3,15 @@
 Use `lakebase_text` for BM25 relevance ranking with PostgreSQL's standard `tsvector` type. The `lakebase_bm25` index
 adds corpus-aware ranking and top-K pushdown.
 
+Lakebase Search requires Postgres 16 or later. Enable the extension before creating the index:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS lakebase_text;
+```
+
+`lakebase_text` has no extension dependency. It relies on a preloaded library that Neon enables by default; if the
+project customized its preloaded-library list, confirm the library remains enabled.
+
 ## Prepare and Index Text
 
 Prefer a stored generated `tsvector` when search text comes from stable table columns:
@@ -21,8 +30,7 @@ Create the index after the initial corpus has been inserted so build-time corpus
 
 ```sql
 CREATE INDEX documents_body_bm25 ON documents
-  USING lakebase_bm25 (body_tsv)
-  WITH (default_limit = 20);
+  USING lakebase_bm25 (body_tsv);
 ```
 
 After a large bulk load, run `VACUUM` to refresh the statistics used by BM25 scoring.
@@ -52,24 +60,6 @@ configuration that matches the corpus.
 
 `lakebase_bm25.default_limit` controls how many rows the index returns before PostgreSQL applies the SQL `LIMIT`. Its
 default is `1000`; setting it close to the requested top-K avoids unnecessary scoring.
-
-Choose one configuration method:
-
-```sql
--- Per index fallback
-ALTER INDEX documents_body_bm25 SET (default_limit = 20);
-```
-
-```sql
--- Per transaction override
-BEGIN;
-SET LOCAL lakebase_bm25.default_limit = 20;
--- BM25 query
-COMMIT;
-```
-
-The GUC overrides the index storage parameter. Avoid setting both unless that precedence is intentional. Keep a GUC
-and its query on the same connection.
 
 ## Use Prefilter Selectively
 
