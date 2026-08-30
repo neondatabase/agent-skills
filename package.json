@@ -49,7 +49,7 @@
     "validate:ci": "npm run validate:agent-plugin && npm run validate:plugins && npm run validate:versions && npm run validate:skills && npm run validate:references"
   },
   "devDependencies": {
-    "prettier": "3.9.5",
+    "prettier": "3.9.6",
     "skills-ref": "0.1.5"
   }
 }
