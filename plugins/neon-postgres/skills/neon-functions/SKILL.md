@@ -139,7 +139,7 @@ Keep `.env` or `.env.local` up to date with every key declared in `neon.ts`. `ne
 
 To deploy a single function without applying `neon.ts`: `neon functions deploy <slug> --src src/index.ts` (`--src` takes either the entry file or a directory containing `index.ts`, `index.mjs`, or `index.js`). That command's `--env` is `KEY=VALUE` (repeatable), not a file path. Use it for a targeted env update. Retrieve the public URL with `neon functions get <slug>` (the `invocation_url` field, of the form `https://<branch_id>-<slug>.compute.<cell>.us-east-2.aws.neon.tech`). Manage with `neon functions list|get|delete`.
 
-When `neon checkout` _creates_ a new branch and a `neon.ts` is present, it applies the policy automatically — deploying the function to the fresh branch. Checking out an existing branch does not re-deploy; run `neon deploy` explicitly.
+When `neon checkout` _creates_ a new branch and a `neon.ts` is present, it applies the policy automatically — deploying the function to the fresh branch. Checking out an existing branch does not re-deploy; run `neon deploy --env .env.local` explicitly.
 
 ## Neon Infrastructure as Code (`neon.ts`)
 
@@ -148,10 +148,10 @@ The `preview.functions` block from [Setup](#setup) is part of `neon.ts`, Neon's 
 ```bash
 neon config status   # print the branch's live config (deployed functions)
 neon config plan     # dry-run diff of what apply would change
-neon config apply    # bundle + deploy the declared functions  (neon deploy is an alias)
+neon config apply --env .env.local  # bundle + deploy the declared functions  (neon deploy is an alias)
 ```
 
-Functions are **branch-scoped**: each branch runs its own deployment at its own URL. When a `neon.ts` is present, `neon checkout` applies the policy as it _creates_ a branch, so a fresh preview/CI branch comes up with the function already deployed. Checking out an _existing_ branch doesn't redeploy — run `neon deploy` to apply changes.
+Functions are **branch-scoped**: each branch runs its own deployment at its own URL. When a `neon.ts` is present, `neon checkout` applies the policy as it _creates_ a branch, so a fresh preview/CI branch comes up with the function already deployed. Checking out an _existing_ branch doesn't redeploy — run `neon deploy --env .env.local` to apply changes.
 
 Per-branch deploy tuning (e.g. `runtime`) lives in the `branch` closure, keyed by slug, so it can vary by branch without changing which functions exist:
 
