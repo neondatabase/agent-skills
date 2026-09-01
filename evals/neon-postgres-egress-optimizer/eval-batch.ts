@@ -22,7 +22,7 @@ function parseArgs(): { prompt: string; skill?: string; count: number } {
     }
   }
 
-  const n = parseInt(count === undefined ? "" : count, 10);
+  const n = parseInt(count ?? "", 10);
   if (!prompt || !["A", "B"].includes(prompt) || !count || isNaN(n) || n < 1) {
     console.error(
       "Usage: ./eval-batch.ts --prompt <A|B> --count <N> [--skill <version>]",

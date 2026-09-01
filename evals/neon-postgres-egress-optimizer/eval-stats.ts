@@ -19,9 +19,7 @@ function parseCsv(text: string): Row[] {
   const headers = headerLine.split(",");
   return dataLines.map((line) => {
     const values = line.split(",");
-    return Object.fromEntries(
-      headers.map((h, i) => [h, values[i] === undefined ? "" : values[i]]),
-    );
+    return Object.fromEntries(headers.map((h, i) => [h, values[i] ?? ""]));
   });
 }
 
