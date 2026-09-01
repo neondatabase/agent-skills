@@ -1,7 +1,6 @@
 # Full-Text Search with BM25 Ranking
 
-Use `lakebase_text` for BM25 relevance ranking with PostgreSQL's standard `tsvector` type. The `lakebase_bm25` index
-adds corpus-aware ranking and top-K pushdown.
+Use `lakebase_text` for BM25 relevance ranking with PostgreSQL's standard `tsvector` type. The `lakebase_bm25` index adds corpus-aware ranking and top-K pushdown.
 
 Lakebase Search requires Postgres 16 or later. Enable the extension before creating the index:
 
@@ -9,8 +8,7 @@ Lakebase Search requires Postgres 16 or later. Enable the extension before creat
 CREATE EXTENSION IF NOT EXISTS lakebase_text;
 ```
 
-`lakebase_text` has no extension dependency. It relies on a preloaded library that Neon enables by default; if the
-project customized its preloaded-library list, confirm the library remains enabled.
+`lakebase_text` has no extension dependency. It relies on a preloaded library that Neon enables by default; if the project customized its preloaded-library list, confirm the library remains enabled.
 
 ## Prepare and Index Text
 
@@ -26,19 +24,25 @@ CREATE TABLE documents (
 );
 ```
 
-Create the index after the initial corpus has been inserted so build-time corpus statistics are meaningful:
+Create the index after the initial corpus has been inserted so build-time corpus statistics are meaningful. BM25 scoring is tuned by two storage parameters set at index-build time:
+
+- `k1` controls term-frequency saturation (default `1.2`, range `1.2`–`2.0`): higher values let repeated terms keep adding relevance.
+
+- `b` controls document-length normalization (default `0.75`, range `0.0`–`1.0`): higher values penalize longer documents more.
+
+Both can only be set in the `WITH` clause, and updating them rebuilds the index:
 
 ```sql
 CREATE INDEX documents_body_bm25 ON documents
-  USING lakebase_bm25 (body_tsv);
+  USING lakebase_bm25 (body_tsv)
+  WITH (k1 = 1.2, b = 0.75);
 ```
 
 After a large bulk load, run `VACUUM` to refresh the statistics used by BM25 scoring.
 
 ## Query and Interpret Scores
 
-`to_bm25query` binds the query `tsvector` to the BM25 index whose corpus statistics should be used. The `<@>` operator
-returns a negative BM25 score, so lower (more negative) values are more relevant and must sort ascending:
+`to_bm25query` binds the query `tsvector` to the BM25 index whose corpus statistics should be used. The `<@>` operator returns a negative BM25 score, so lower (more negative) values are more relevant and must sort ascending:
 
 ```sql
 SELECT
@@ -53,18 +57,15 @@ ORDER BY score
 LIMIT $2;
 ```
 
-Use the same text-search configuration for document and query vectors. Select a language-specific or custom
-configuration that matches the corpus.
+Use the same text-search configuration for document and query vectors. Select a language-specific or custom configuration that matches the corpus.
 
 ## Set the Candidate Limit
 
-`lakebase_bm25.default_limit` controls how many rows the index returns before PostgreSQL applies the SQL `LIMIT`. Its
-default is `1000`; setting it close to the requested top-K avoids unnecessary scoring.
+`lakebase_bm25.default_limit` controls how many rows the index returns before PostgreSQL applies the SQL `LIMIT`. Its default is `1000`; setting it close to the requested top-K avoids unnecessary scoring.
 
 ## Use Prefilter Selectively
 
-Enable prefilter when a `WHERE` condition is strict or unpredictable and cheap to evaluate. It lets the index prune
-rows before BM25 scoring. A loose or expensive filter can be slower with prefilter enabled.
+Enable prefilter when a `WHERE` condition is strict or unpredictable and cheap to evaluate. It lets the index prune rows before BM25 scoring. A loose or expensive filter can be slower with prefilter enabled.
 
 ```sql
 BEGIN;
@@ -84,5 +85,15 @@ ORDER BY score
 LIMIT $2;
 COMMIT;
 ```
+
+## Set Parameters at Build Time or Per Query
+
+Several BM25 parameters can be set in two places. As an index storage parameter in the `CREATE INDEX` `WITH` clause, a value is fed into the index as its build-time default. As a session GUC via `SET` (or `SET LOCAL`), it applies per query and takes precedence over the stored default when both are present.
+
+- `default_limit` and `prefilter` exist in both forms: set an index default that fits the common case, then override it per query with a GUC without rebuilding.
+- `k1` (default `1.2`) and `b` (default `0.75`) are storage parameters only. There is no GUC for them.
+- `enable_scan` (default `on`) is a GUC only.
+
+The examples use `SET LOCAL` so each override is scoped to its own transaction, which is required behind a connection pool or stateless driver.
 
 Source: [`lakebase_text` documentation](https://neon.com/docs/extensions/lakebase-text).

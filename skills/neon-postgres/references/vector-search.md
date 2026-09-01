@@ -1,7 +1,18 @@
 # Semantic Vector Search
 
-Use `lakebase_vector` for approximate nearest-neighbor retrieval over embeddings. It retains pgvector's vector types,
-distance operators, and query syntax; the index access method is `lakebase_ann`.
+Use `lakebase_vector` for approximate nearest-neighbor retrieval over embeddings. It retains pgvector's vector types, distance operators, and query syntax; the index access method is `lakebase_ann`.
+
+## Contents
+
+- [Create the extension](#create-the-extension) — enable `lakebase_vector` and its `pgvector` dependency
+- [Prepare embeddings](#prepare-embeddings) — define the vector column and keep embedding dimensions consistent
+- [Build the index](#build-the-index) — match the distance metric, operator class, and query operator
+- [Tune the index](#tune-the-index) — configure index-build options and concurrent index management
+- [Query](#query) — rank by vector distance or filter by a similarity radius
+- [Tune search](#tune-search) — inspect the index and tune recall against latency
+  - [Use prefilter selectively](#use-prefilter-selectively) — apply selective filters before ANN scoring
+
+## Create the Extension
 
 Lakebase Search requires Postgres 16 or later. Enable the extension before creating vector columns or indexes:
 
@@ -9,8 +20,7 @@ Lakebase Search requires Postgres 16 or later. Enable the extension before creat
 CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE;
 ```
 
-`lakebase_vector` installs `pgvector` through `CASCADE`. It relies on a preloaded library that Neon enables by
-default; if the project customized its preloaded-library list, confirm the library remains enabled.
+`lakebase_vector` installs `pgvector` through `CASCADE`. It relies on a preloaded library that Neon enables by default; if the project customized its preloaded-library list, confirm the library remains enabled.
 
 ## Prepare Embeddings
 
@@ -25,9 +35,7 @@ CREATE TABLE documents (
 );
 ```
 
-Replace `1536` with the embedding model's dimension. Generate stored-document and query embeddings with the same
-model and preprocessing. Keep embedding generation outside SQL unless the architecture already provides an
-in-database embedding function.
+Replace `1536` with the embedding model's dimension. Generate stored-document and query embeddings with the same model and preprocessing. Keep embedding generation outside SQL unless the architecture already provides an in-database embedding function.
 
 ## Build the Index
 
@@ -44,13 +52,34 @@ CREATE INDEX documents_embedding_ann ON documents
   USING lakebase_ann (embedding vector_cosine_ops);
 ```
 
-For a large, frequently changing table, use `CREATE INDEX CONCURRENTLY` or `REINDEX INDEX CONCURRENTLY` when avoiding
-blocked reads and writes matters.
+## Tune the Index
+
+The default index options suit most workloads:
+
+- `build_mode = 'standard'` balances recall and index build time. Use `quality` for better recall when a longer build is acceptable.
+- `lists = 'auto'` chooses the IVF partition layout from the number of indexed vectors. Choose between `auto` and a manual value case by case: test both on the target dataset and use the value that better meets recall and performance targets.
+
+To prioritize recall over index build time:
+
+```sql
+CREATE INDEX documents_embedding_ann_quality ON documents
+  USING lakebase_ann (embedding vector_cosine_ops)
+  WITH (build_mode = 'quality');
+```
+
+To override the automatic partition layout instead:
+
+```sql
+CREATE INDEX documents_embedding_ann_lists ON documents
+  USING lakebase_ann (embedding vector_cosine_ops)
+  WITH (lists = '1024');
+```
+
+For a large table, use `CREATE INDEX CONCURRENTLY` to avoid locking out writes while creating the index. For a frequently changing table, periodically use `REINDEX INDEX CONCURRENTLY` to rebuild the index with minimal write locking.
 
 ## Query
 
-Generate the query embedding with the same model and preprocessing used for stored documents, then bind it as a
-parameter:
+Generate the query embedding with the same model and preprocessing used for stored documents, then bind it as a parameter:
 
 ```sql
 SELECT id, title, embedding <=> $1::vector AS distance
@@ -59,11 +88,9 @@ ORDER BY distance
 LIMIT $2;
 ```
 
-Distance sorts ascending: a smaller value is a closer match. Keep the query operator consistent with the index
-operator class.
+Distance sorts ascending: a smaller value is a closer match. Keep the query operator consistent with the index operator class.
 
-To filter by a similarity radius, use the matching boolean range operator in `WHERE` and the distance operator in
-`ORDER BY`:
+To filter by a similarity radius, use the matching boolean range operator in `WHERE` and the distance operator in `ORDER BY`:
 
 ```sql
 SELECT id, title
@@ -83,27 +110,28 @@ Inspect the index before overriding defaults:
 SELECT lakebase_ann_index_info('documents_embedding_ann');
 ```
 
-This reports `lists`, `default_probes`, and `default_epsilon`. Small datasets use exact flat search before IVF lists
-are built. In that state, `lists` and `default_probes` are empty, probes cannot be set, and epsilon has no effect.
+This reports `lists`, `default_probes`, and `default_epsilon`. Small datasets use exact flat search before IVF lists are built. In that state, `lists` and `default_probes` are empty. Leave `lakebase_ann.probes` set to its default of `'auto'`; `lakebase_ann.epsilon` still controls full-precision reranking during flat search.
 
-For an IVF index, `lakebase_ann.probes` controls how many partitions are searched. Higher values generally improve
-recall at the cost of speed, the shape of `probes` shall always match the `lists`.
-`lakebase_ann.epsilon` controls the reranking margin, higher value will run full-precision check on more vectors.
-Its default is `1.9` and valid range is `0.0` through `4.0`.
+For an IVF index, `lakebase_ann.probes` controls how many partitions are searched at each level. Higher values generally improve recall at the cost of speed. Its default is `'auto'`. When `lists` is not empty, the shape of `probes` must match the shape of `lists`: use one value for a one-level index or two comma-separated values for a two-level index. At each level, the `probes` value must be no larger than the corresponding `lists` value. A mismatched or out-of-range value causes an error.
+
+`lakebase_ann.epsilon` controls how many candidates are reranked using full-precision distances. Higher values rerank more candidates and take longer. Its default is `'auto'`, which works well for most workloads.
+
+### Use Prefilter Selectively
+
+By default, PostgreSQL applies non-vector filters after the ANN index returns candidate rows. Enable prefilter when a filter is cheap to evaluate and removes most rows. Leave it off for loose or expensive filters.
 
 ```sql
 BEGIN;
-SET LOCAL lakebase_ann.epsilon = '1.9';
+SET LOCAL lakebase_ann.prefilter = on;
 
 SELECT id, title
 FROM documents
+WHERE id % 100 = 0
 ORDER BY embedding <=> $1::vector
 LIMIT $2;
 COMMIT;
 ```
 
-Benchmark probe values against representative query embeddings and choose the smallest value that satisfies both
-recall and tail-latency targets. Keep the settings and query in the same transaction when using a connection pool or
-stateless driver.
+Start with `probes` and `epsilon` set to `'auto'`. Benchmark manual probe values against representative query embeddings and choose the smallest values that satisfy recall and tail-latency targets. Keep session settings and the query in the same transaction when using a connection pool or stateless driver.
 
 Source: [`lakebase_vector` documentation](https://neon.com/docs/extensions/lakebase-vector).

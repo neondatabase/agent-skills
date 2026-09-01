@@ -1,8 +1,6 @@
 # Hybrid Search
 
-Use hybrid search when either semantic similarity or exact vocabulary can identify a relevant document. Lakebase
-Search does not provide a built-in hybrid function: run vector and BM25 retrieval separately, then combine their
-results with a fusion strategy suited to the workload.
+Use hybrid search when either semantic similarity or exact vocabulary can identify a relevant document. Lakebase Search does not provide a built-in hybrid function: run vector and BM25 retrieval separately, then combine their results with a fusion strategy suited to the workload.
 
 Lakebase Search requires Postgres 16 or later. Hybrid search uses both extensions:
 
@@ -11,9 +9,7 @@ CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE;
 CREATE EXTENSION IF NOT EXISTS lakebase_text;
 ```
 
-`lakebase_vector` installs `pgvector` through `CASCADE`; `lakebase_text` has no extension dependency. Both rely on
-preloaded libraries that Neon enables by default. If the project customized its preloaded-library list, confirm both
-libraries remain enabled.
+`lakebase_vector` installs `pgvector` through `CASCADE`; `lakebase_text` has no extension dependency. Both rely on preloaded libraries that Neon enables by default. If the project customized its preloaded-library list, confirm both libraries remain enabled.
 
 Prepare a table with both vector and text-search columns:
 
@@ -28,20 +24,15 @@ CREATE TABLE documents (
 );
 ```
 
-Replace `1536` with the embedding model's dimension. Use the same model and preprocessing for stored-document and
-query embeddings, and choose a PostgreSQL text-search configuration appropriate for the corpus.
+Replace `1536` with the embedding model's dimension. Use the same model and preprocessing for stored-document and query embeddings, and choose a PostgreSQL text-search configuration appropriate for the corpus.
 
-Create and validate each retriever independently before combining them. Follow [Vector search](vector-search.md) and
-[Full-text search](full-text-search.md) for their indexes, query operators, and tuning.
+Create and validate each retriever independently before combining them. Follow [Vector search](vector-search.md) and [Full-text search](full-text-search.md) for their indexes, query operators, and tuning.
 
-Reciprocal Rank Fusion (RRF) is the approach in the Lakebase Search get-started guide and a useful default because it
-combines ranks instead of incomparable raw distances and scores. It is not the only option: weighted rank fusion,
-normalized score fusion, or a reranker may fit applications with different relevance signals.
+Reciprocal Rank Fusion (RRF) is the approach in the Lakebase Search get-started guide and a useful default because it combines ranks instead of incomparable raw distances and scores. It is not the only option: weighted rank fusion, normalized score fusion, or a reranker may fit applications with different relevance signals.
 
 ## RRF Example
 
-For rank `r` and constant `k`, each retriever contributes `1 / (k + r)`. The documented starting point uses 40
-candidates per retriever and `k = 60`; tune both for the corpus and workload.
+For rank `r` and constant `k`, each retriever contributes `1 / (k + r)`. The documented starting point uses 40 candidates per retriever and `k = 60`; tune both for the corpus and workload.
 
 Bind the query embedding as `$1`, query text as `$2`, and final result count as `$3`:
 
@@ -82,24 +73,17 @@ ORDER BY rrf_score DESC, d.id
 LIMIT $3;
 ```
 
-`RANK()` gives tied retrieval scores the same rank. Sort by `rrf_score` descending and use the stable ID as a final
-tie-breaker.
+`RANK()` gives tied retrieval scores the same rank. Sort by `rrf_score` descending and use the stable ID as a final tie-breaker.
 
-`FETCH FIRST ... ROWS WITH TIES` keeps every candidate tied at the cutoff, so `RANK()` receives the complete
-boundary tie group. The candidate set can therefore exceed 40 rows. `lakebase_bm25.default_limit` defaults to
-`1000`; increase it only when the BM25 candidate set needs to exceed that value.
+`FETCH FIRST ... ROWS WITH TIES` keeps every candidate tied at the cutoff, so `RANK()` receives the complete boundary tie group. The candidate set can therefore exceed 40 rows. `lakebase_bm25.default_limit` defaults to `1000`; increase it only when the BM25 candidate set needs to exceed that value.
 
 ## Adapt the Hybrid Search
 
-- Retrieve more candidates from each source than the final result count; otherwise one retriever can dominate before
-  fusion has enough overlap. Keep `lakebase_bm25.default_limit` above the BM25 candidate target and allow room for
-  boundary ties.
+- Retrieve more candidates from each source than the final result count; otherwise one retriever can dominate before fusion has enough overlap. Keep `lakebase_bm25.default_limit` above the BM25 candidate target and allow room for boundary ties.
 - Keep each retriever's operator and index configuration correct independently before tuning RRF.
 - Tune candidate counts and the RRF constant with judged or behavioral relevance data, plus latency measurements.
-- Add weights only when product evidence shows one retriever should contribute more. Weight the reciprocal-rank
-  contributions, not the raw vector distance and negative BM25 score.
-- Apply the same access-control and tenant filters to both candidate CTEs. If BM25 filters are strict and cheap,
-  evaluate whether `lakebase_bm25.prefilter` improves the filtered query.
+- Add weights only when product evidence shows one retriever should contribute more. Weight the reciprocal-rank contributions, not the raw vector distance and negative BM25 score.
+- Apply the same access-control and tenant filters to both candidate CTEs. If BM25 filters are strict and cheap, evaluate whether `lakebase_bm25.prefilter` improves the filtered query.
 
 Source: [Lakebase Search get-started guide][lakebase-search-guide].
 
