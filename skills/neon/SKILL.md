@@ -243,7 +243,7 @@ Reconcile the declaration from the CLI — the Neon equivalent of `terraform sta
 ```bash
 neon status          # print the branch's live config (read-only). Alias for `neon config status`.
 neon config plan     # dry-run diff of what apply would change (read-only)
-neon deploy          # provision the declared services. Alias for `neon config apply`
+neon deploy --env .env.local  # apply neon.ts. --env is the Function env file. Alias for `neon config apply`
 ```
 
 `apply` / `deploy` provision the declared services **and then pull the branch's env into your local `.env.local`** (e.g. `Pulled 5 Neon variables into .env.local: DATABASE_URL, …`), so your local env always matches what's deployed.
