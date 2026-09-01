@@ -473,7 +473,7 @@ async function validateSkill(skillsRoot, name) {
   }
   if (frontmatter.name !== name) {
     addError(
-      `skills/${name}/SKILL.md declares name "${frontmatter.name ?? ""}", which must match its directory.`,
+      `skills/${name}/SKILL.md declares name "${frontmatter.name === undefined ? "(missing)" : frontmatter.name}", which must match its directory.`,
     );
   }
   if (!frontmatter.description) {

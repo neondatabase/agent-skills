@@ -362,7 +362,7 @@ async function main() {
     }
     seenNames.add(entry.name);
 
-    const sourcePath = resolveMarketplaceSource(entry.source, pluginRoot ?? "");
+    const sourcePath = resolveMarketplaceSource(entry.source, pluginRoot);
     if (!sourcePath) {
       addError(`${label}.source must be a string path.`);
       continue;

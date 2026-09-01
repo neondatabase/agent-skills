@@ -132,10 +132,12 @@ attachDatabasePool(pool);
 
 ```bash
 neon dev      # serves every function in neon.ts with hot reload; injects DATABASE_URL & friends
-neon deploy   # bundles with esbuild, uploads, and applies neon.ts to the linked branch
+neon deploy --env .env.local   # preferred full deploy from neon.ts; --env is the file Function env is read from
 ```
 
-To deploy a single function without `neon.ts`: `neon functions deploy <slug> --src src/index.ts` (`--src` takes either the entry file or a directory containing `index.ts`, `index.mjs`, or `index.js`). Retrieve the public URL with `neon functions get <slug>` (the `invocation_url` field, of the form `https://<branch_id>-<slug>.compute.<cell>.us-east-2.aws.neon.tech`). Manage with `neon functions list|get|delete`.
+Keep `.env` or `.env.local` up to date with every key declared in `neon.ts`. `neon deploy --env <file>` loads that file into `process.env` each time, then uploads those values. A missing value is `undefined` and `defineConfig` throws. Omit the key from `neon.ts` if you do not want to write it. Never coerce a missing `process.env` value to an empty string (that uploads `""` and deletes the live key). Use `process.env.X!` when TypeScript needs an assertion.
+
+To deploy a single function without applying `neon.ts`: `neon functions deploy <slug> --src src/index.ts` (`--src` takes either the entry file or a directory containing `index.ts`, `index.mjs`, or `index.js`). That command's `--env` is `KEY=VALUE` (repeatable), not a file path. Use it for a targeted env update. Retrieve the public URL with `neon functions get <slug>` (the `invocation_url` field, of the form `https://<branch_id>-<slug>.compute.<cell>.us-east-2.aws.neon.tech`). Manage with `neon functions list|get|delete`.
 
 When `neon checkout` _creates_ a new branch and a `neon.ts` is present, it applies the policy automatically — deploying the function to the fresh branch. Checking out an existing branch does not re-deploy; run `neon deploy` explicitly.
 
@@ -180,7 +182,7 @@ Object storage (`AWS_*`) and AI Gateway (`NEON_AI_GATEWAY_*`) vars are also inje
 
 `neon env pull` / `neon-env run` / `neon dev` emit `NEON_BRANCH` (and the connection strings) into your local dev environment too, so local runs mirror the deployed runtime.
 
-**Your own secrets** are per-deployment. Set them with `--env KEY=VALUE` on `neon functions deploy` (repeatable; `--env KEY=` deletes a key, unmentioned keys carry over), or declare them in `neon.ts` under the function's `env` (resolved at deploy time, so read from `process.env` to avoid hardcoding):
+**Your own secrets** are per-deployment. Preferred path: declare them in `neon.ts` and run `neon deploy --env <file>`. Keep `.env` or `.env.local` complete; that file is loaded into `process.env` every time and those values become Function env. All declared keys must be present. Omit a key from `neon.ts` if you do not want to write it. `undefined` is an invariant (`defineConfig` throws): you asked to write the key and the value is missing. Never coerce a missing `process.env` value to an empty string: that uploads `""` and deletes the live key. If TypeScript needs an assertion, use `process.env.X!` and make sure the file has the value:
 
 ```typescript
 functions: {
@@ -192,7 +194,9 @@ functions: {
 }
 ```
 
-Load a `.env` before deploy with `neon deploy --env .env.production`. Pull the branch's Neon-managed vars onto disk for local dev with `neon env pull` (`link`/`checkout` do this automatically; pass `--no-env-pull` to skip and use `neon-env run -- <cmd>` for runtime injection). Limits: ≤1,000 vars, ≤64 KiB total, and the `NEON_` prefix is reserved.
+`neon functions deploy --env KEY=VALUE` is the manual path (repeatable; `--env KEY=` deletes a key; unmentioned keys carry over). Use it for a targeted env update, not a full `neon.ts` apply.
+
+Load a `.env` before a full deploy with `neon deploy --env .env.production`. Pull the branch's Neon-managed vars onto disk for local dev with `neon env pull` (`link`/`checkout` do this automatically; pass `--no-env-pull` to skip and use `neon-env run -- <cmd>` for runtime injection). Limits: ≤1,000 vars, ≤64 KiB total, and the `NEON_` prefix is reserved.
 
 ## Connecting to Postgres
 

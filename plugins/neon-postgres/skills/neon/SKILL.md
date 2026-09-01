@@ -248,6 +248,14 @@ neon deploy          # provision the declared services. Alias for `neon config a
 
 `apply` / `deploy` provision the declared services **and then pull the branch's env into your local `.env.local`** (e.g. `Pulled 5 Neon variables into .env.local: DATABASE_URL, …`), so your local env always matches what's deployed.
 
+### Function env and `neon deploy`
+
+`neon deploy` is the preferred full deployment: it applies `neon.ts` (services and functions) to the linked branch. Keep `.env` or `.env.local` complete for every key you declare under `preview.functions.*.env`. `neon deploy --env <file>` loads that file into `process.env` before evaluating `neon.ts`, then uploads those values as Function env. Use it every time you run a full deploy.
+
+Every declared key must be a defined string. `undefined` (an unset `process.env.X`) means you listed a key you want written but the value is missing: `defineConfig` throws. Omit the key from `neon.ts` if you do not want to write it. Never coerce a missing `process.env` value to an empty string: that uploads `""` and deletes the live key. If TypeScript needs a type assertion, use `process.env.X!` and make sure the file actually has the value.
+
+Use `neon functions deploy` when you are not applying `neon.ts`: a single function by slug, or a targeted `--env KEY=VALUE` update (that flag is not a file path).
+
 ### Type-safe env vars with parseEnv
 
 `@neon/env`'s `parseEnv` takes your `neon.ts` config object and returns a parsed, typed env object, validated against the services you declared. The shape of `env` follows your config, and missing variables are flagged with clear errors.
