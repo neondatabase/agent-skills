@@ -296,7 +296,7 @@ Pass the JWKS/issuer URL to the function via its `env` (see [Environment Variabl
 
 A WebSocket server is the canonical Functions workload: a long-running handler holds connections open in-process, with no external state store needed to keep a stream coherent. The connection stays alive as long as bytes flow (15-minute heartbeat, see [Timeouts](#timeouts-and-runtime-limits)).
 
-**Upgrade from inside `fetch`.** Call `upgradeWebSocket(request)` from [`@neon/functions`](https://www.npmjs.com/package/@neon/functions) and return the response it gives you. There is one entrypoint and no WebSocket dependency to install:
+**Upgrade from inside `fetch`.** Call `upgradeWebSocket(request)` from [`@neon/functions`](https://www.npmjs.com/package/@neon/functions) and return the response it gives you. Hono apps use the same primitive via `@neon/functions/hono` (see [Hono](#hono) below). There is one entrypoint and no WebSocket dependency to install:
 
 ```typescript
 import { upgradeWebSocket } from "@neon/functions";
@@ -354,31 +354,46 @@ export default {
 
 **Subprotocols.** Pass `{ protocol }` to select one the client offered; it is echoed in `Sec-WebSocket-Protocol` and exposed as `socket.protocol`. Selecting one the client did not offer throws a `TypeError`. Omit it and no protocol is negotiated. No extensions are negotiated either — `socket.extensions` is always `""` and `permessage-deflate` is not available.
 
-**Hono.** Nothing special is needed: `upgradeWebSocket` takes a `Request`, so call it inside a route with `c.req.raw` and return the response. Auth and everything else is ordinary middleware.
+**Hono.** Use `upgradeWebSocket` from `@neon/functions/hono` — the same primitive as Hono's own WebSocket helper, with no `ws` dependency and not the deprecated `@hono/node-ws`. Auth is ordinary middleware; gate upgrade requests before `next()`:
 
 ```typescript
 // src/index.ts
 import { Hono } from "hono";
-import { upgradeWebSocket } from "@neon/functions";
+import { upgradeWebSocket } from "@neon/functions/hono";
 
-const app = new Hono();
+const clients = new Set<WebSocket>();
 
-app.get("/", (c) => c.text("ok"));
+const app = new Hono<{ Variables: { userId: string } }>();
 
-app.get("/ws", async (c) => {
+app.use("/ws", async (c, next) => {
   const identity = await verifyToken(c.req.query("token"));
   if (!identity) return c.text("Unauthorized", 401);
-
-  const { socket, response } = upgradeWebSocket(c.req.raw);
-  socket.addEventListener("open", () => socket.send("welcome"));
-  socket.addEventListener("message", (event) =>
-    socket.send(`echo: ${event.data}`),
-  );
-  return response;
+  c.set("userId", identity.id);
+  await next();
 });
 
-export default { fetch: (request: Request) => app.fetch(request) };
+app.get(
+  "/ws",
+  upgradeWebSocket((c) => ({
+    onOpen(_event, ws) {
+      clients.add(ws.raw);
+      ws.send("welcome");
+    },
+    onClose(_event, ws) {
+      clients.delete(ws.raw);
+    },
+    onMessage(event, ws) {
+      ws.send(`echo: ${event.data}`);
+    },
+  })),
+);
+
+export default app;
 ```
+
+Connect from the browser with the function's `wss://` URL (from `neon functions get <slug>`), for example `new WebSocket("wss://<branch>-<slug>.compute.<region>.aws.neon.tech/ws?token=<jwt>")`. Reconnect on close — isolates are evictable and idle connections may be terminated after 15 minutes.
+
+Do not put `cors()` on the upgrade route, and do not read `c.res` before `await next()` or call `c.header()` after it — both rebuild the `101` and break the upgrade. See `@neon/functions` README for the full middleware table.
 
 ### Heartbeat (keep the socket alive)
 
