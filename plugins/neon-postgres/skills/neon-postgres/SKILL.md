@@ -5,13 +5,15 @@ description: >-
   behind Neon. Covers setup, connection methods and drivers, pooled vs direct
   connections, branching, schema migrations, autoscaling, scale-to-zero, instant
   restore, read replicas, connection pooling, IP allow lists, and logical
-  replication.
+  replication. Also covers Lakebase Search: semantic vector search, full-text
+  search with BM25 ranking, and hybrid search.
   Use when users ask about "Lakebase Postgres", "Neon setup", "connect to Neon",
   "Neon project", "DATABASE_URL", "serverless Postgres", "Neon CLI", "neon", "Neon MCP",
   "Neon Auth", "@neondatabase/serverless", "@neondatabase/neon-js",
   "scale to zero", "Neon autoscaling", "Neon read replica",
   "Neon connection pooling", "schema migrations", "database troubleshooting",
-  "Postgres performance", or "neon inspect db".
+  "Postgres performance", "neon inspect db", "semantic search", "vector
+  search", "full-text search", "BM25", or "hybrid search".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-postgres
@@ -100,12 +102,6 @@ Use a **direct (non-pooled)** connection string when you run the migration, not 
 Use Neon's predefined, read-only diagnostics before writing catalog queries by hand. The Neon CLI `neon inspect db` subcommands and the Neon MCP server's `inspect_database` tool run the same checks.
 
 This section covers Neon-specific diagnostic tools, compute cache behavior, and platform signals. When the evidence points to generic Postgres work such as rewriting a query, choosing an index, changing a schema, or interpreting plan nodes, load the [`postgres-best-practices`](https://github.com/neondatabase/postgres-skills/tree/main/skills/postgres-best-practices) skill and carry the diagnostic evidence into that workflow.
-
-If the skill is not installed, install it from the `neondatabase/postgres-skills` repository:
-
-```bash
-npx skills add neondatabase/postgres-skills
-```
 
 Docs:
 
@@ -255,6 +251,20 @@ Key points:
 - Useful for replicating to/from external Postgres systems.
 
 Link: https://neon.com/docs/guides/logical-replication-guide.md
+
+## Lakebase Search
+
+Use Lakebase Search for semantic, full-text, and hybrid search:
+
+- For semantic search, read [Vector search](references/vector-search.md).
+- For full-text search with BM25 ranking, read [Full-text search](references/full-text-search.md).
+- For combining semantic and lexical results, read [Hybrid search](references/hybrid-search.md).
+
+Links:
+
+- [Get started with Lakebase Search](https://neon.com/docs/ai/lakebase-search-get-started)
+- [`lakebase_vector` reference](https://neon.com/docs/extensions/lakebase-vector)
+- [`lakebase_text` reference](https://neon.com/docs/extensions/lakebase-text)
 
 ## Gotchas
 
