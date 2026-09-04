@@ -1,62 +1,105 @@
 # Managing Lakebase Search with Drizzle
 
-When the user wants Lakebase Search managed through Drizzle, treat the SQL in [Vector Search](vector-search.md), [Full-Text Search](full-text-search.md), and [Hybrid Search](hybrid-search.md) as the source of truth and apply it as below. Use Drizzle for all schema and migration management unless the user says otherwise. Requires `drizzle-orm` 0.31+ and `drizzle-kit` 0.22+ for the `vector` column type and the `cosineDistance` helper.
+When the user wants Lakebase Search managed through Drizzle, treat the SQL in [Vector Search](vector-search.md), [Full-Text Search](full-text-search.md), and [Hybrid Search](hybrid-search.md) as the source of truth and apply it as below. Use Drizzle for all schema and migration management unless the user says otherwise.
+
+Requires `drizzle-orm` 0.32+ and `drizzle-kit` 0.23+: the generated `tsvector` column needs generated-column support (0.32/0.23) and the `lakebase_ann` index needs the custom-method `.using(...).op(...)` index API (0.31/0.22), and the `vector` column type and `cosineDistance` helper are included in those versions.
 
 Contents:
 
-- [Schema](#schema) — columns Drizzle can express
-- [Custom Migration](#custom-migration) — extension, generated `tsvector` column, and custom-method indexes
-- [Query](#query) — vector, BM25, and hybrid reads
-- [Tune Per Query](#tune-per-query) — per-query GUCs
+- [Config](#config): `drizzle.config.ts` and the migration connection
+- [Extensions](#extensions): custom migration required to create extensions (Drizzle can't)
+- [Schema](#schema): columns, generated `tsvector`, and the ANN index
+- [BM25 Index](#bm25-index): created after the corpus is seeded
+- [Query](#query): vector, BM25, and hybrid reads
+- [Tune Per Query](#tune-per-query): per-query GUCs
 
 Rules:
 
-- Split the schema at Drizzle's boundary: columns Drizzle can express go in `schema.ts`, everything else goes in a custom migration.
-- Use `drizzle-kit generate` then `migrate`. Never run `drizzle-kit push`.
+- Express everything Drizzle can in `schema.ts`: the columns, the generated `tsvector`, and the `lakebase_ann` index. Only `CREATE EXTENSION` and the post-seed `lakebase_bm25` index need custom migrations.
+- Use `drizzle-kit generate` then `migrate`. Never run `drizzle-kit push` (it reconciles the database to `schema.ts`, so it drops the post-seed `lakebase_bm25` index and any other object not declared there)
 - Run every migration over the direct (unpooled) connection.
+- The extension must exist before the `vector` column and the `lakebase_ann` index that depend on it.
 
-Drizzle cannot express `CREATE EXTENSION`, the `lakebase_ann` / `lakebase_bm25` access methods, or a generated `tsvector` column, which is why those go in a custom migration.
+## Config
 
-`push` drops the extension objects, the generated `tsvector` column, and the custom-method indexes, because none of them appear in the schema. Run `drizzle-kit generate` then `migrate` over the **direct (unpooled)** connection, as [Migrations](../SKILL.md) requires.
-
-## Schema
-
+`drizzle-kit generate` and `migrate` read `drizzle.config.ts`. Point `dbCredentials.url` at the **direct (unpooled)** connection string:
 
 ```typescript
-// src/schema.ts
-import { pgTable, bigint, text, vector } from "drizzle-orm/pg-core";
+// drizzle.config.ts
+import { defineConfig } from "drizzle-kit";
 
-export const documents = pgTable("documents", {
-  id: bigint("id", { mode: "number" }).generatedByDefaultAsIdentity().primaryKey(),
-  title: text("title").notNull(),
-  body: text("body").notNull(),
-  embedding: vector("embedding", { dimensions: 1536 }),
+export default defineConfig({
+  schema: "./src/schema.ts",
+  out: "./drizzle",
+  dialect: "postgresql",
+  // Direct (unpooled) URL. Neon exposes it as DATABASE_URL_UNPOOLED.
+  dbCredentials: { url: process.env.DATABASE_URL_UNPOOLED },
 });
 ```
 
-Set the dimension to match your embedding model. Do not add `body_tsv` to the schema: Postgres maintains it and the app never writes it, so define it in the custom migration below.
+## Extensions
 
-## Custom Migration
-
-Generate an empty migration and write the SQL Drizzle cannot express:
+Drizzle cannot express `CREATE EXTENSION`, and the `vector` column and `lakebase_ann` index below depend on `lakebase_vector`, so generate a custom migration for the extensions **first** so it runs before the schema migration:
 
 ```bash
-npx drizzle-kit generate --custom --name=lakebase_search
+npx drizzle-kit generate --custom --name=lakebase_extensions
 ```
 
 ```sql
--- drizzle/NNNN_lakebase_search.sql
+-- drizzle/0000_lakebase_extensions.sql
 CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE;
 CREATE EXTENSION IF NOT EXISTS lakebase_text;
-
-ALTER TABLE documents
-  ADD COLUMN body_tsv tsvector GENERATED ALWAYS AS (to_tsvector('english', body)) STORED;
-
-CREATE INDEX documents_embedding_ann ON documents
-  USING lakebase_ann (embedding vector_cosine_ops);
 ```
 
-Create the `lakebase_bm25` index only after the initial corpus is loaded, so its build-time statistics are meaningful (see [Full-text search](full-text-search.md)). Put it in a **separate later migration** that runs after seeding, or in a data-load step:
+## Schema
+
+The columns, the generated `tsvector`, and the `lakebase_ann` index all go in `schema.ts`. `tsvector` has no built-in Drizzle type, so define it using the `customType`:
+
+```typescript
+// src/schema.ts
+import { pgTable, bigint, text, vector, index, customType } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+
+const tsvector = customType<{ data: string }>({
+  dataType() {
+    return "tsvector";
+  },
+});
+
+export const documents = pgTable(
+  "documents",
+  {
+    id: bigint("id", { mode: "number" }).generatedByDefaultAsIdentity().primaryKey(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    embedding: vector("embedding", { dimensions: 1536 }),
+    bodyTsv: tsvector("body_tsv").generatedAlwaysAs(
+      sql`to_tsvector('english', "body")`,
+    ),
+  },
+  (table) => [
+    index("documents_embedding_ann").using(
+      "lakebase_ann",
+      table.embedding.op("vector_cosine_ops"),
+    ),
+  ],
+);
+```
+
+Set the dimension to match your embedding model. Postgres maintains `body_tsv`, so never write it from the app. Generate and apply the migration after the extensions migration above:
+
+```bash
+npx drizzle-kit generate --name=lakebase_search
+npx drizzle-kit migrate
+```
+
+## BM25 Index
+
+Keep the `lakebase_bm25` index out of `schema.ts`. It must be built only after the initial corpus is loaded, so its build-time statistics are meaningful (see [Full-text search](full-text-search.md)) — a schema migration would build it against an empty table. Add it in a later custom migration that runs after seeding:
+
+```bash
+npx drizzle-kit generate --custom --name=bm25_index
+```
 
 ```sql
 -- drizzle/NNNN_bm25_index.sql, applied after the corpus is seeded
@@ -81,7 +124,7 @@ const rows = await db
   .limit(k);
 ```
 
-BM25 has no Drizzle helper: `<@>` and `to_bm25query` require raw SQL. `body_tsv` is not in the schema, so reference it by name. Bind user input as parameters through the `sql` template:
+BM25 has no Drizzle helper: `<@>` and `to_bm25query` require raw SQL. Reference the generated column by its `body_tsv` name. Bind user input as parameters through the `sql` template:
 
 ```typescript
 import { sql } from "drizzle-orm";
@@ -111,8 +154,10 @@ import { documents } from "./schema";
 const distance = cosineDistance(documents.embedding, queryEmbedding);
 
 const rows = await db.transaction(async (tx) => {
-  // SET LOCAL scopes the GUC to this transaction's connection; do not hoist it out
-  await tx.execute(sql`SET LOCAL lakebase_ann.probes = 10`); // example value; tune per vector-search.md
+  // SET LOCAL scopes the GUC to this transaction's connection; do not hoist it out.
+  // Keep probes at 'auto' unless an IVF `lists` layout exists: a numeric value must
+  // match the `lists` shape or it errors ("need 0 probes ..."). See vector-search.md.
+  await tx.execute(sql`SET LOCAL lakebase_ann.probes = 'auto'`);
   return tx
     .select({ id: documents.id, title: documents.title, distance })
     .from(documents)
