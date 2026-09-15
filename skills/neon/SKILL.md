@@ -2,19 +2,19 @@
 name: neon
 description: >-
   Overview of Neon, a complete set of cloud backend primitives for apps and
-  agents, spanning Lakebase Postgres, Auth, the Data API, Object Storage, Compute
+  agents, spanning Lakebase Postgres, Auth, the Data API, Object Storage,
   Functions, and the AI Gateway. Start here to route to the right Neon skill, set
   up the CLI or MCP server, and follow the branch-first workflow. Use when "Neon"
   or "Lakebase Postgres" is mentioned, or when any of its individual capabilities
   are the trigger: "object storage" or "S3", "buckets", "serverless functions",
-  "AI gateway", "call an LLM", "logs", "branch logs", "query logs",
-  "log export", "Loki", "Grafana", "observability", "telemetry", "postgres",
-  "database", or "backend". Also use when there is no Neon account yet, the
-  user cannot sign in or provide an API key right now and needs a project they
-  can claim later, or the user asks for a throwaway DATABASE_URL, Claimable Neon,
-  Claimable Postgres, neon.new, claimable.neon.tech, instant Postgres, a no-signup
-  database, temporary postgres, quick postgres, a no credit card database, or
-  npx neon-new.
+  "function trigger", "cron", "AI gateway", "call an LLM", "logs",
+  "branch logs", "log export", "Loki", "Grafana", "observability", "telemetry",
+  "postgres", "database", or "backend". Also use when there is no Neon account
+  yet, the user cannot sign in or provide an API key right now and needs a
+  project they can claim later, or the user asks for a throwaway DATABASE_URL,
+  Claimable Neon, Claimable Postgres, neon.new, claimable.neon.tech, instant
+  Postgres, a no-signup database, temporary postgres, quick postgres, a no
+  credit card database, or npx neon-new.
 metadata:
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon
 ---
@@ -34,7 +34,7 @@ Neon bundles several backend primitives for building apps and agents that all br
 - **Lakebase Postgres** — Postgres that scales and branches with your app, built on the lakebase architecture: OLTP directly on cloud object storage, with storage decoupled from compute. _Generally available._
 - **Auth** — Managed Better Auth with users and sessions stored in Postgres. _Generally available._
 - **Object Storage** — S3-compatible object storage that branches with your projects. _Public beta._
-- **Functions** — Neon's compute offering: long-running serverless functions that run close to your database, for WebSocket servers, long agent HTTP streams, APIs, and server-sent event servers. _Public beta._
+- **Functions** — Neon's compute offering: long-running serverless functions that run close to your database, for WebSocket servers, long agent HTTP streams, APIs, and server-sent event servers. A Function Trigger POSTs to a function on a cron. _Public beta._
 - **AI Gateway** — One API for frontier and open-source models, supporting the chat completions API and the responses API, powered by Databricks Unity AI Gateway. _Public beta._
 
 ### Public Beta Service Availability
@@ -89,7 +89,7 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | `neon-postgres`                  | Working with databases, including connections, schemas, queries, search, and autoscaling: SQL development, schema design, performance optimization, and scaling decisions.           |
 | `neon-postgres-branches`         | Choosing or creating the right branch type for dev, preview, test, or CI workflows. Use this skill as a slash command.                                                               |
 | `neon-object-storage`            | Storing and serving files (uploads, images, blobs), including branching them with the database.                                                                                      |
-| `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers.                                                                                      |
+| `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers, and Function Triggers (cron).                                                        |
 | `neon-ai-gateway`                | Calling an LLM or routing across model providers with one credential, including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint. |
 | `neon-postgres-egress-optimizer` | Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase.                                                                                          |
 
@@ -257,6 +257,51 @@ neon deploy --env <file>  # apply neon.ts. Pass --env when Function env reads pr
 Every declared Function env key must be a defined string. `undefined` (an unset `process.env.X`) means you listed a key you want written but the value is missing: `defineConfig` throws. Omit the key from `neon.ts` if you do not want to write it. Never coerce a missing `process.env` value to an empty string: that uploads `""` and deletes the live key. An empty assignment in the file (`KEY=`) is also `""`. If TypeScript needs a type assertion, use `process.env.X!` and make sure the file actually has the value.
 
 Use `neon functions deploy` when you are not applying `neon.ts`: a single function by slug, or a targeted `--env KEY=VALUE` update (that flag is not a file path).
+
+### Function Triggers
+
+A Function Trigger is a branch-scoped rule that POSTs to a Neon Function on a schedule so recurring work (a nightly report, a cleanup job, a periodic sync) does not need a separate scheduler. Beta; same regions as Functions (`us-east-2`, `eu-central-1`). The only trigger type in the current CLI, `neon.ts` schema, OpenAPI spec, and `@neon/functions` parser is `schedule` (five-field UTC cron).
+
+**Prefer `neon.ts`.** Declare triggers on the function. `neon deploy` applies them after the function is deployed. Names must be unique among every trigger visible on the branch. Triggers that exist remotely but are omitted here are left alone; delete with `neon triggers delete`.
+
+```typescript
+preview: {
+  functions: {
+    cron: {
+      name: "Cron Job",
+      source: "src/index.ts",
+      triggers: [
+        {
+          type: "schedule",
+          name: "hourly",
+          cron: "0 * * * *",
+          functionPath: "/cron", // default "/"
+          // enabled: true,
+        },
+      ],
+    },
+  },
+}
+```
+
+Needs Neon CLI 4.17 or newer (`@neon/config` with the `triggers` field on a function).
+
+**CLI** when you are not applying `neon.ts`, or to list, enable, disable, or delete:
+
+```bash
+neon triggers create --function-slug cron --name hourly --cron '0 * * * *' --function-path /cron
+neon triggers list
+neon triggers update <id> --cron '*/30 * * * *'
+neon triggers enable <id>
+neon triggers disable <id>
+neon triggers delete <id>
+```
+
+Inspect a trigger with `neon triggers list --output json`. Inherited triggers (created on a parent branch) show `Inherited true` on the child and stay disabled there until `neon triggers enable`.
+
+**MCP backup** (Neon MCP server, `?category=functions`): `list_triggers`, `get_trigger`, `create_trigger`, `update_trigger`, `delete_trigger`. `create_trigger` takes `project_id`, `branch_id` (a `br-…` id, not a name), and `body` with `"type": "schedule"`, `function_slug`, `name`, and `schedule: { cron }`. REST if neither CLI nor MCP is available: `POST /projects/{project_id}/branches/{branch_id}/triggers` with the same body. CLI reference: https://neon.com/docs/cli/triggers.md.
+
+The handler is still a normal `fetch`. Authenticate a trigger delivery with `parseTrigger` / `parseTriggerInvocation` from `@neon/functions` (≥ 0.10.0). Full type table, payload, and Hono example: the `neon-functions` skill, [Function Triggers](https://neon.com/docs/ai/skills/neon-functions/references/function-triggers.md).
 
 ### Type-safe env vars with parseEnv
 

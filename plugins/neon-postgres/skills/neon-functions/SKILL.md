@@ -7,9 +7,11 @@ description: >-
   streaming responses, a WebSocket or server-sent-events (SSE) server, a
   webhook handler, a Discord bot, an MCP server, or any request/response
   workload that risks timing out on short, lambda-style serverless functions —
-  and wants it to branch with their database. Triggers include "serverless
+  and wants it to branch with their database. Also use for Function Triggers:
+  a cron that POSTs to a function on a schedule. Triggers include "serverless
   function", "deploy an API", "long-running function", "streaming agent",
   "SSE server", "WebSocket server", "webhook handler", "MCP server",
+  "cron", "function trigger", "scheduled function", "cron job",
   "run code next to my database", "function that won't time out",
   "function logs", "Neon Functions", and "Neon Compute".
 metadata:
@@ -42,8 +44,9 @@ Reach for Neon Functions when the workload is a request/response handler that be
 - **Compute that must sit next to Postgres.** The function runs in the same region as the branch's database, so there are no cross-region round trips on every query. `DATABASE_URL` is injected for you.
 - **A backend that branches with your data.** Each branch runs its own version of the function at its own URL, against its own isolated database (and storage, and gateway) state. Preview deployments, CI, and dev environments each get a self-contained backend — deploying to a child never affects the parent.
 - **Webhooks, bots, and post-response work.** Webhook handlers that fan out into multiple DB writes, Discord/WebSocket bots, and fire-and-forget follow-ups via `waitUntil` (analytics, audit logs) all fit.
+- **Recurring HTTP work.** A Function Trigger POSTs to the function on a cron (`type: "schedule"`). Same `fetch` handler, same 15-minute time-to-first-byte limit. See [Function Triggers](#function-triggers).
 
-If the workload is a pure static site, a cron/background job that needs its own lifecycle and cancellation, or something that must run outside the supported regions (`us-east-2`, `eu-central-1`) today, this isn't the right tool yet (see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits) and [Availability](#availability)).
+If the workload is a pure static site, or something that must run outside the supported regions (`us-east-2`, `eu-central-1`) today, this isn't the right tool yet (see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits) and [Availability](#availability)).
 
 ## What It Does
 
@@ -52,6 +55,7 @@ If the workload is a pure static site, a cron/background job that needs its own 
 - **Close to your database** — Runs in the branch's region; `DATABASE_URL` injected automatically when the branch has Postgres.
 - **Branchable** — Each branch runs its own function version at its own URL against its own isolated state.
 - **Same CLI/API** — Deploy and manage via `neon`, `neon.ts`, or the Neon API.
+- **Function Triggers** — Neon POSTs to the function on a cron. See [Function Triggers](#function-triggers).
 
 ## Availability
 
@@ -454,7 +458,9 @@ async function poll() {
 // Seed from the latest id so a fresh isolate sends only new rows, not the whole table, then poll.
 pool
   .query("SELECT coalesce(max(id), 0)::text AS id FROM events")
-  .then((seed) => { lastId = seed.rows[0].id; })
+  .then((seed) => {
+    lastId = seed.rows[0].id;
+  })
   .catch((err) => console.error("[seed]", err))
   .finally(() => setInterval(poll, 1000).unref?.());
 ```
@@ -571,6 +577,12 @@ export default {
 
 The same rules as WebSockets apply. **Heartbeat:** a stream stays open only while bytes flow — Neon's window is 15 minutes ([Timeouts and Runtime Limits](#timeouts-and-runtime-limits)) but proxies are usually far stricter, so emit a `: ping\n\n` comment every ~25–30s (shown above) to keep idle streams from being dropped. Keep state in Postgres, and fan out across isolates using one of the [sync strategies](#keeping-clients-in-sync-across-isolates-do-not-skip-this) (hold a `Set` of stream controllers and `enqueue` to each). `EventSource` is GET-only and can't set headers, so authenticate with a `?token=` query param or cookie, exactly like the WebSocket case. [references/sse.md](https://neon.com/docs/ai/skills/neon-functions/references/sse.md) has the full pattern — Hono variant, cross-isolate fan-out, wire format, client, and caveats.
 
+## Function Triggers
+
+A Function Trigger POSTs JSON to your function on a cron. Declare it in `neon.ts`, apply with `neon deploy`, and authenticate the delivery with `parseTrigger` (Hono) or `parseTriggerInvocation` (a `fetch` handler). The only trigger type today is `schedule`. Prefer `neon.ts`; CLI and the Neon MCP trigger tools (`list_triggers`, `create_trigger`, …) are the backup.
+
+Full field list, CLI, MCP, payload, inheritance, and both handler shapes: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon-functions/references/function-triggers.md).
+
 ## MCP Servers
 
 An [MCP](https://modelcontextprotocol.io) server is a natural Functions workload: a long-running HTTP handler that exposes tools to AI clients (Cursor, Claude, ChatGPT, agents), with those tools reading and writing the branch's Postgres right next to the compute. MCP's **streamable HTTP transport** is a plain `POST`/`GET` on a single endpoint (conventionally `/mcp`), so it maps onto a function's `fetch` handler with no `upgrade` method or extra protocol.
@@ -617,3 +629,5 @@ The Neon documentation is the source of truth and Functions is evolving rapidly,
 - https://neon.com/docs/compute/functions/reference/neon-ts.md
 - https://neon.com/docs/compute/functions/reference/runtime-limits.md
 - https://neon.com/docs/compute/functions/preview-access.md
+- https://neon.com/docs/cli/triggers.md
+- [references/function-triggers.md](https://neon.com/docs/ai/skills/neon-functions/references/function-triggers.md)
