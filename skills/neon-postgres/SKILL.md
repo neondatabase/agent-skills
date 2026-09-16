@@ -1,19 +1,15 @@
 ---
 name: neon-postgres
 description: >-
-  Guides and best practices for working with Lakebase Postgres, the database
-  behind Neon. Covers setup, connection methods and drivers, pooled vs direct
-  connections, branching, schema migrations, autoscaling, scale-to-zero, instant
-  restore, read replicas, connection pooling, IP allow lists, and logical
-  replication. Also covers Lakebase Search: semantic vector search, full-text
-  search with BM25 ranking, and hybrid search.
-  Use when users ask about "Lakebase Postgres", "Neon setup", "connect to Neon",
-  "Neon project", "DATABASE_URL", "serverless Postgres", "Neon CLI", "neon", "Neon MCP",
-  "Neon Auth", "@neondatabase/serverless", "@neondatabase/neon-js",
-  "scale to zero", "Neon autoscaling", "Neon read replica",
-  "Neon connection pooling", "schema migrations", "database troubleshooting",
-  "Postgres performance", "neon inspect db", "semantic search", "vector
-  search", "full-text search", "BM25", or "hybrid search".
+  Guides and best practices for working with Lakebase Postgres on Neon:
+  connections, pooled vs direct, schema migrations, branching, autoscaling,
+  scale-to-zero, instant restore, read replicas, IP allow lists, logical
+  replication, and Lakebase Search. Use when the work is an existing
+  DATABASE_URL, SQL, schema, inspect, or search. New backends, Auth, files,
+  Functions, and LLM calls go to the parent `neon` skill. Also use for
+  "@neondatabase/serverless", "@neondatabase/neon-js", "neon inspect db",
+  "semantic search", "vector search", "full-text search", "BM25", or
+  "hybrid search".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-postgres
@@ -33,11 +29,29 @@ Lakebase Postgres is the database at the core of Neon. It runs on the lakebase a
 
 It is the same database whether you reach it through Neon or through Databricks; this skill covers the Neon access path.
 
+## When this skill applies
+
+This skill is database implementation: connections, schema, SQL, inspect, search, and Neon-specific Postgres behavior.
+
+Reuse a supplied `DATABASE_URL` and the existing ORM or driver. Provision a project only when a connection string is missing.
+
+New backends, Auth, Object Storage, Functions, and LLM calls belong in the parent `neon` skill.
+
+| App need | Hand off |
+| --- | --- |
+| Users, sessions, login | parent Auth |
+| Files, uploads | `neon-object-storage` |
+| APIs, cron, WebSocket, SSE | `neon-functions` |
+| Model calls | `neon-ai-gateway` |
+| PostgREST / Supabase database client | parent Data API compatibility path |
+
 ## Setup Flow
 
 ### 1. Select the organization and project
 
-Use the CLI (default) or MCP server to list organizations and projects. Let the user select an existing project or create a new one. Check the `.neon` file for an existing linked project or branch.
+If the repo already has a `DATABASE_URL` (or a `.neon` file pointing at a project), use it. Do not create a second project for schema work.
+
+Otherwise use the CLI (default) or MCP server to list organizations and projects. Let the user select an existing project or create a new one.
 
 ### 2. Get the connection string
 
@@ -57,11 +71,11 @@ Use the CLI (default), `neon env pull`, or the MCP server to get the connection 
 
 ### 3. Pick the connection method and driver
 
-Always pair Neon with an ORM such as **Drizzle** for easy schema management and migrations. Refer to the connection methods guide to pick the correct driver based on how the runtime treats your code: https://neon.com/docs/connect/choose-connection.md.
+Preserve the existing ORM and driver. For new TypeScript schema work with no established choice, Drizzle is a suggestion: https://neon.com/docs/guides/drizzle.md. Refer to the connection methods guide to pick the correct driver based on how the runtime treats your code: https://neon.com/docs/connect/choose-connection.md.
 
-Recommendations:
+Driver notes:
 
-- Drizzle as ORM (see https://neon.com/docs/guides/drizzle.md)
+- Drizzle is a suggestion for new TypeScript schema work with no established choice (see https://neon.com/docs/guides/drizzle.md)
 - On Vercel, use `node-postgres` (`npm install pg`) with Vercel Fluid compute and `import { attachDatabasePool } from "@vercel/functions";`
 - On Cloudflare, use `node-postgres` with Cloudflare Hyperdrive
 - On Neon Functions, use `node-postgres`, as the functions are long-running and reuse the pool across requests.
