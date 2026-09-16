@@ -56,7 +56,7 @@ export default defineConfig({
 ```
 
 ```bash
-neon deploy --env .env.local
+neon deploy
 ```
 
 Change the cron string and deploy again to reschedule. Starter: `neon bootstrap --template cron-job`.
@@ -69,17 +69,17 @@ Use when you are not applying `neon.ts`, or to list, enable, disable, or delete.
 neon triggers create --function-slug cron --name hourly --cron '0 * * * *' --function-path /cron
 neon triggers list
 neon triggers list --output json
-neon triggers update <id> --cron '*/30 * * * *'
-neon triggers enable <id>
-neon triggers disable <id>
-neon triggers delete <id>
+neon triggers update <id> --branch <branch> --cron '*/30 * * * *'
+neon triggers enable <id> --branch <branch>
+neon triggers disable <id> --branch <branch>
+neon triggers delete <id> --branch <branch>
 ```
 
 `enable` / `disable` wrap `update --enabled`. Updating the cron recomputes `Next Run At`. Disabling clears `Next Run At`. Alias: `neon trigger`.
 
-Inspect a trigger with `neon triggers list --output json` (id, `schedule.cron`, `function_path`, `enabled`, `inherited`, `next_run_at`, `source_branch_id`).
+Inspect a trigger with `neon triggers list --output json` (`trigger_id`, `schedule.cron`, `function_path`, `enabled`, `inherited`, `next_run_at`). Pass `--branch` on get/update/enable/disable/delete: without it the CLI resolves the trigger id as a branch name.
 
-Project and branch resolve from `--project-id` / `--branch`, then `.neon`, then a single-project auto-detect.
+Project and branch otherwise resolve from `--project-id` / `--branch`, then `.neon`, then a single-project auto-detect.
 
 ## MCP backup
 

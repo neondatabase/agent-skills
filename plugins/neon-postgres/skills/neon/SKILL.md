@@ -291,13 +291,13 @@ Needs Neon CLI 4.17 or newer (`@neon/config` with the `triggers` field on a func
 ```bash
 neon triggers create --function-slug cron --name hourly --cron '0 * * * *' --function-path /cron
 neon triggers list
-neon triggers update <id> --cron '*/30 * * * *'
-neon triggers enable <id>
-neon triggers disable <id>
-neon triggers delete <id>
+neon triggers update <id> --branch <branch> --cron '*/30 * * * *'
+neon triggers enable <id> --branch <branch>
+neon triggers disable <id> --branch <branch>
+neon triggers delete <id> --branch <branch>
 ```
 
-Inspect a trigger with `neon triggers list --output json`. Inherited triggers (created on a parent branch) show `Inherited true` on the child and stay disabled there until `neon triggers enable`.
+Inspect a trigger with `neon triggers list --output json`. Pass `--branch` on get/update/enable/disable/delete: without it the CLI resolves the trigger id as a branch name. Inherited triggers (created on a parent branch) show `Inherited true` on the child and stay disabled there until `neon triggers enable`.
 
 **MCP backup** (Neon MCP server, `?category=functions`): `list_triggers`, `get_trigger`, `create_trigger`, `update_trigger`, `delete_trigger`. `create_trigger` takes `project_id`, `branch_id` (a `br-…` id, not a name), and `body` with `"type": "schedule"`, `function_slug`, `name`, and `schedule: { cron }`. REST if neither CLI nor MCP is available: `POST /projects/{project_id}/branches/{branch_id}/triggers` with the same body. CLI reference: https://neon.com/docs/cli/triggers.md.
 
