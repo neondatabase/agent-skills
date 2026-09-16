@@ -339,7 +339,7 @@ Use `neon functions deploy` when you are not applying `neon.ts`: a single functi
 
 ### Function Triggers
 
-A Function Trigger POSTs to a Neon Function on a cron (`type: "schedule"`) or when an object is created in a bucket (`type: "storage_object_created"`). Beta; same regions as Functions. Prefer a top-level `triggers` map in `neon.ts` (the record key is the trigger name) and `neon deploy`. Nested `functions.*.triggers` is rejected. CLI, MCP, REST, inherited-trigger behavior, and parsers: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon/references/function-triggers.md). Handler payload and Hono example: the `neon-functions` skill, `references/function-triggers.md`.
+A Function Trigger POSTs to a Neon Function on a cron (`type: "schedule"`) or when an object is created in a bucket (`type: "storage_object_created"`). Beta; same regions as Functions. Prefer a `triggers` map in `neon.ts` (the record key is the trigger name) and `neon deploy`. CLI, MCP, REST, inherited-trigger behavior, and parsers: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon/references/function-triggers.md). Handler payload and Hono example: the `neon-functions` skill, `references/function-triggers.md`.
 
 ### Type-safe env vars with parseEnv
 

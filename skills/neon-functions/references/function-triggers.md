@@ -8,7 +8,7 @@ If `neon deploy` returns 404 `function triggers not available for this project`,
 
 ## Supported types
 
-`@neon/config` 1.7.0 `triggers` is a top-level keyed map. Nested `functions.*.triggers` is rejected. Types:
+`triggers` is a keyed map on `defineConfig`. Types:
 
 | `type`                   | When it fires                                      | `neon.ts` fields                         | CLI create                                      |
 | ------------------------ | -------------------------------------------------- | ---------------------------------------- | ----------------------------------------------- |
