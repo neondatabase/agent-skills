@@ -118,7 +118,7 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | `neon-postgres`                  | Working with databases, including connections, schemas, queries, search, and autoscaling: SQL development, schema design, performance optimization, and scaling decisions.           |
 | `neon-postgres-branches`         | Choosing or creating the right branch type for dev, preview, test, or CI workflows. Use this skill as a slash command.                                                               |
 | `neon-object-storage`            | Storing and serving files (uploads, images, blobs), including branching them with the database.                                                                                      |
-| `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers, and Function Triggers (cron).                                                        |
+| `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers, and Function Triggers (cron and object-storage).                                     |
 | `neon-ai-gateway`                | Calling an LLM or routing across model providers with one credential, including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint. |
 | `neon-postgres-egress-optimizer` | Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase.                                                                                          |
 
@@ -286,18 +286,16 @@ npm i @neon/config
 import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
-  preview: {
-    aiGateway: true,
-    buckets: {
-      images: {
-        access: "private",
-      },
+  aiGateway: true,
+  buckets: {
+    images: {
+      access: "private",
     },
-    functions: {
-      imagegen: {
-        name: "AI SDK image agent",
-        source: "src/index.ts",
-      },
+  },
+  functions: {
+    imagegen: {
+      name: "AI SDK image agent",
+      source: "src/index.ts",
     },
   },
 });
@@ -311,11 +309,9 @@ Every project ships with Lakebase Postgres; `neon.ts` also declares Auth, Functi
 // neon.ts
 export default defineConfig({
   auth: true,
-  preview: {
-    functions: {},
-    buckets: {},
-    aiGateway: true, // see the neon-ai-gateway skill
-  },
+  functions: {},
+  buckets: {},
+  aiGateway: true, // see the neon-ai-gateway skill
 });
 ```
 
@@ -335,7 +331,7 @@ neon deploy --env <file>  # apply neon.ts. Pass --env when Function env reads pr
 
 `neon deploy` is the preferred full deployment: it applies `neon.ts` (services and functions) to the linked branch. `neon deploy --env <file>` loads that file into `process.env` before evaluating `neon.ts`, then uploads those values as Function env. Use it every time Function env reads `process.env`.
 
-`<file>` is the gitignored file `neon env pull` already writes (`.env` if that file exists, otherwise `.env.local`). Env pull writes Neon-managed vars only (`DATABASE_URL`, `NEON_AI_GATEWAY_*`, …). Add every key under `preview.functions.*.env` to that file yourself, then pass the same path to `--env`.
+`<file>` is the gitignored file `neon env pull` already writes (`.env` if that file exists, otherwise `.env.local`). Env pull writes Neon-managed vars only (`DATABASE_URL`, `NEON_AI_GATEWAY_*`, …). Add every key under `functions.*.env` to that file yourself, then pass the same path to `--env`.
 
 Every declared Function env key must be a defined string. `undefined` (an unset `process.env.X`) means you listed a key you want written but the value is missing: `defineConfig` throws. Omit the key from `neon.ts` if you do not want to write it. Never coerce a missing `process.env` value to an empty string: that uploads `""` and deletes the live key. An empty assignment in the file (`KEY=`) is also `""`. If TypeScript needs a type assertion, use `process.env.X!` and make sure the file actually has the value.
 
@@ -343,7 +339,7 @@ Use `neon functions deploy` when you are not applying `neon.ts`: a single functi
 
 ### Function Triggers
 
-A Function Trigger POSTs to a Neon Function on a cron (`type: "schedule"`). Beta; same regions as Functions. Prefer declaring `triggers` on the function in `neon.ts` and applying with `neon deploy`. CLI, MCP, REST, inherited-trigger behavior, and `parseTrigger`: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon/references/function-triggers.md). Handler payload and Hono example: the `neon-functions` skill, `references/function-triggers.md`.
+A Function Trigger POSTs to a Neon Function on a cron (`type: "schedule"`) or when an object is created in a bucket (`type: "storage_object_created"`). Beta; same regions as Functions. Prefer a top-level `triggers` map in `neon.ts` (the record key is the trigger name) and `neon deploy`. Nested `functions.*.triggers` is rejected. CLI, MCP, REST, inherited-trigger behavior, and parsers: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon/references/function-triggers.md). Handler payload and Hono example: the `neon-functions` skill, `references/function-triggers.md`.
 
 ### Type-safe env vars with parseEnv
 

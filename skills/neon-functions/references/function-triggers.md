@@ -2,54 +2,61 @@
 
 A Function Trigger is a branch-scoped rule that POSTs to a Neon Function so recurring work does not need a separate scheduler. The request is a normal `fetch` invocation: same public URL, same 15-minute time-to-first-byte limit, same injected env (`DATABASE_URL`, …).
 
-Beta. Same regions as Functions: `us-east-2` and `eu-central-1`. Needs Neon CLI 4.17 or newer to declare triggers in `neon.ts`.
+Beta. Same regions as Functions: `us-east-2` and `eu-central-1`. Needs Neon CLI 4.21 or newer to declare triggers in `neon.ts`.
 
 If `neon deploy` returns 404 `function triggers not available for this project`, the project does not have Function Triggers yet. Deploy the function without applying the trigger (`neon functions deploy <slug> --src <entry>`) and retry `neon deploy` once the project has them.
 
 ## Supported types
 
-The shipped type is `schedule` only: `@neon/config` 1.5.0 `FunctionScheduleTriggerDef`, Neon CLI 4.18.0 `neon triggers create --cron`, `@neon/sdk` Triggers v1, Neon MCP `create_trigger` (`type` enum: `schedule`), `@neon/functions` 0.10.0 `TriggerInvocation = ScheduleTriggerInvocation`.
+`@neon/config` 1.7.0 `triggers` is a top-level keyed map. Nested `functions.*.triggers` is rejected. Types:
 
-| `type`     | When it fires                       | Declare in `neon.ts` | CLI create                        |
-| ---------- | ----------------------------------- | -------------------- | --------------------------------- |
-| `schedule` | On a five-field UTC cron expression | `triggers[]`         | `neon triggers create --cron '…'` |
+| `type`                   | When it fires                                      | `neon.ts` fields                         | CLI create                                      |
+| ------------------------ | -------------------------------------------------- | ---------------------------------------- | ----------------------------------------------- |
+| `schedule`               | On a five-field UTC cron expression                | `function`, `cron`                       | `neon triggers create --cron '…'`               |
+| `storage_object_created` | When an object is created in a declared bucket     | `function`, `bucket`, optional `prefix`  | `neon triggers create --bucket <name>`          |
 
-`@neon/functions` parses any other `trigger.type` as `invalid_body`.
+`create` takes `--cron` or `--bucket`, not both. `@neon/functions` ≥ 0.11.0: `parseTriggerDelivery` accepts both types; `parseTriggerInvocation` and Hono `parseTrigger(c)` stay schedule-only (`storage_object_created` is `invalid_body` there).
 
-## `schedule`
+## Fields
 
-Neon POSTs to `functionPath` (default `/`) at each cron tick.
+The trigger name is the `neon.ts` map key (CLI `--name`). It must be unique among every trigger visible on the branch, including other functions.
 
-| Field          | Required | Notes                                                                       |
-| -------------- | -------- | --------------------------------------------------------------------------- |
-| `type`         | yes      | `"schedule"`                                                                |
-| `name`         | yes      | Unique among every trigger visible on the branch, including other functions |
-| `cron`         | yes      | Five-field UTC expression, e.g. `0 * * * *`, `*/15 * * * *`                 |
-| `functionPath` | no       | Path on the function. Default `/`. CLI flag: `--function-path`              |
-| `enabled`      | no       | Default `true`. CLI: `--enabled false` to create disabled                   |
+| Field          | Required | Notes                                                                 |
+| -------------- | -------- | --------------------------------------------------------------------- |
+| `type`         | yes      | `"schedule"` or `"storage_object_created"`                            |
+| `function`     | yes      | Function slug. REST/MCP: `function_slug`                              |
+| `cron`         | schedule | Five-field UTC expression, e.g. `0 * * * *`, `*/15 * * * *`           |
+| `bucket`       | storage  | Bucket name. REST: `storage_object_created.bucket_name`               |
+| `prefix`       | no       | Object-key prefix filter. REST: `storage_object_created.prefix`       |
+| `functionPath` | no       | Path on the function. Default `/`. CLI: `--function-path`             |
+| `enabled`      | no       | Default `true`. CLI: `--enabled false` to create disabled             |
 
 ## neon.ts (preferred)
 
-Declare triggers on the function. `neon deploy` applies them **after** the function is deployed. Triggers that exist remotely but are omitted from `neon.ts` are left alone.
+Declare `triggers` next to `functions` (and `buckets` when using storage). `neon deploy` applies triggers **after** the functions they target. Triggers that exist remotely but are omitted from `neon.ts` are left alone.
 
 ```typescript
 import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
-  preview: {
-    functions: {
-      cron: {
-        name: "Cron Job",
-        source: "src/index.ts",
-        triggers: [
-          {
-            type: "schedule",
-            name: "hourly",
-            cron: "0 * * * *",
-            functionPath: "/cron",
-          },
-        ],
-      },
+  functions: {
+    ingest: { name: "Object ingest", source: "src/index.ts" },
+    cron: { name: "Cron", source: "src/cron.ts" },
+  },
+  buckets: { assets: { access: "public_read" } },
+  triggers: {
+    "on-upload": {
+      type: "storage_object_created",
+      function: "ingest",
+      bucket: "assets",
+      prefix: "logos/",
+      functionPath: "/object",
+    },
+    "every-minute": {
+      type: "schedule",
+      function: "cron",
+      cron: "* * * * *",
+      functionPath: "/cron",
     },
   },
 });
@@ -59,7 +66,7 @@ export default defineConfig({
 neon deploy
 ```
 
-Change the cron string and deploy again to reschedule. Starter: `neon bootstrap --template cron-job`.
+Change the cron string, bucket, or prefix and deploy again to reschedule. Starter: `neon bootstrap --template cron-job`.
 
 ## CLI
 
@@ -67,23 +74,25 @@ Use when you are not applying `neon.ts`, or to list, enable, disable, or delete.
 
 ```bash
 neon triggers create --function-slug cron --name hourly --cron '0 * * * *' --function-path /cron
+neon triggers create --function-slug ingest --name on-upload --bucket assets --prefix 'logos/' --function-path /object
 neon triggers list
 neon triggers list --output json
 neon triggers update <id> --branch <branch> --cron '*/30 * * * *'
+neon triggers update <id> --branch <branch> --bucket assets --prefix 'incoming/'
 neon triggers enable <id> --branch <branch>
 neon triggers disable <id> --branch <branch>
 neon triggers delete <id> --branch <branch>
 ```
 
-`enable` / `disable` wrap `update --enabled`. Updating the cron recomputes `Next Run At`. Disabling clears `Next Run At`. Alias: `neon trigger`.
+`enable` / `disable` wrap `update --enabled`. Updating the cron recomputes `Next Run At`. Disabling clears `Next Run At`. Alias: `neon trigger`. `--cron` on a storage trigger, or `--bucket` / `--prefix` on a schedule trigger, is rejected.
 
-Inspect a trigger with `neon triggers list --output json` (`trigger_id`, `schedule.cron`, `function_path`, `enabled`, `inherited`, `next_run_at`). Pass `--branch` on get/update/enable/disable/delete: without it the CLI resolves the trigger id as a branch name.
+Inspect a trigger with `neon triggers list --output json`. Pass `--branch` on get/update/enable/disable/delete: without it the CLI resolves the trigger id as a branch name.
 
 Project and branch otherwise resolve from `--project-id` / `--branch`, then `.neon`, then a single-project auto-detect.
 
 ## MCP backup
 
-The Neon MCP server (`?category=functions`) exposes `list_triggers`, `get_trigger`, `create_trigger`, `update_trigger`, and `delete_trigger`. `branch_id` is a `br-…` id, not a branch name (`list_branches` to resolve). Create body is snake_case:
+The Neon MCP server (`?category=functions`) exposes `list_triggers`, `get_trigger`, `create_trigger`, `update_trigger`, and `delete_trigger`. `branch_id` is a `br-…` id, not a branch name (`list_branches` to resolve). Create a schedule trigger with snake_case:
 
 ```json
 {
@@ -96,13 +105,13 @@ The Neon MCP server (`?category=functions`) exposes `list_triggers`, `get_trigge
 }
 ```
 
-`create_trigger` required fields: `type`, `function_slug`, `name`, `schedule`. REST is the same payload at `POST /projects/{project_id}/branches/{branch_id}/triggers`. CLI docs: https://neon.com/docs/cli/triggers.md.
+`create_trigger` required fields for schedule: `type`, `function_slug`, `name`, `schedule`. REST is the same payload at `POST /projects/{project_id}/branches/{branch_id}/triggers`. For `storage_object_created`, use CLI or REST with `"type": "storage_object_created"` and `storage_object_created: { "bucket_name": "assets", "prefix": "logos/" }`. CLI docs: https://neon.com/docs/cli/triggers.md.
 
 ## Delivery payload
 
 Neon POSTs JSON. The Functions proxy drops client-supplied `x-neon-*` headers, so a present `x-neon-trigger-invocation-id` is from a trigger delivery. It must match `invocation_id` in the body.
 
-Wire JSON (snake_case):
+Schedule wire JSON (snake_case):
 
 ```json
 {
@@ -117,11 +126,58 @@ Wire JSON (snake_case):
 }
 ```
 
-Parsed (`@neon/functions` ≥ 0.10.0) is camelCase: `invocationId`, `trigger.id`, `trigger.name`, `trigger.type` (`"schedule"`), `data.scheduledAt`.
+Storage-object-created wire JSON:
 
-### `parseTrigger` (Hono)
+```json
+{
+  "version": 1,
+  "invocation_id": "…",
+  "trigger": {
+    "type": "storage_object_created",
+    "id": "trigger-…",
+    "name": "on-upload"
+  },
+  "data": { "bucket_name": "uploads", "object_key": "smoke.txt" }
+}
+```
 
-Throws `HTTPException`. `c.req.json()` still works afterwards.
+Parsed (`@neon/functions` ≥ 0.11.0) is camelCase. `parseTriggerDelivery` also sets a top-level `type`. Schedule: `data.scheduledAt`. Storage: `data.bucketName`, `data.objectKey`. Narrow on `invocation.type` (or `isScheduleTriggerInvocation` / `isStorageObjectCreatedTriggerInvocation`) before reading `data` — a check on `trigger.type` does not narrow the sibling `data` field.
+
+### `parseTriggerDelivery` (both types)
+
+```typescript
+import { parseTriggerDelivery } from "@neon/functions/triggers";
+
+export default {
+  async fetch(request: Request): Promise<Response> {
+    const parsed = await parseTriggerDelivery(request);
+    if (!parsed.ok) {
+      const status = parsed.error === "invalid_body" ? 400 : 401;
+      return new Response(parsed.error, { status });
+    }
+
+    const invocation = parsed.invocation;
+    if (invocation.type === "storage_object_created") {
+      return Response.json({
+        bucketName: invocation.data.bucketName,
+        objectKey: invocation.data.objectKey,
+      });
+    }
+
+    return Response.json({
+      scheduledAt: invocation.data.scheduledAt,
+    });
+  },
+};
+```
+
+`parseTriggerDelivery(request)` clones the Request before `json()`, so `request.json()` still works. If you already have the body: `parseTriggerDelivery({ headers, body })` (sync). `parsed.error` is `missing_header`, `invalid_body`, or `invocation_id_mismatch`. Unknown `trigger.type` values fail as `invalid_body`.
+
+Hono: `parseTriggerDelivery(c.req.raw)`.
+
+### `parseTrigger` (Hono, schedule only)
+
+Throws `HTTPException`. `c.req.json()` still works afterwards. Returns `ScheduleTriggerInvocation`. A `storage_object_created` delivery is `invalid_body`.
 
 | Failure                  | Status | Message                                       |
 | ------------------------ | ------ | --------------------------------------------- |
@@ -138,7 +194,7 @@ app.post("/cron", async (c) => {
 });
 ```
 
-### `parseTriggerInvocation` (`fetch`)
+### `parseTriggerInvocation` (`fetch`, schedule only)
 
 ```typescript
 import { parseTriggerInvocation } from "@neon/functions/triggers";
@@ -157,8 +213,6 @@ export default {
   },
 };
 ```
-
-`parseTriggerInvocation(request)` clones the Request before `json()`, so `request.json()` still works. If you already have the body: `parseTriggerInvocation({ headers, body })` (sync). `parsed.error` is `missing_header`, `invalid_body`, or `invocation_id_mismatch`.
 
 ## Local `neon dev`
 
