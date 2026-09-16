@@ -1,6 +1,6 @@
 # Managed Better Auth
 
-Beta. Overview and framework quickstarts: https://neon.com/docs/auth/overview.md
+Overview and framework quickstarts: https://neon.com/docs/auth/overview.md
 
 Enabling Auth on the branch (`auth: true` in `neon.ts` then `neon deploy`, or `neon neon-auth enable`) is not implementing login. Follow the matching framework quickstart:
 
