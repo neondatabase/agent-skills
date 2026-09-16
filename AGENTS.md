@@ -22,7 +22,7 @@ Rules to keep in mind when touching these files:
 
 `npm run validate:agent-plugin` (part of `validate:ci`) enforces the manifest, MCP, and skill-discovery rules above. The last two bullets are packaging conventions rather than checked rules, though `validate:versions` does hold `kimi.plugin.json` to the version in `package.json` like every other manifest.
 
-## Pi, and the npm fields that are staged for it
+## Pi, and the npm publish
 
 The [Pi coding agent](https://pi.dev) loads this repo through the `pi` block in [`package.json`](package.json) — `"pi": { "skills": ["./skills"] }` (see the [Pi package docs](https://github.com/earendil-works/pi/tree/main/packages/coding-agent/docs/packages.md)). Pi would auto-discover a top-level `skills/` by convention even without the block, but the explicit path is self-documenting and matches how every other channel here names its skills source.
 
@@ -30,13 +30,13 @@ Like the root Agent Plugins v1 package, Pi reads `skills/` **directly** — no v
 
 A Pi package declares extensions, skills, prompt templates, and themes — not MCP servers — and Pi ships no built-in MCP by design, leaving it to an extension that reads its own config. So a Pi install carries the skills alone, unlike the Claude, Cursor, and Kimi packaging that declares the Neon MCP Server.
 
-**The README advertises the git install only.** `@neondatabase/agent-skills` is not on npm and nothing here publishes it, so `pi install npm:` would fail today. Three more fields in `package.json` are nonetheless in place, so publishing is a decision rather than a project:
+**The skills are published to npm as [`@neon/skills`](https://www.npmjs.com/package/@neon/skills), and the README leads with `pi install npm:@neon/skills`** (it still lists the `git:` install as an alternative). Three fields in `package.json` shape that publish:
 
-- `keywords` includes `"pi-package"` — the tag the [pi.dev/packages](https://pi.dev/packages) gallery crawls npm for. A git install works but never appears in the gallery, so this is what a publish buys. Keep it in mind if you ever reformat `keywords`.
+- `keywords` includes `"pi-package"` — the tag the [pi.dev/packages](https://pi.dev/packages) gallery crawls npm for. A git install works but never appears in the gallery, so the npm publish is what earns the listing (once Pi's next crawl runs). Keep it in mind if you ever reformat `keywords`.
 - `files` narrows the tarball to `skills/`, `plugin.json`, and `mcp.json` (npm always adds `package.json`, `README.md`, and `LICENSE`). Without it a publish would ship the whole tree — `evals/`, `.github/`, `scripts/`, everything.
 - `publishConfig.access` is `public`, because npm defaults a **scoped** package to a restricted (paid) publish and rejects it.
 
-None of these carries a version, so `sync-versions.mjs` neither reads nor writes them, and no validator enforces them. What's still missing is the release path: Neon publishes its npm packages from a private mirror rather than from the source repo, so wiring that up — and then documenting the npm install — is a follow-up.
+None of these carries a version, so `sync-versions.mjs` neither reads nor writes them, and no validator enforces them. The publish itself is currently a manual `npm publish` rather than automation in this repo — Neon otherwise ships its npm packages from a private mirror — so wiring an automated release from source is still a follow-up.
 
 ## Downstream Marketplaces — Keep in Sync
 

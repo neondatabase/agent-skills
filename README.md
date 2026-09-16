@@ -20,7 +20,7 @@ It all starts with the `SKILL.md` file in the skill's directory. It's the entry 
 
 [![neon](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon.svg?variant=branded&size=xs&label=neon)](https://skills.sh/neondatabase/agent-skills/neon)
 
-An overview of Neon for apps and agents — Lakebase Postgres, Auth, Data API, Object Storage, Compute Functions, and the AI Gateway — and how to get started.
+An overview of Neon for apps and agents — Lakebase Postgres, Auth, Data API, Object Storage, Compute Functions, and the AI Gateway — and how to get started. Includes Claimable Neon for use with no Neon account.
 
 ### Neon Postgres
 
@@ -39,12 +39,6 @@ For agent platforms, codegen tools, and multi-tenant SaaS products that provisio
 [![neon-postgres-branches](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-branches.svg?variant=branded&size=xs&label=neon-postgres-branches)](https://skills.sh/neondatabase/agent-skills/neon-postgres-branches)
 
 Choose and create the right Neon branch type for migration testing and isolated development workflows, including schema-only branches for sensitive data and reset-from-parent workflows to quickly realign child branches.
-
-### Claimable Postgres
-
-[![claimable-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/claimable-postgres.svg?variant=branded&size=xs&label=claimable-postgres)](https://skills.sh/neondatabase/agent-skills/claimable-postgres)
-
-Provision instant temporary Postgres databases via Claimable Postgres by Neon ([neon.new](https://neon.new)) with no login, signup, or credit card. Supports REST API, CLI, and SDK.
 
 ### Neon Postgres Egress Optimizer
 
@@ -117,7 +111,13 @@ Plugin changes apply to new sessions, so run `/new` afterward.
 
 ### Pi
 
-You can also install the skills in [Pi](https://pi.dev), straight from this repo:
+You can also install the skills in [Pi](https://pi.dev) from npm:
+
+```bash
+pi install npm:@neon/skills
+```
+
+Or straight from this repo:
 
 ```bash
 pi install git:github.com/neondatabase/agent-skills
