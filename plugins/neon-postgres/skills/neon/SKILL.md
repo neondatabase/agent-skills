@@ -175,7 +175,7 @@ neon init --skip-template --agent cursor \
   --region-id aws-us-east-2 -y
 ```
 
-`--services` may declare `auth`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. There is no `data-api` value.
+`--services` may declare `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
 
 If `init` already installed the Neon plugin, do not also run `neon mcp` and `neon skills` for the same agent.
 
