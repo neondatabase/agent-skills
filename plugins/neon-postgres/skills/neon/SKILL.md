@@ -125,19 +125,15 @@ Run `neon skills update` to update all installed Neon skills, or `neon skills up
 
 ## Getting Started with Neon
 
-If the CLI is not authenticated yet (`NEON_API_KEY` unset, and `neon profile list -o json` has no profile whose `account` is not `-`), follow [Starting without a Neon account](#starting-without-a-neon-account). A `DEFAULT` row with `account: "-"` and `file: "missing"` is not an account.
-
-### 1. Install the Neon CLI
-
 **Prefer the CLI over the MCP server** unless the user instructs otherwise, the CLI is unavailable or blocked in your environment, or it is not authenticated, since it provides more capabilities, including deploying Neon Functions.
 
-First, check whether the Neon CLI is already installed:
+### Check the CLI, then credentials
 
 ```bash
 neon --version
 ```
 
-If it isn't installed, use your preferred package manager:
+If that fails, install first:
 
 ```bash
 npm i -g neon       # npm
@@ -147,19 +143,48 @@ pnpm add -g neon    # pnpm
 
 For full CLI installation options, see https://neon.com/docs/cli/install.md
 
-Once installed, authenticate:
+Then inspect credentials without printing secrets. `NEON_API_KEY` or a `neon profile list -o json` row whose `account` is not `-` is an account. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not.
+
+- Credentials already available: reuse them. Do not launch a browser.
+- A human needs to sign in: they run `neon login` (`neon auth` is an alias). An unattended agent must not launch browser authentication.
+- No account yet: follow [Starting without a Neon account](#starting-without-a-neon-account) for the Claimable Neon path.
+
+### Combined setup: `neon init`
+
+When both agent tooling and project setup are needed, use authenticated `neon init`. `--agent` takes the coding-agent name. `-y` skips prompts but does not supply project selection or credentials. `--skip-template` skips scaffolding a starter app.
+
+Link an existing project:
 
 ```bash
-neon auth
+neon init --skip-template --agent cursor \
+  --org-id <org-id> --project-id <project-id> -y
 ```
+
+Create and link a project:
+
+```bash
+neon init --skip-template --agent cursor \
+  --org-id <org-id> --project-name my-app \
+  --region-id aws-us-east-2 -y
+```
+
+`--services` may declare `auth`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. There is no `data-api` value.
+
+If `init` already installed the Neon plugin, do not also run `neon mcp` and `neon skills` for the same agent.
+
+When tooling already exists, only one component is missing, or env writes need `--no-env-pull`, use the manual steps below. `init` has no `--no-env-pull`. Before a command that pulls env, inspect existing configuration. If a supplied `DATABASE_URL` or `AWS_*` value must stay, pass `--no-env-pull` on `link` / `checkout` and write env to a separate `--file`.
+
+### 1. Install the Neon CLI
+
+Use the install check above. Do not run `neon login` unattended. MCP remains the fallback when the CLI is unavailable, blocked, unauthenticated, or the user prefers it.
 
 ### 2. Install the Neon MCP Server
 
-With the CLI installed, set up the Neon MCP server using the `neon mcp` command:
-
 ```bash
-neon mcp install
+neon mcp --oauth --project --agent cursor -y
 ```
+
+`--oauth` writes the server URL and leaves sign-in to the MCP client. That is not an authenticated MCP session. `--project` means project-level agent config, not a Neon project ID; the agent must support project-level installs (`cursor` does). Bare `neon mcp -y` installs globally and can reuse or mint an account-wide API key — do not treat it as the unattended default.
 
 For all available plugins and IDE integrations, see: https://neon.com/docs/ai/ai-agents-tools.md
 
@@ -167,30 +192,39 @@ For full MCP server installation options, see https://neon.com/docs/ai/connect-m
 
 ### 3. Install Neon Agent Skills
 
-Install the Neon agent skills into your project:
-
 ```bash
-neon skills
+neon skills -s neon --agent cursor -y
 ```
 
 To install a specific skill only:
 
 ```bash
-neon skills -s <skill-name>
+neon skills -s <skill-name> --agent cursor -y
 ```
+
+Useful flags: `--global`, `-y`, `--agent <agent-name>`. Interactive `neon skills` with no flags prompts.
 
 ### 4. Link Your Project and Get Started
 
-With setup complete, run `neon link` to connect your workspace to a Neon org, project, and branch. Then consult the skill for each Neon feature your app requires — each skill provides detailed guidance on configuration and how to connect that feature to your project. See [Choosing the Right Skill](#choosing-the-right-skill) above for the full list.
+With setup complete, connect the workspace to a Neon org, project, and branch. Then consult the skill for each Neon feature your app requires. See [Choosing the Right Skill](#choosing-the-right-skill) above.
+
+Non-interactive link:
+
+```bash
+neon link --project-id <project-id> -y
+neon link --org-id <org-id> --project-name my-app --region-id aws-us-east-2
+```
+
+`-y` skips the already-linked confirmation and pins the default branch when the project has more than one. Pass `--branch <name>` when branch selection matters.
 
 #### Useful CLI Commands
 
-1. `neon link` — Interactively links the workspace to a Neon org, project, and branch, writing the IDs to a git-ignored `.neon` file. Run once per project. Once linked, project- and branch-scoped commands no longer need `--project-id` or `--branch` (for example, `neon branch list`). `neon link --agent` can be used to run in a non-interactive, state-machine mode.
-2. `neon checkout <branch-name>` — Pins a different branch in `.neon`, creating it if it doesn't exist yet, and pulls that branch's env. It drives the [Branch-First Dev Flow](#branch-first-dev-flow) described below.
+1. `neon link` — Writes org, project, and branch IDs to a git-ignored `.neon` file. Run once per project. Once linked, project- and branch-scoped commands no longer need `--project-id` or `--branch` (for example, `neon branch list`). Non-interactive: `--org-id` / `--project-id` / `--project-name` plus `--region-id`, and `-y` when appropriate. There is no `neon link --agent`.
+2. `neon checkout <branch-name>` — Pins a branch in `.neon` and pulls that branch's env. An existing branch is enough. A missing **name** needs `--create` for unattended use (`neon checkout dev --create`). A missing branch **id** cannot be created. Interactive checkout with no name may offer to create; do not rely on that unattended. Drives the [Branch-First Dev Flow](#branch-first-dev-flow) below.
 3. `neon config init` — Initializes a `neon.ts` file, which declares how you provision and manage Neon services, in the root of the project.
 4. `neon env pull` — Fetches the current branch's Neon environment variables (`DATABASE_URL`, …) into your existing `.env`, or `.env.local` if you don't have one (override the target with `--file`). No branch ID needed; it reads `.neon`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
 
-   Without `neon.ts` it pulls the vars of every service the branch actually has (Postgres, plus Neon Auth, the Data API, and bucket `AWS_*` once provisioned); with `neon.ts` it pulls only the services declared there and errors if the branch is missing one — and the AI Gateway vars are never pulled unless `neon.ts` declares `aiGateway`.
+   Without `neon.ts`, a **bare** `neon env pull` includes the default Gateway credential on claimed projects. Implicit pulls bundled into `link` / `checkout` / `apply` do **not** pull an undeclared Gateway token. Declaring `aiGateway` in `neon.ts` requests those variables. With `neon.ts`, pull includes only the services declared there and errors if the branch is missing one.
 
 ### Bootstrap a New Project
 
@@ -425,20 +459,21 @@ Neon branches enable a branch-first development flow, which we recommend when us
 
 Create a Neon branch any time you would create a git branch. Use the following commands if you have CLI access:
 
-- `neon checkout <branch-name>` — Creates the branch if it doesn't exist, or checks out the existing one, by updating only the branch pointer in `.neon`. Run without a name for an interactive picker. It does not touch code or local Postgres.
+- `neon checkout <branch-name>` — Pins an existing branch by updating only the branch pointer in `.neon`. Pass `--create` to create a missing **name** (`neon checkout dev --create`). Run without a name for an interactive picker. It does not touch code or local Postgres.
 - `neon env pull` — Fetches the current branch's Neon environment variables into your `.env`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
 - `neon diff` — Shows the schema diff between the child branch and its parent. Run this to see what changes have been made to the schema since the last branch was created and before you commit your changes.
 
 ```bash
 neon link                     # once; also pulls the linked branch's env
-neon checkout dev-add-search  # per feature; also pulls the branch's env
+neon checkout dev-add-search --create  # per feature; also pulls the branch's env
 ```
+
 
 Because `link` and `checkout` pull env by default, the branch's `DATABASE_URL` lands in your local `.env` automatically — build against it, then `checkout` the next branch and repeat. As the agent, drive this loop yourself: run `checkout` between tasks.
 
 ### How checkout composes with neon.ts
 
-When a `neon.ts` is present, `neon checkout` applies your policy as it **creates** a branch, so a fresh branch comes up with its declared settings and services already in place. That create-apply does not load `--env`; if Function env reads `process.env`, run `neon deploy --env <file>` after checkout (add `--update-existing` if checkout already created the branch). Checking out an _existing_ branch never reconciles it — apply config changes to it explicitly with `neon deploy --env <file>` (alias for `neon config apply`). The bundled `env pull` also checks `neon.ts` against the linked branch and fails fast if the branch is missing a declared service, pointing you at `neon deploy --env <file>` to provision it, so your local env and the remote branch never drift apart silently.
+When a `neon.ts` is present, `neon checkout <name> --create` applies your policy as it **creates** a branch, so a fresh branch comes up with its declared settings and services already in place. Pass `--env <file>` on that create so Function env that reads `process.env` resolves (`neon checkout feat --create --env .env.local`). Existing process env wins over the file. Checking out an _existing_ branch never reconciles it — apply config changes to it explicitly with `neon deploy --env <file>` (alias for `neon config apply`). `--update-existing` auto-confirms overriding remote settings; add it only after reviewing those changes. The bundled `env pull` also checks `neon.ts` against the linked branch and fails fast if the branch is missing a declared service, pointing you at `neon deploy --env <file>` to provision it, so your local env and the remote branch never drift apart silently.
 
 ### Opting out of local env vars
 
