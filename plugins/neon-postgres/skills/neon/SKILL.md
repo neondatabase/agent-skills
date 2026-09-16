@@ -36,6 +36,7 @@ Neon bundles several backend primitives for building apps and agents that all br
 - **Object Storage** — S3-compatible object storage that branches with your projects. _Public beta._
 - **Functions** — Neon's compute offering: long-running serverless functions that run close to your database, for WebSocket servers, long agent HTTP streams, APIs, and server-sent event servers. A Function Trigger POSTs to a function on a cron. _Public beta._
 - **AI Gateway** — One API for frontier and open-source models, supporting the chat completions API and the responses API, powered by Databricks Unity AI Gateway. _Public beta._
+- **Data API** — Optional PostgREST-compatible HTTP interface. Use it only when the app already uses PostgREST or a Supabase database client, or is migrating that client. New apps query Postgres from Functions or existing handlers. There is no `neon-data-api` skill; configuration is `dataApi` in `neon.ts` (see [Type-safe config](#type-safe-config-invalid-setups-dont-compile) when you have chosen it).
 
 ### Public Beta Service Availability
 
@@ -45,17 +46,21 @@ Beta access features are currently available on projects in `us-east-2` and `eu-
 
 ## Architecture: How to Use Neon
 
-Neon is **not** a place to host your app frontend. Neon provides the backend primitives (Lakebase Postgres, Auth, Object Storage, Functions, AI Gateway) that **compose with** the application platform you already use.
+Query Postgres from Neon Functions or existing app handlers. Use the Data API only for PostgREST / Supabase client compatibility and migrations that already depend on it. Do not default new apps to the Data API.
+
+Neon is **not** a place to host your app frontend. Neon provides the backend primitives (Lakebase Postgres, Auth, Object Storage, Functions, AI Gateway) that **compose with** the application platform you already use. The Data API is an optional PostgREST-compatible HTTP path, not a required primitive for a new app.
 
 Recommended architectures:
 
-**Full-stack app on Vercel** (or Netlify) augmented with Neon — the app framework (Next.js, TanStack Start, etc.) owns your UI and routes and talks directly to your Neon services (Lakebase Postgres, Auth, Object Storage, Functions, AI Gateway).
+**New client-only app** — host the UI on Vercel or Netlify; the browser calls a Neon Function; the Function queries Postgres (and Object Storage, Auth, AI Gateway as needed).
 
-**Reach for Neon Functions when you outgrow the host's limits** — a WebSocket or SSE server, long-running agents, or an MCP server that risks timing out on short, lambda-style serverless functions. As long as there is an active connection, a Neon Function can run up to 24 hours without interruption, with the added benefit of running close to your data.
+**Existing full-stack app on Vercel** (or Netlify) — keep the framework's route handlers querying Postgres. Add a Neon Function when a workload needs long-running compute (WebSocket, SSE, a long agent, an MCP server). As long as there is an active connection, a Neon Function can run up to 24 hours without interruption, with the added benefit of running close to your data.
 
-**Move your whole backend control plane onto Neon Functions** — especially useful when the frontend is **client-only** rather than full-stack: TanStack Router, React Router in client mode, and similar SPAs hosted on Vercel or Netlify. The client talks **directly to Neon Functions**, where you build REST APIs and request/response agents. Secure these functions like any standalone REST API — verify a JWT or API key at the top of each handler (see the `neon-functions` skill).
+**Existing PostgREST or Supabase-js database client** — keep the Data API compatibility path. An installed Supabase package used only for Auth or Storage is not evidence that database access needs PostgREST.
 
-Because Functions are just your backend, they compose with a full-stack app that already has one (Next.js route handlers, etc.), too.
+A generic request for REST endpoints is a Function or existing-handler request, not a Data API request.
+
+Secure a Function like any standalone REST API — verify a JWT or API key at the top of each handler (see the `neon-functions` skill).
 
 ## Neon Documentation
 
@@ -92,6 +97,8 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers, and Function Triggers (cron).                                                        |
 | `neon-ai-gateway`                | Calling an LLM or routing across model providers with one credential, including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint. |
 | `neon-postgres-egress-optimizer` | Diagnosing or fixing excessive Postgres egress (network data-transfer) costs in a codebase.                                                                                          |
+
+There is no `neon-data-api` skill. Configure `dataApi` in `neon.ts` only for PostgREST / Supabase database-client compatibility or a migration that already depends on it.
 
 For guidance on agent platforms that provision and operate Lakebase Postgres on Neon at scale, use `neon-postgres-agent-platforms`, which lives in a separate repo: [`neondatabase/neon-for-agent-platforms`](https://github.com/neondatabase/neon-for-agent-platforms).
 
@@ -240,7 +247,7 @@ If the Getting Started account check found credentials, use them. If a command w
 
 If they cannot sign in or provide a key right now, ask before using Claimable Neon. Continue only after they say yes. That is a temporary workaround.
 
-If there is no Neon account yet, follow [references/claimable-neon.md](https://neon.com/docs/ai/skills/neon/references/claimable-neon.md). Do not run `neon init --agent` or `neon auth` on this path; those need a human Neon account. If `neon claim` is missing, the reference has the REST fallback. Unclaimed projects expire at `project_expires_at` (72 hours today). Claim codes expire in `expires_in` (15 minutes today). Add Auth or the Data API with `neon.ts` and `neon deploy` before or after claim.
+If there is no Neon account yet, follow [references/claimable-neon.md](https://neon.com/docs/ai/skills/neon/references/claimable-neon.md). Do not run `neon init --agent` or `neon auth` on this path; those need a human Neon account. If `neon claim` is missing, the reference has the REST fallback. Unclaimed projects expire at `project_expires_at` (72 hours today). Claim codes expire in `expires_in` (15 minutes today). Add Auth with `neon.ts` and `neon deploy` when login is requested and no existing provider should be preserved. Add the Data API only for PostgREST / Supabase database-client compatibility or a migration that already depends on it.
 
 Requests for neon.new, Claimable Postgres, claimable.neon.tech, instant Postgres, or a no-signup database are the same path.
 
@@ -276,13 +283,12 @@ export default defineConfig({
 
 ### Provision services with neon config
 
-Every project ships with Lakebase Postgres; `neon.ts` lets you also declare Neon Auth and the Data API today, with Functions, buckets, and the AI Gateway under a `preview` block — every service for the branch composes in one file:
+Every project ships with Lakebase Postgres; `neon.ts` also declares Auth, Functions, buckets, and the AI Gateway. Data API is a compatibility toggle, not part of a default backend:
 
 ```typescript
 // neon.ts
 export default defineConfig({
   auth: true,
-  dataApi: true,
   preview: {
     functions: {},
     buckets: {},
@@ -290,6 +296,8 @@ export default defineConfig({
   },
 });
 ```
+
+Empty `functions` / `buckets` maps are configuration slots, not a deployed API. Do not replace an existing `neon.ts` wholesale with this example.
 
 Reconcile the declaration from the CLI — the Neon equivalent of `terraform status` / `plan` / `apply`:
 
@@ -399,7 +407,6 @@ import { defineConfig } from "@neon/config/v1";
 
 export default defineConfig({
   auth: true,
-  dataApi: true,
   branch: (branch) => {
     if (branch.exists) {
       // leave existing branches untouched
@@ -426,7 +433,7 @@ The `branch` function receives the target branch (its `name`, whether it `exists
 
 ### Type-safe config: invalid setups don't compile
 
-Because `neon.ts` is TypeScript, the compiler catches invalid infrastructure before you ever deploy — and Neon encodes the actual rules (and their fixes) into the types, so the error tells you what to do rather than failing with a useless `Type 'true' is not assignable to type 'never'`. The canonical case: the Data API verifies requests with Neon Auth by default, so enabling it on its own is a type error _on_ `dataApi`:
+Because `neon.ts` is TypeScript, the compiler catches invalid infrastructure before you ever deploy — and Neon encodes the actual rules (and their fixes) into the types, so the error tells you what to do rather than failing with a useless `Type 'true' is not assignable to type 'never'`. The canonical case, **when the app has chosen Data API for PostgREST/Supabase compatibility**: the Data API verifies requests with Neon Auth by default, so enabling it on its own is a type error _on_ `dataApi`. Do not enable Auth merely to satisfy this error in an app that never needed Data API.
 
 ```typescript
 export default defineConfig({
@@ -467,7 +474,6 @@ Create a Neon branch any time you would create a git branch. Use the following c
 neon link                     # once; also pulls the linked branch's env
 neon checkout dev-add-search --create  # per feature; also pulls the branch's env
 ```
-
 
 Because `link` and `checkout` pull env by default, the branch's `DATABASE_URL` lands in your local `.env` automatically — build against it, then `checkout` the next branch and repeat. As the agent, drive this loop yourself: run `checkout` between tasks.
 
@@ -565,7 +571,7 @@ Neon features for agents:
 - Instant Provisioning: your users never wait for infrastructure.
 - Snapshots: let users toggle between checkpoints of code and state together.
 - Low cost-per-Database: automatic scale to zero and 350ms cold starts.
-- Full-Stack, Batteries-Included: Neon Auth, Data API included at no added charge.
+- Full-Stack, Batteries-Included: Neon Auth included at no added charge. The Data API is included for PostgREST / Supabase database-client compatibility, not as the default query path.
 - Granular API Controls: Track and control usage for flexible limits and invoicing.
 
 All details here: https://neon.com/programs/agents.md
