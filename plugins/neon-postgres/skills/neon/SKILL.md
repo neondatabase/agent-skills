@@ -297,11 +297,11 @@ neon triggers disable <id> --branch <branch>
 neon triggers delete <id> --branch <branch>
 ```
 
-Inspect a trigger with `neon triggers list --output json`. Pass `--branch` on get/update/enable/disable/delete: without it the CLI resolves the trigger id as a branch name. Inherited triggers (created on a parent branch) show `Inherited true` on the child and stay disabled there until `neon triggers enable`.
+Inspect a trigger with `neon triggers list --output json`. Pass `--branch` on get/update/enable/disable/delete: without it the CLI resolves the trigger id as a branch name. Inherited triggers (created on a parent branch) show `Inherited true` on the child and start disabled. `neon deploy` of a `neon.ts` that declares the same trigger enables that copy; omit it to leave the inherited trigger disabled.
 
 **MCP backup** (Neon MCP server, `?category=functions`): `list_triggers`, `get_trigger`, `create_trigger`, `update_trigger`, `delete_trigger`. `create_trigger` takes `project_id`, `branch_id` (a `br-…` id, not a name), and `body` with `"type": "schedule"`, `function_slug`, `name`, and `schedule: { cron }`. REST if neither CLI nor MCP is available: `POST /projects/{project_id}/branches/{branch_id}/triggers` with the same body. CLI reference: https://neon.com/docs/cli/triggers.md.
 
-The handler is still a normal `fetch`. Authenticate a trigger delivery with `parseTrigger` / `parseTriggerInvocation` from `@neon/functions` (≥ 0.10.0). Full type table, payload, and Hono example: the `neon-functions` skill, [Function Triggers](https://neon.com/docs/ai/skills/neon-functions/references/function-triggers.md).
+The handler is still a normal `fetch`. Authenticate a trigger delivery with `parseTrigger` / `parseTriggerInvocation` from `@neon/functions` (≥ 0.10.0). Full type table, payload, and Hono example: the `neon-functions` skill, `references/function-triggers.md`.
 
 ### Type-safe env vars with parseEnv
 

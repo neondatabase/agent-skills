@@ -180,7 +180,9 @@ A public POST to the **deployed** function that includes that header still retur
 
 ## Inheritance
 
-Triggers are branch-scoped. A trigger created on a parent is visible on children (`inherited: true`, `source_branch_id` points at the origin). It stays disabled on the child until `neon triggers enable`.
+Triggers are branch-scoped. A trigger created on a parent is visible on children (`inherited: true`, `source_branch_id` points at the origin) and starts disabled there.
+
+`neon deploy` of a `neon.ts` that declares the same trigger (default `enabled: true`) enables that inherited copy on the child. Omit it from `neon.ts` to leave the inherited trigger disabled. Enable without applying `neon.ts` with `neon triggers enable <id> --branch <branch>`.
 
 ## Logs
 

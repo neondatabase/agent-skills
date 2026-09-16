@@ -581,7 +581,7 @@ The same rules as WebSockets apply. **Heartbeat:** a stream stays open only whil
 
 A Function Trigger POSTs JSON to your function on a cron. Declare it in `neon.ts`, apply with `neon deploy`, and authenticate the delivery with `parseTrigger` (Hono) or `parseTriggerInvocation` (a `fetch` handler). The only trigger type today is `schedule`. Prefer `neon.ts`; CLI and the Neon MCP trigger tools (`list_triggers`, `create_trigger`, …) are the backup.
 
-Full field list, CLI, MCP, payload, inheritance, and both handler shapes: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon-functions/references/function-triggers.md).
+Full field list, CLI, MCP, payload, inheritance, and both handler shapes: [references/function-triggers.md](references/function-triggers.md).
 
 ## MCP Servers
 
@@ -630,4 +630,4 @@ The Neon documentation is the source of truth and Functions is evolving rapidly,
 - https://neon.com/docs/compute/functions/reference/runtime-limits.md
 - https://neon.com/docs/compute/functions/preview-access.md
 - https://neon.com/docs/cli/triggers.md
-- [references/function-triggers.md](https://neon.com/docs/ai/skills/neon-functions/references/function-triggers.md)
+- [references/function-triggers.md](references/function-triggers.md)
