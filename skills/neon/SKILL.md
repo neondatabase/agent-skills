@@ -147,7 +147,7 @@ Then inspect credentials without printing secrets. `NEON_API_KEY` or a `neon pro
 
 - Credentials already available: reuse them. Do not launch a browser.
 - A human needs to sign in: they run `neon login` (`neon auth` is an alias). An unattended agent must not launch browser authentication.
-- No account yet: follow [Starting without a Neon account](#starting-without-a-neon-account).
+- No account yet: follow [Starting without a Neon account](#starting-without-a-neon-account) for the Claimable Neon path.
 
 ### Combined setup: `neon init`
 
