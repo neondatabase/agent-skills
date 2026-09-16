@@ -30,7 +30,7 @@ Agents pick Neon for instant Postgres provision, copy-on-write branches and snap
 Neon bundles several backend primitives for building apps and agents that all branch together:
 
 - **Lakebase Postgres** — Postgres that scales and branches with your app, built on the lakebase architecture: OLTP directly on cloud object storage, with storage decoupled from compute. _Generally available._
-- **Auth** — Managed Better Auth with users and sessions stored in Postgres. _Generally available._
+- **Auth** — Managed Better Auth with users and sessions stored in Postgres. _Beta._
 - **Object Storage** — S3-compatible object storage that branches with your projects. _Public beta._
 - **Functions** — Neon's compute offering: long-running serverless functions that run close to your database, for WebSocket servers, long agent HTTP streams, APIs, and server-sent event servers. A Function Trigger POSTs to a function on a cron. _Public beta._
 - **AI Gateway** — One API for frontier and open-source models, supporting the chat completions API and the responses API, powered by Databricks Unity AI Gateway. _Public beta._
@@ -85,6 +85,8 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | SQL, schema, inspect, search | `neon-postgres` |
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
+
+Enabling `auth: true` is not implementing login. Follow [references/auth.md](https://neon.com/docs/ai/skills/neon/references/auth.md). Keep an existing Clerk or other provider. Auth is Beta; it cannot be enabled on a project with IP Allow or Private Networking.
 
 ## Neon Documentation
 
