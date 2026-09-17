@@ -76,7 +76,7 @@ Do not destructure `{ user }` from the top-level result. Do not pass options int
 
 JWT: `const { data, error } = await auth.token();` then `data.token`. Do not call `getJWTToken()` on the public client.
 
-**Phone OTP:** the browser client exposes `phoneNumber`. Inspected `createNeonAuth` server endpoint tree has no `phoneNumber` namespace, so the Next proxy may not forward those calls. Confirm the installed SDK before wiring phone OTP through this proxy. If the namespace is missing, stop and report that; do not switch providers or bypass the existing session setup. SMS e2e needs a configured `send.otp` webhook.
+**Phone OTP:** the browser client exposes `phoneNumber`. Existing users link a number, then sign in; there is no phone-first signup. Next.js `auth.handler()` forwards the catch-all path to Managed Auth, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. SMS e2e needs a configured `send.otp` webhook and custom UI.
 
 ## React / Vite
 
