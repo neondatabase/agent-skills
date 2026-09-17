@@ -30,7 +30,7 @@ neon skills -s neon -y
 
 # Neon Functions
 
-Currently available in `us-east-2` and `eu-central-1`.
+Currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`.
 
 Neon Functions are long-running Node.js HTTP handlers deployed onto a Neon branch. Each function gets a public HTTPS URL, runs in the same region as your database, and — if the branch has Postgres — gets `DATABASE_URL` injected automatically. You deploy and manage them through the same Neon CLI, `neon.ts`, and API you already use.
 
@@ -48,7 +48,7 @@ Reach for Neon Functions when the workload is a request/response handler that be
 - **Webhooks, bots, and post-response work.** Webhook handlers that fan out into multiple DB writes, Discord/WebSocket bots, and fire-and-forget follow-ups via `waitUntil` (analytics, audit logs) all fit.
 - **Recurring HTTP work.** A Function Trigger POSTs to the function on a cron (`type: "schedule"`). Same `fetch` handler, same 15-minute time-to-first-byte limit. See [Function Triggers](#function-triggers).
 
-If the workload is a pure static site, or something that must run outside the supported regions (`us-east-2`, `eu-central-1`) today, this isn't the right tool yet (see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits) and [Availability](#availability)).
+If the workload is a pure static site, or something that must run outside the supported regions (`aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`) today, this isn't the right tool yet (see [Timeouts and Runtime Limits](#timeouts-and-runtime-limits) and [Availability](#availability)).
 
 ## What It Does
 
@@ -61,7 +61,7 @@ If the workload is a pure static site, or something that must run outside the su
 
 ## Availability
 
-Check this precondition before setting anything up: Neon Functions is currently available in `us-east-2` and `eu-central-1`. Confirm the user's Neon project is in one of these regions.
+Check this precondition before setting anything up: Neon Functions is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Confirm the user's Neon project is in one of these regions.
 
 ## Architecture: Where Functions Fit
 
