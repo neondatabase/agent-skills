@@ -30,11 +30,11 @@ Start here for undecided login. Keep Clerk or another working provider unless th
 ## When to Use
 
 1. Inspect existing identity. Keep Clerk, another IdP, or a working Better Auth server unless the user requests migration. A supplied `DATABASE_URL` is not a reason to change identity.
-2. For undecided login, enable Managed Better Auth and implement the matching framework quickstart. Enabling the service is not implementing login.
-3. Before enabling, confirm the project is on AWS and does not use IP Allow or Private Networking. Leave those protections in place.
-4. Check the required feature against the [plugin matrix](#plugin-support). Configure supported plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neondatabase/auth`.
-5. If a required plugin, hook, custom JWT claim, or server option is outside Managed support, move identity to self-managed Better Auth on the app host or in a Neon Function. Use `better-auth` / `better-auth/client`. Do not inject plugins into the Neon wrapper.
-6. If support is unknown, fetch the live guide and stop rather than guessing.
+2. Before enabling Managed Auth, confirm the project is on AWS and does not use IP Allow or Private Networking. Leave those protections in place.
+3. Check the required feature against the [plugin matrix](#plugin-support). Configure supported plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neondatabase/auth`.
+4. If a required plugin, hook, custom JWT claim, or server option is outside Managed support, move identity to self-managed Better Auth on the app host or in a Neon Function. Use `better-auth` / `better-auth/client`. Do not inject plugins into the Neon wrapper.
+5. If support is unknown, fetch the live guide and stop rather than guessing.
+6. For undecided login that fits Managed support, enable Managed Better Auth and implement the matching framework quickstart. Enabling the service is not implementing login.
 
 Framework wiring: [references/managed-auth.md](references/managed-auth.md). Self-managed Better Auth, including Functions: [references/self-managed.md](references/self-managed.md).
 
