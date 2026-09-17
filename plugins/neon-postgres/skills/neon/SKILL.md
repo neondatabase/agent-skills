@@ -84,7 +84,7 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
-Enabling `auth: true` is not implementing login. Follow [references/auth.md](https://neon.com/docs/ai/skills/neon/references/auth.md). Keep an existing Clerk or other provider. Auth cannot be enabled on a project with IP Allow or Private Networking.
+Enabling `auth: true` is not implementing login. Follow [references/auth.md](references/auth.md). Keep an existing Clerk or other provider. Auth cannot be enabled on a project with IP Allow or Private Networking.
 
 ## Neon Documentation
 
