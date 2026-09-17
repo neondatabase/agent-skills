@@ -38,7 +38,7 @@ Neon bundles several backend primitives for building apps and agents that all br
 
 ### Region availability
 
-Object Storage, Functions, and AI Gateway are currently available on projects in `us-east-2` and `eu-central-1`. Before guiding a user through any of these services, confirm they are working in one of these regions. If not, they will need to create a new project in a supported region.
+Object Storage, Functions, and AI Gateway are currently available on projects in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Before guiding a user through any of these services, confirm they are working in one of these regions. If not, they will need to create a new project in a supported region.
 
 ## Architecture: How to Use Neon
 
@@ -444,7 +444,7 @@ For reading env you _already_ have on disk (typed and validated against your `ne
 
 ## Observability
 
-Neon exposes branch-scoped logs for Functions and Object Storage today (`us-east-2`, `eu-central-1`). Query the branch that hosts the deployed function or bucket, not the checkout used for development.
+Neon exposes branch-scoped logs for Functions and Object Storage today (`aws-us-east-2`, `aws-eu-central-1`). Query the branch that hosts the deployed function or bucket, not the checkout used for development.
 
 ```bash
 neon logs query --since 1h
