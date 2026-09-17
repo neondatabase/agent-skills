@@ -470,4 +470,3 @@ Use [`@neon/sdk`](https://neon.com/docs/ai/skills/neon/references/sdk.md) to man
 ### Neon for (Agentic) Platforms
 
 Enroll in the [Neon Agent Program](https://neon.com/programs/agents.md) only when the work is a fleet of user databases (app-generating agents and platforms). A single-app backend skips this. Instant provision, snapshots, scale-to-zero compute (storage still billed), Auth, and Data API compatibility details: that page.
-

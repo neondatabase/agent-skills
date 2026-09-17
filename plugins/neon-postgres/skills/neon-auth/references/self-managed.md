@@ -60,7 +60,7 @@ Self-managed values, not produced by `auth: true`:
 | `BETTER_AUTH_URL` | Public URL of this Better Auth server |
 | `BETTER_AUTH_SECRET` | Signing secret from upstream installation |
 
-When the server is a Function, declare them under `preview.functions.<slug>.env` and pass `neon deploy --env <file>`. Keep `NEON_AUTH_*` for Managed Auth only.
+When the server is a Function, declare them in that function's `env` in `neon.ts` (`functions.*.env`) and pass `neon deploy --env <file>`. Keep `NEON_AUTH_*` for Managed Auth only.
 
 Configure trusted app origins, cookies, and CORS from upstream Hono and cookie docs. Prefer same-origin hosting when it already works.
 
