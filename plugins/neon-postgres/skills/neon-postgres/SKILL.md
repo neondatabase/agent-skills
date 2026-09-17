@@ -33,7 +33,7 @@ It is the same database whether you reach it through Neon or through Databricks;
 
 ### 1. Select the organization and project
 
-If the repo already has a `DATABASE_URL` (or a `.neon` file pointing at a project), use it. Do not create a second project for schema work.
+If a `DATABASE_URL` is already supplied (prompt, environment, or repo) or a `.neon` file points at a project, use it. Do not list organizations or create a second project for schema work.
 
 Otherwise use the CLI (default) or MCP server to list organizations and projects. Let the user select an existing project or create a new one.
 
