@@ -5,10 +5,11 @@ description: >-
   (Managed Better Auth), identity routing, sign-up, sign-in, password reset,
   email OTP, magic links, organizations, phone OTP, OAuth, passkeys, MFA,
   trusted domains, invalid domain, and @neondatabase/auth. No existing identity:
-  default to Managed Better Auth. Keep working Better Auth, Clerk, or another
-  IdP. Migrating from Supabase Auth: Managed Better Auth. A required plugin
-  outside Managed support: self-managed Better Auth on a Neon Function or the
-  existing app host. Also use for auth APIs in @neondatabase/neon-js.
+  default to Managed Better Auth. Keep working Better Auth, Clerk, Supabase
+  Auth, or another IdP. User asked to migrate from Supabase Auth: Managed
+  Better Auth. A required plugin outside Managed support: self-managed Better
+  Auth on a Neon Function or the existing app host. Also use for auth APIs in
+  @neondatabase/neon-js.
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-auth
@@ -37,8 +38,8 @@ Inspect existing identity and the required login features before provisioning. A
 | No existing auth | Default to Managed Better Auth. [Managed setup](#managed-setup), then [references/managed-auth.md](references/managed-auth.md). |
 | Needs a feature Managed does not offer | Self-managed Better Auth on the existing app host (Vercel or similar) or a Neon Function. Keep Lakebase Postgres. Confirm the **installed** Better Auth version documents that exact flow before recommending the move. If support stays unresolved, keep the current identity. [references/self-managed.md](references/self-managed.md). |
 | Already has Better Auth | Keep it. It works with the other Neon primitives. Migrate to Managed only if the user asks. |
-| Migrating from Supabase Auth to Neon | Managed Better Auth. [Supabase Auth](#supabase-auth). |
-| Clerk, Auth.js, or another working IdP | Keep it unless the user asks to migrate. |
+| User asked to migrate from Supabase Auth | Managed Better Auth. [Supabase Auth](#supabase-auth). Moving only Postgres or adding a Function keeps Supabase Auth. |
+| Clerk, Auth.js, Supabase Auth, or another working IdP | Keep it unless the user asks to migrate. |
 
 Google, GitHub, and Vercel social OAuth are offered on Managed Auth. They are not a reason to leave Managed Auth. Other OAuth providers, generic OAuth, MFA, passkeys, API keys, MCP OAuth, SSO, custom plugins, hooks, and custom JWT claims are the [plugin matrix](#plugin-support) check.
 
@@ -85,7 +86,7 @@ Claimable projects: follow the parent Claimable path, then `auth: true` and `neo
 
 ## Supabase Auth
 
-When the app is moving from Supabase Auth to Neon, recommend Managed Better Auth and follow https://neon.com/docs/auth/migrate/from-supabase.md.
+When the user asked to migrate login from Supabase Auth, recommend Managed Better Auth and follow https://neon.com/docs/auth/migrate/from-supabase.md. Moving only Postgres or adding a Function is not that request: keep Supabase Auth.
 
 `SupabaseAuthAdapter()` keeps method shapes such as `signInWithPassword` and `signInWithOAuth`. Those calls are not interchangeable with default Better Auth examples (`signIn.email`). Keep an existing adapter caller on that API.
 
@@ -117,7 +118,7 @@ Checked 2026-09-17 against https://neon.com/docs/auth/guides/plugins.md, https:/
 | Email OTP | Supported | Managed delivery. `emailOtp.sendVerificationOtp`, `signIn.emailOtp`. |
 | Magic Link | Supported | Enable on the branch (off by default). `signIn.magicLink`. |
 | Organization | Partial, Beta | Members, invitations, owner/admin/member. No Teams, server hooks, custom roles/permissions, or dynamic access control. Emailed invitations: [managed-auth.md](references/managed-auth.md#organization-invitations). |
-| JWT | Supported | EdDSA (Ed25519), 15-minute expiry, no custom claims. Retrieve with `.token()` (`data.token`). |
+| JWT | Supported | EdDSA (Ed25519), 15-minute expiry, no custom claims. Default client: `.token()` then `data.token`. `SupabaseAuthAdapter()`: `getSession()` then `data.session.access_token` (no `.token()`). |
 | Open API | Supported | Server routes `/reference` and `/open-api/generate-schema`. |
 | Phone Number | Supported with constraints | Browser client: existing users link a number, then sign in; no phone-first signup; own SMS webhook; custom UI. Next.js `auth.handler()` forwards the catch-all path, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. https://neon.com/docs/auth/guides/plugins/phone-number.md |
 | MFA / Two-Factor | Roadmap | Unavailable on Managed Auth. If required: [self-managed.md](references/self-managed.md), after confirming the installed Better Auth version. |
@@ -149,6 +150,6 @@ The Managed SDK handles iframe OAuth popup and `neon_auth_session_verifier`. Kee
 
 A Function authenticates whoever already signs the user in. Do not switch identity to call a Function. Verify the token in the `neon-functions` skill and https://neon.com/docs/compute/functions/authentication.md.
 
-Managed Auth: injected `NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`, token via `.token()` (`data.token`). A valid token is not permission to read another user's rows. Sign-out ends the browser session; do not claim it immediately revokes an already-issued JWT.
+Managed Auth: injected `NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`. Token: default client `.token()` then `data.token`; `SupabaseAuthAdapter()` `getSession()` then `data.session.access_token`. A valid token is not permission to read another user's rows. Sign-out ends the browser session; do not claim it immediately revokes an already-issued JWT.
 
 Data API identity: [references/managed-auth.md](references/managed-auth.md). New apps query Postgres from Functions or existing handlers, not the Data API.

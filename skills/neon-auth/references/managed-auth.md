@@ -7,7 +7,7 @@ Enabling `auth: true` is not implementing login. Follow the matching live quicks
 - React (API methods, including React Router): https://neon.com/docs/auth/quick-start/react.md
 - TanStack Router (UI components): https://neon.com/docs/auth/quick-start/tanstack-router.md
 
-Keep Clerk, existing Better Auth, or another working provider. Do not migrate it unless the user asks. Supabase Auth while moving the app to Neon is the `SKILL.md` Supabase case, not this keep-in-place rule.
+Keep Clerk, existing Better Auth, Supabase Auth, or another working provider. Do not migrate it unless the user asks. The `SKILL.md` Supabase case is that explicit login-migration request.
 
 Framework-specific companion skills also live in [neondatabase/neon-js](https://github.com/neondatabase/neon-js) (`neon-auth-nextjs`, `neon-auth-react`, `neon-js-react`). Prefer the live Neon guides above; do not copy those SDK-local files into this repo.
 

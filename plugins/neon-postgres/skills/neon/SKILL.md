@@ -69,7 +69,7 @@ Inspect the repo before provisioning.
 4. Provision only when infrastructure is missing: `neon init` / `neon link` / Claimable, then `neon.ts`, then `neon deploy`.
 5. Verify the app flow (sign-in, upload, API call), not only that env vars landed.
 
-Do not replace working Better Auth, Clerk, S3, or a supplied `DATABASE_URL` with a Neon primitive unless the user asks. Do not rewrite an existing `neon.ts`. If Neon credentials fail for an existing account, stop and ask the user to sign in; do not create a Claimable project as a substitute.
+Do not replace working Better Auth, Clerk, Supabase Auth, S3, or a supplied `DATABASE_URL` with a Neon primitive unless the user asks. Do not rewrite an existing `neon.ts`. If Neon credentials fail for an existing account, stop and ask the user to sign in; do not create a Claimable project as a substitute.
 
 A supplied `DATABASE_URL` with no Neon credentials is schema work: complete it without provisioning. Managed Better Auth cannot be enabled on a project that uses IP Allow or Private Networking. Leave those protections in place.
 
@@ -78,8 +78,8 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Need | Use |
 | --- | --- |
 | Login, users, sessions (no existing provider) | `neon-auth` — Managed Better Auth (`auth: true`) |
-| Existing Better Auth, Clerk, or another working IdP | Keep it. `neon-auth` only if they ask to migrate |
-| Supabase Auth while moving the app to Neon | `neon-auth` (Managed Better Auth; adapter-shaped calls) |
+| Existing Better Auth, Clerk, Supabase Auth, or another working IdP | Keep it. `neon-auth` only if they ask to migrate |
+| User asked to migrate from Supabase Auth | `neon-auth` (Managed Better Auth; keep `SupabaseAuthAdapter()` call shapes) |
 | Files, uploads, blobs (no existing object store) | Object Storage |
 | HTTP APIs, cron, WebSocket, SSE, long-running agents | Functions querying Postgres |
 | LLM calls | AI Gateway |
@@ -87,7 +87,7 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
-Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth and Clerk. Auth cannot be enabled on a project with IP Allow or Private Networking.
+Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth, Clerk, and Supabase Auth unless the user asked to migrate login. Auth cannot be enabled on a project with IP Allow or Private Networking.
 
 ## Neon Documentation
 
