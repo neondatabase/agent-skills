@@ -7,8 +7,8 @@ description: >-
   MCP server, and follow the branch-first workflow. Use when building an app or
   backend on Neon, or when "Neon" or "Lakebase Postgres" is mentioned. Child
   skill neon-postgres wins for an existing DATABASE_URL, SQL, schema, inspect,
-  or search. Child skill neon-auth wins for login, users, sessions, and Better
-  Auth plugins. Also use for object storage, S3, buckets, serverless functions,
+  or search. Child skill neon-auth wins for login, users, sessions, identity
+  routing, and Managed Better Auth setup. Also use for object storage, S3, buckets, serverless functions,
   function triggers, cron, AI gateway, LLM calls, logs, Loki, Grafana,
   observability, postgres, database, backend, Claimable Neon, neon.new, or a
   no-signup database.
@@ -64,12 +64,12 @@ Secure a Function like any standalone REST API — verify a JWT or API key at th
 Inspect the repo before provisioning.
 
 1. Map requested capabilities: login, files, HTTP APIs, LLM calls, SQL.
-2. Reuse what is already there: a supplied `DATABASE_URL`, an existing ORM or driver, Clerk or another auth provider, S3 or another object store, an existing `.neon` / `neon.ts`, an existing Data API or PostgREST client.
+2. Reuse what is already there: a supplied `DATABASE_URL`, an existing ORM or driver, Better Auth, Clerk or another auth provider, S3 or another object store, an existing `.neon` / `neon.ts`, an existing Data API or PostgREST client.
 3. Select Neon primitives for capabilities that are still undecided.
 4. Provision only when infrastructure is missing: `neon init` / `neon link` / Claimable, then `neon.ts`, then `neon deploy`.
 5. Verify the app flow (sign-in, upload, API call), not only that env vars landed.
 
-Do not replace a working Clerk, S3, or supplied `DATABASE_URL` with a Neon primitive unless the user asks. Do not rewrite an existing `neon.ts`. If Neon credentials fail for an existing account, stop and ask the user to sign in; do not create a Claimable project as a substitute.
+Do not replace working Better Auth, Clerk, S3, or a supplied `DATABASE_URL` with a Neon primitive unless the user asks. Do not rewrite an existing `neon.ts`. If Neon credentials fail for an existing account, stop and ask the user to sign in; do not create a Claimable project as a substitute.
 
 A supplied `DATABASE_URL` with no Neon credentials is schema work: complete it without provisioning. Managed Better Auth cannot be enabled on a project that uses IP Allow or Private Networking. Leave those protections in place.
 
@@ -77,7 +77,9 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 
 | Need | Use |
 | --- | --- |
-| Login, users, sessions (no existing provider) | `neon-auth` (`auth: true`) |
+| Login, users, sessions (no existing provider) | `neon-auth` — Managed Better Auth (`auth: true`) |
+| Existing Better Auth, Clerk, or another working IdP | Keep it. `neon-auth` only if they ask to migrate |
+| Supabase Auth while moving the app to Neon | `neon-auth` (Managed Better Auth; adapter-shaped calls) |
 | Files, uploads, blobs (no existing object store) | Object Storage |
 | HTTP APIs, cron, WebSocket, SSE, long-running agents | Functions querying Postgres |
 | LLM calls | AI Gateway |
@@ -85,7 +87,7 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
-Use `neon-auth` for login setup, plugin support, and Auth troubleshooting; the [Auth guide](references/auth.md) points there. Keep an existing Clerk or other provider. Auth cannot be enabled on a project with IP Allow or Private Networking.
+Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth and Clerk. Auth cannot be enabled on a project with IP Allow or Private Networking.
 
 ## Neon Documentation
 
@@ -117,7 +119,7 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | Skill                            | Use it for                                                                                                                                                                           |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `neon-postgres`                  | Working with databases, including connections, schemas, queries, search, and autoscaling: SQL development, schema design, performance optimization, and scaling decisions.           |
-| `neon-auth`                      | Login, users, sessions, trusted domains, Managed Better Auth, and when to run self-managed Better Auth on Neon (unsupported plugins, MCP OAuth). Fetch: https://neon.com/docs/ai/skills/neon-auth/SKILL.md |
+| `neon-auth`                      | Identity routing and Managed Better Auth setup (login, users, sessions, trusted domains). Fetch: https://neon.com/docs/ai/skills/neon-auth/SKILL.md |
 | `neon-postgres-branches`         | Choosing or creating the right branch type for dev, preview, test, or CI workflows. Use this skill as a slash command.                                                               |
 | `neon-object-storage`            | Storing and serving files (uploads, images, blobs), including branching them with the database.                                                                                      |
 | `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers, and Function Triggers (cron and object-storage).                                     |

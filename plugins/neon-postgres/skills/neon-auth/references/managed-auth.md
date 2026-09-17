@@ -7,9 +7,17 @@ Enabling `auth: true` is not implementing login. Follow the matching live quicks
 - React (API methods, including React Router): https://neon.com/docs/auth/quick-start/react.md
 - TanStack Router (UI components): https://neon.com/docs/auth/quick-start/tanstack-router.md
 
-Keep Clerk or another working provider. Do not migrate it unless the user asks.
+Keep Clerk, existing Better Auth, or another working provider. Do not migrate it unless the user asks. Supabase Auth while moving the app to Neon is the `SKILL.md` Supabase case, not this keep-in-place rule.
 
 Framework-specific companion skills also live in [neondatabase/neon-js](https://github.com/neondatabase/neon-js) (`neon-auth-nextjs`, `neon-auth-react`, `neon-js-react`). Prefer the live Neon guides above; do not copy those SDK-local files into this repo.
+
+## Auth emails
+
+Managed Auth sends verification, email OTP, magic-link, and password-reset messages. Getting started uses the shared SMTP provider (`auth@mail.myneon.app`). Implementing login does not require Resend, SendGrid, or other application email code.
+
+Production requires custom SMTP. Verification codes work on shared or custom SMTP. Verification links require custom SMTP. Checklist: https://neon.com/docs/auth/production-checklist.md. Branding and webhook delivery: https://neon.com/docs/auth/guides/customize-emails.md.
+
+SMS is separate: the Phone Number plugin needs an application `send.otp` webhook.
 
 ## Packages
 
@@ -19,7 +27,7 @@ Framework-specific companion skills also live in [neondatabase/neon-js](https://
 | Already using the combined SDK | `@neondatabase/neon-js/auth` re-export |
 | Pre-built UI | `@neondatabase/auth-ui` |
 
-Keep an existing `SupabaseAuthAdapter()` caller on that API (`signInWithPassword`, `signInWithOAuth`). Do not mix those methods into default Better Auth examples.
+Keep an existing `SupabaseAuthAdapter()` caller on that API (`signInWithPassword`, `signInWithOAuth`). Do not mix those methods into default Better Auth examples. Password hashes do not migrate from Supabase; `updateUser()` cannot change email or password; email verification needs app UI. Guide: https://neon.com/docs/auth/migrate/from-supabase.md
 
 The Managed client is Better Auth methods through Neon's wrapper. It is not interchangeable with bare `better-auth/client` while Auth is managed: the wrapper rejects extra plugins and implements Neon OAuth verifier / iframe popup / JWT extraction.
 
@@ -135,7 +143,7 @@ Preserve existing `@neondatabase/auth/react/ui` imports rather than forcing a dr
 
 ## Cross-subdomain vs bearer JWT
 
-`cookies.domain` shares session cookies across subdomains of one parent domain (see the neon-js `cross-domain-cookies` example). That is not cookie sharing across unrelated frontend and backend hosts. A Neon Function authenticates with `Authorization: Bearer` and the Managed JWKS; that path is supported. See https://neon.com/docs/compute/functions/authentication.md and https://neon.com/docs/auth/guides/plugins/jwt.md.
+`cookies.domain` shares session cookies across subdomains of one parent domain (see the neon-js `cross-domain-cookies` example). That is not cookie sharing across unrelated frontend and backend hosts. A Neon Function authenticates with `Authorization: Bearer`. With Managed Auth, verify against the injected JWKS. With another identity, use that identity's token contract — see `neon-functions`. https://neon.com/docs/compute/functions/authentication.md and https://neon.com/docs/auth/guides/plugins/jwt.md.
 
 ## Data API identity
 

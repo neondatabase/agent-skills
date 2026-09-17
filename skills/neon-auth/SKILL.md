@@ -2,13 +2,13 @@
 name: neon-auth
 description: >-
   Add authentication to a new app. Use for "add auth", "add login", Neon Auth
-  (Managed Better Auth), sign-up, sign-in, password reset, email OTP, magic
-  links, organizations, phone OTP, OAuth, passkeys, MFA, trusted domains,
-  invalid domain, and @neondatabase/auth. Default undecided login to Neon Auth;
-  keep working identity providers. Use self-managed Better Auth on Neon when a
-  required plugin exceeds Managed support. Also use for the auth APIs in
-  @neondatabase/neon-js, Better Auth plugin support, SSO, API keys, and MCP
-  OAuth when choosing identity for a Neon app or Function.
+  (Managed Better Auth), identity routing, sign-up, sign-in, password reset,
+  email OTP, magic links, organizations, phone OTP, OAuth, passkeys, MFA,
+  trusted domains, invalid domain, and @neondatabase/auth. No existing identity:
+  default to Managed Better Auth. Keep working Better Auth, Clerk, or another
+  IdP. Migrating from Supabase Auth: Managed Better Auth. A required plugin
+  outside Managed support: self-managed Better Auth on a Neon Function or the
+  existing app host. Also use for auth APIs in @neondatabase/neon-js.
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-auth
@@ -26,20 +26,30 @@ neon skills -s neon -y
 
 Neon Auth is Managed Better Auth: users, sessions, and auth config live in the `neon_auth` schema on the branch's Lakebase Postgres, and auth state branches with the database. The client API is the Better Auth method set (`signIn.email`, `signIn.social`, `getSession`) through `@neondatabase/auth`. That wrapper is not a drop-in for bare `better-auth/client`: it pins the plugin list and adds Neon-specific OAuth verifier, iframe popup, and JWT handling. Stay on the wrapper while Auth is managed.
 
-Start here for undecided login. Keep Clerk or another working provider unless the user asks to migrate. A needed Better Auth plugin that Managed Auth does not support is the signal to run self-managed Better Auth on Neon instead.
+This skill chooses identity, then implements Managed Better Auth. It does not replace a working auth server in order to use Postgres, Functions, Object Storage, or the AI Gateway.
 
 ## When to Use
 
-1. Inspect existing identity. Keep Clerk, another IdP, or a working Better Auth server unless the user requests migration. A supplied `DATABASE_URL` is not a reason to change identity.
-2. Before enabling Managed Auth, confirm the project is on AWS and does not use IP Allow or Private Networking. Leave those protections in place.
-3. Check the required feature against the [plugin matrix](#plugin-support). Configure supported plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neondatabase/auth`.
-4. If a required plugin, hook, custom JWT claim, or server option is outside Managed support, run self-managed Better Auth on Neon (existing app host, or a Neon Function). Keep Lakebase Postgres. Use `better-auth` / `better-auth/client`. Do not inject plugins into the Neon wrapper.
-5. If support is unknown, fetch the live guide. Continue with Managed Auth when supported, or self-managed Better Auth on Neon when unsupported. Stop only if support remains unresolved.
-6. For undecided login that fits Managed support, follow [Managed setup](#managed-setup) and [references/managed-auth.md](references/managed-auth.md). For self-managed Better Auth on Neon, skip Managed setup and load [references/self-managed.md](references/self-managed.md). Enabling the service is not implementing login.
+Inspect existing identity and the required login features before provisioning. A supplied `DATABASE_URL` is not a reason to change identity. Adding a Neon Function is not a reason to change identity.
+
+| Situation | What to do |
+| --- | --- |
+| No existing auth | Default to Managed Better Auth. [Managed setup](#managed-setup), then [references/managed-auth.md](references/managed-auth.md). |
+| Needs a feature Managed does not offer | Self-managed Better Auth on the existing app host (Vercel or similar) or a Neon Function. Keep Lakebase Postgres. Confirm the **installed** Better Auth version documents that exact flow before recommending the move. If support stays unresolved, keep the current identity. [references/self-managed.md](references/self-managed.md). |
+| Already has Better Auth | Keep it. It works with the other Neon primitives. Migrate to Managed only if the user asks. |
+| Migrating from Supabase Auth to Neon | Managed Better Auth. [Supabase Auth](#supabase-auth). |
+| Clerk, Auth.js, or another working IdP | Keep it unless the user asks to migrate. |
+
+Google, GitHub, and Vercel social OAuth are offered on Managed Auth. They are not a reason to leave Managed Auth. Other OAuth providers, generic OAuth, MFA, passkeys, API keys, MCP OAuth, SSO, custom plugins, hooks, and custom JWT claims are the [plugin matrix](#plugin-support) check.
+
+Before enabling Managed Auth, confirm the project is on AWS and does not use IP Allow or Private Networking. Leave those protections in place.
+
+Configure supported Managed plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neondatabase/auth`. Enabling `auth: true` is not implementing login.
 
 ## What It Does
 
 - **Managed identity in Postgres** — users and sessions in `neon_auth`, queryable with SQL, compatible with RLS.
+- **Auth emails without an app mailer** — verification, email OTP, magic links, and password reset. Getting started uses shared SMTP (`auth@mail.myneon.app`). You do not add Resend or SendGrid to implement login. Production needs custom SMTP: https://neon.com/docs/auth/production-checklist.md
 - **Branches with the database** — each branch has its own Auth URL and isolated auth state.
 - **Better Auth client methods via the Neon SDK** — `@neondatabase/auth` (auth only) or `@neondatabase/neon-js/auth` (combined SDK). Optional UI: `@neondatabase/auth-ui`.
 - **Fixed plugin set** — the Managed client does not accept a `plugins` option. See [plugin support](#plugin-support).
@@ -73,9 +83,25 @@ Then implement login: [references/managed-auth.md](references/managed-auth.md).
 
 Claimable projects: follow the parent Claimable path, then `auth: true` and `neon deploy` when login is requested and no existing provider should be preserved.
 
+## Supabase Auth
+
+When the app is moving from Supabase Auth to Neon, recommend Managed Better Auth and follow https://neon.com/docs/auth/migrate/from-supabase.md.
+
+`SupabaseAuthAdapter()` keeps method shapes such as `signInWithPassword` and `signInWithOAuth`. Those calls are not interchangeable with default Better Auth examples (`signIn.email`). Keep an existing adapter caller on that API.
+
+Inventory the auth methods and database calls actually used:
+
+- Password hashes cannot transfer. Users create new accounts or sign in with OAuth.
+- Do not promise unchanged user IDs, sessions, or account linking. Plan application foreign keys with the owner.
+- `updateUser()` cannot change email or password on Managed Auth. Email verification needs application UI (codes work on shared SMTP; links need custom SMTP).
+- The migration guide lists Supabase phone/SMS/WhatsApp, SAML, and Web3 as unsupported on Managed Auth. Confirm the **installed** Better Auth version if the user still needs that exact flow; if support stays unresolved, keep Supabase Auth and stop the auth cutover. That page's "no phone auth" claim is about Supabase phone sign-in, not the constrained Managed Phone Number plugin (existing users link a number).
+- `@supabase/supabase-js` used only for Auth does not justify enabling the Data API. Keep Data API only for existing PostgREST / Supabase database-client queries.
+
 ## Verification
 
-On either path, done means sign-up, sign-in, sign-out, session restoration after reload, and protected access work, including error and loading states. Also exercise the required plugin's actual flow (passkey register then sign-in, MFA enroll then challenged sign-in, emailed invitation accepted). Report any flow that remains unverified.
+Managed path: sign-up, sign-in, sign-out, session restoration after reload, and protected access, including error and loading states. Exercise email verification (code on shared SMTP) when it is on. Report any flow that remains unverified.
+
+A required plugin on the self-managed path is verified in that app's Better Auth setup, not as a Managed flow.
 
 ## Plugin support
 
@@ -94,10 +120,10 @@ Checked 2026-09-17 against https://neon.com/docs/auth/guides/plugins.md, https:/
 | JWT | Supported | EdDSA (Ed25519), 15-minute expiry, no custom claims. Retrieve with `.token()` (`data.token`). |
 | Open API | Supported | Server routes `/reference` and `/open-api/generate-schema`. |
 | Phone Number | Supported with constraints | Browser client: existing users link a number, then sign in; no phone-first signup; own SMS webhook; custom UI. Next.js `auth.handler()` forwards the catch-all path, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. https://neon.com/docs/auth/guides/plugins/phone-number.md |
-| MFA / Two-Factor | Roadmap | Unavailable on Managed Auth. Required for this app: self-managed Better Auth on Neon. [references/self-managed.md](references/self-managed.md) |
-| Passkey, API Key, Generic OAuth, One Tap, Multi Session | Not exposed by Managed SDK/UI | Required for this app: self-managed Better Auth on Neon. Generic OAuth is not the same as Google/GitHub/Vercel social sign-in. |
-| MCP / OAuth Provider | Use self-managed Better Auth on Neon | Third-party MCP clients self-authorizing against your server. See `neon-functions` and [references/self-managed.md](references/self-managed.md). |
-| SSO / SAML | Not listed or exposed | Required for this app: self-managed Better Auth on Neon. Upstream Better Auth documents it. |
+| MFA / Two-Factor | Roadmap | Unavailable on Managed Auth. If required: [self-managed.md](references/self-managed.md), after confirming the installed Better Auth version. |
+| Passkey, API Key, Generic OAuth, One Tap, Multi Session | Not exposed by Managed SDK/UI | If required: [self-managed.md](references/self-managed.md). Generic OAuth is not Google/GitHub/Vercel social sign-in. |
+| MCP / OAuth Provider | Not Managed Auth | Third-party MCP clients self-authorizing against your server. Keep existing login. See `neon-functions` [references/mcp.md](https://neon.com/docs/ai/skills/neon-functions/references/mcp.md). |
+| SSO / SAML | Not listed or exposed | If required: [self-managed.md](references/self-managed.md), after confirming the installed Better Auth version. |
 
 `anonymousTokenClient()` on the Managed client is a Neon-specific anonymous Data API JWT. It is not Better Auth's Anonymous-account plugin (`signIn.anonymous`).
 
@@ -121,8 +147,8 @@ The Managed SDK handles iframe OAuth popup and `neon_auth_session_verifier`. Kee
 
 ## Functions and Data API
 
-A Function that authenticates a Managed user stays on Managed Auth. Verify the JWT in the `neon-functions` skill and https://neon.com/docs/compute/functions/authentication.md (`NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`). Retrieve the token with `.token()` (`data.token`). A valid token is not permission to read another user's rows. Sign-out ends the browser session; do not claim it immediately revokes an already-issued JWT.
+A Function authenticates whoever already signs the user in. Do not switch identity to call a Function. Verify the token in the `neon-functions` skill and https://neon.com/docs/compute/functions/authentication.md.
 
-Third-party MCP OAuth is a separate provider: [references/self-managed.md](references/self-managed.md) and `neon-functions` `references/mcp.md`. Fetch current Better Auth MCP docs for the installed version before using that sketch.
+Managed Auth: injected `NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`, token via `.token()` (`data.token`). A valid token is not permission to read another user's rows. Sign-out ends the browser session; do not claim it immediately revokes an already-issued JWT.
 
 Data API identity: [references/managed-auth.md](references/managed-auth.md). New apps query Postgres from Functions or existing handlers, not the Data API.
