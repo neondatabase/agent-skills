@@ -9,7 +9,7 @@ description: >-
   search with BM25 ranking, and hybrid search.
   Use when users ask about "Lakebase Postgres", "Neon setup", "connect to Neon",
   "Neon project", "DATABASE_URL", "serverless Postgres", "Neon CLI", "neon", "Neon MCP",
-  "Neon Auth", "@neondatabase/serverless", "@neondatabase/neon-js",
+  "@neondatabase/serverless", "@neondatabase/neon-js" (Data API queries),
   "scale to zero", "Neon autoscaling", "Neon read replica",
   "Neon connection pooling", "schema migrations", "database troubleshooting",
   "Postgres performance", "neon inspect db", "semantic search", "vector
@@ -32,6 +32,8 @@ neon skills -s neon -y
 Lakebase Postgres is the database at the core of Neon. It runs on the lakebase architecture — OLTP built directly on cloud object storage — which decouples storage from compute to offer autoscaling, branching, instant restore, and scale-to-zero. It's fully compatible with Postgres and works with any language, framework, or ORM that supports Postgres.
 
 It is the same database whether you reach it through Neon or through Databricks; this skill covers the Neon access path.
+
+Login, users, sessions, and `@neondatabase/auth` belong in `neon-auth`.
 
 ## Setup Flow
 

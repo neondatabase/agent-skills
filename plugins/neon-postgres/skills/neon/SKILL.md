@@ -7,7 +7,8 @@ description: >-
   MCP server, and follow the branch-first workflow. Use when building an app or
   backend on Neon, or when "Neon" or "Lakebase Postgres" is mentioned. Child
   skill neon-postgres wins for an existing DATABASE_URL, SQL, schema, inspect,
-  or search. Also use for object storage, S3, buckets, serverless functions,
+  or search. Child skill neon-auth wins for login, users, sessions, and Better
+  Auth plugins. Also use for object storage, S3, buckets, serverless functions,
   function triggers, cron, AI gateway, LLM calls, logs, Loki, Grafana,
   observability, postgres, database, backend, Claimable Neon, neon.new, or a
   no-signup database.
@@ -76,7 +77,7 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 
 | Need | Use |
 | --- | --- |
-| Login, users, sessions (no existing provider) | Auth (`auth: true`) |
+| Login, users, sessions (no existing provider) | `neon-auth` (`auth: true`) |
 | Files, uploads, blobs (no existing object store) | Object Storage |
 | HTTP APIs, cron, WebSocket, SSE, long-running agents | Functions querying Postgres |
 | LLM calls | AI Gateway |
@@ -84,7 +85,7 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
-Enabling `auth: true` is not implementing login. Follow [references/auth.md](references/auth.md). Keep an existing Clerk or other provider. Auth cannot be enabled on a project with IP Allow or Private Networking.
+Use `neon-auth` for login setup, plugin support, and Auth troubleshooting; the [Auth guide](references/auth.md) points there. Keep an existing Clerk or other provider. Auth cannot be enabled on a project with IP Allow or Private Networking.
 
 ## Neon Documentation
 
@@ -116,6 +117,7 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | Skill                            | Use it for                                                                                                                                                                           |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `neon-postgres`                  | Working with databases, including connections, schemas, queries, search, and autoscaling: SQL development, schema design, performance optimization, and scaling decisions.           |
+| `neon-auth`                      | Login, users, sessions, trusted domains, Managed Better Auth, and when to run self-managed Better Auth (unsupported plugins, MCP OAuth). Fetch: https://neon.com/docs/ai/skills/neon-auth/SKILL.md |
 | `neon-postgres-branches`         | Choosing or creating the right branch type for dev, preview, test, or CI workflows. Use this skill as a slash command.                                                               |
 | `neon-object-storage`            | Storing and serving files (uploads, images, blobs), including branching them with the database.                                                                                      |
 | `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, SSE/WebSocket servers, and Function Triggers (cron and object-storage).                                     |
@@ -145,6 +147,14 @@ For example, to install the object storage skill globally for a specific agent w
 ```bash
 neon skills -s neon-object-storage --global -y --agent <agent-name>
 ```
+
+`neon-auth` is not in the CLI skill catalog of current releases. Unknown names fail, so do not run `neon skills -s neon-auth`. Fetch it:
+
+```
+https://neon.com/docs/ai/skills/neon-auth/SKILL.md
+```
+
+References: https://neon.com/docs/ai/skills/neon-auth/references/managed-auth.md and https://neon.com/docs/ai/skills/neon-auth/references/self-managed.md. If those URLs are unpublished, fetch the same files from https://github.com/neondatabase/agent-skills/blob/main/skills/neon-auth/SKILL.md
 
 If the Neon CLI is not available, you can visit https://neon.com/.well-known/agent-skills for a registry of all available Neon skills and fetch them manually.
 
@@ -227,7 +237,7 @@ For full MCP server installation options, see https://neon.com/docs/ai/connect-m
 neon skills -s neon --agent cursor -y
 ```
 
-To install a specific skill only:
+To install a specific skill only (not `neon-auth` until the CLI catalog includes it; fetch it as in [Installing the Right Skill](#installing-the-right-skill)):
 
 ```bash
 neon skills -s <skill-name> --agent cursor -y
@@ -461,18 +471,3 @@ Use [`@neon/sdk`](https://neon.com/docs/ai/skills/neon/references/sdk.md) to man
 
 Enroll in the [Neon Agent Program](https://neon.com/programs/agents.md) only when the work is a fleet of user databases (app-generating agents and platforms). A single-app backend skips this. Instant provision, snapshots, scale-to-zero compute (storage still billed), Auth, and Data API compatibility details: that page.
 
-## Gotchas
-
-### Neon Auth: "invalid domain"
-
-Neon Auth only redirects back to domains on its trusted-domains list. Anytime the domain your app runs on changes — a new production custom domain, a new deploy/preview URL, moving from `localhost` to a hosted environment, and so on — you must register the new domain with Neon Auth. Otherwise sign-in and OAuth callbacks fail with an **`invalid domain`** error because the redirect target isn't trusted.
-
-The easiest way to fix this is the CLI. With the workspace linked to the project (see the branch-first flow above), add the new domain to the trusted list:
-
-```bash
-neon neon-auth domain add <domain>   # e.g. neon neon-auth domain add https://app.example.com
-neon neon-auth domain list           # verify what's currently trusted
-neon neon-auth domain delete <domain> # remove one you no longer use
-```
-
-If the workspace isn't linked, pass `--project-id <id>` (and `--branch <id|name>`) explicitly. For local development, `neon neon-auth domain allow-localhost` manages whether `localhost` is permitted. Register the domain before pointing users at the new URL, so they never hit the `invalid domain` error.
