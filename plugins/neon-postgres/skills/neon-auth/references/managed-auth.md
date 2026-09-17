@@ -63,7 +63,28 @@ import { createAuthClient } from "@neondatabase/auth/next";
 export const authClient = createAuthClient();
 ```
 
-Protect routes with `auth.middleware({ loginUrl: "/auth/sign-in" })` from `proxy.ts` on Next 16. Earlier Next apps may still use `middleware.ts`; match the installed SDK.
+Protect routes with `auth.middleware({ loginUrl: "/auth/sign-in" })` from `proxy.ts` on Next 16. Earlier Next apps may still use `middleware.ts`; match the installed SDK. Always set `config.matcher` to the protected pages. A matcher that covers every path redirects JavaScript and CSS for unauthenticated visitors, so the login page cannot load:
+
+```typescript
+import { auth } from "@/lib/auth/server";
+
+export default auth.middleware({ loginUrl: "/auth/sign-in" });
+
+export const config = {
+  matcher: ["/account/:path*"],
+};
+```
+
+Replace `/account/:path*` with the app's protected routes. Keep login, registration, recovery, `/api/auth`, and static assets accessible without a session.
+
+Before reading protected data or performing a mutation, check the session inside the Route Handler or Server Action and enforce the resource's authorization rules. Verify direct unauthenticated requests are denied, independently of page redirects:
+
+```typescript
+const { data: session } = await auth.getSession();
+if (!session?.user) {
+  return Response.json({ error: "Unauthorized" }, { status: 401 });
+}
+```
 
 Server session:
 
@@ -77,6 +98,10 @@ Do not destructure `{ user }` from the top-level result. Do not pass options int
 JWT: `const { data, error } = await auth.token();` then `data.token`. Do not call `getJWTToken()` on the public client.
 
 **Phone OTP:** the browser client exposes `phoneNumber`. Existing users link a number, then sign in; there is no phone-first signup. Next.js `auth.handler()` forwards the catch-all path to Managed Auth, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. SMS e2e needs a configured `send.otp` webhook and custom UI.
+
+## Organization invitations
+
+`organization.inviteMember()` does not send email unless `send_invitation_email` is on (default `false`) and "Verify email at signup" is enabled. Accepting an emailed invite needs `/auth/accept-invitation?invitationId=` via `AuthView` or a custom flow that signs the recipient in and calls `organization.acceptInvitation({ invitationId })`. If email delivery stays off, use an in-app invitation list. https://neon.com/docs/auth/guides/plugins/organization.md
 
 ## React / Vite
 

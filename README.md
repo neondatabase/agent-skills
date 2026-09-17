@@ -32,7 +32,7 @@ A comprehensive index of documentation and best practices for Lakebase Postgres 
 
 [![neon-auth](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-auth.svg?variant=branded&size=xs&label=neon-auth)](https://skills.sh/neondatabase/agent-skills/neon-auth)
 
-Neon Auth (Managed Better Auth) for login, users, and sessions that branch with the database, including which Better Auth plugins are supported and when to run self-managed Better Auth instead.
+Neon Auth (Managed Better Auth) for login, users, and sessions that branch with the database, including which Better Auth plugins are supported and when to run self-managed Better Auth on Neon instead.
 
 ### Neon Postgres Agent Platforms
 

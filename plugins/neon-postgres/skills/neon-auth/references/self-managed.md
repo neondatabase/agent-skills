@@ -1,6 +1,6 @@
 # Self-managed Better Auth
 
-Stay on Managed Better Auth until a required plugin, hook, custom JWT claim, or server option is outside Managed support. See the plugin matrix in `SKILL.md`. Social OAuth for Google, GitHub, and Vercel is supported on Managed Auth and is not a migration reason.
+Stay on Managed Better Auth until a required plugin, hook, custom JWT claim, or server option is outside Managed support. See the plugin matrix in `SKILL.md`. Social OAuth for Google, GitHub, and Vercel is supported on Managed Auth and is not a migration reason. Self-managed Better Auth on Neon keeps Lakebase Postgres as the auth database.
 
 When you do migrate, change the **server**. Replacing only `@neondatabase/auth` with `better-auth/client` while the Managed Auth service is still the identity backend does not add plugins. Do not disable types or inject `plugins` into the Neon wrapper.
 
@@ -33,6 +33,8 @@ React self-managed apps may use `better-auth/react`. Adding a client plugin does
 - Client: https://better-auth.com/docs/concepts/client
 
 ## Where it runs
+
+Keep Lakebase Postgres on Neon as the auth database. Reuse an existing app handler when it already hosts auth; otherwise use a Neon Function for the self-managed server, subject to Functions availability and claim rules.
 
 Prefer the existing app host (Next.js route handlers, and similar) when that host already serves `/api/auth`.
 
@@ -73,3 +75,5 @@ A self-managed auth server used only for MCP can sit beside an existing Clerk (o
 ## Migration is not a package swap
 
 There is no documented universal import from Managed `neon_auth` into a self-managed Better Auth schema. Before changing existing state, inventory users, linked accounts, password credentials, sessions, organization membership, application foreign keys / user IDs, callback URLs, and JWT consumers. Prove preservation on an isolated branch. Agree a reauthentication or cutover plan with the owner where anything is unresolved. Do not promise drop-in session continuity.
+
+Verify the required plugin's actual flow as well as sign-up, sign-in, sign-out, session restoration, and protected access. Report any flow that remains unverified.
