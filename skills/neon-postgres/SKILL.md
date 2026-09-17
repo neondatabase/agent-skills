@@ -29,22 +29,6 @@ Lakebase Postgres is the database at the core of Neon. It runs on the lakebase a
 
 It is the same database whether you reach it through Neon or through Databricks; this skill covers the Neon access path.
 
-## When this skill applies
-
-This skill is database implementation: connections, schema, SQL, inspect, search, and Neon-specific Postgres behavior.
-
-Reuse a supplied `DATABASE_URL` and the existing ORM or driver. Provision a project only when a connection string is missing.
-
-New backends, Auth, Object Storage, Functions, and LLM calls belong in the parent `neon` skill.
-
-| App need | Hand off |
-| --- | --- |
-| Users, sessions, login | parent Auth |
-| Files, uploads | `neon-object-storage` |
-| APIs, cron, WebSocket, SSE | `neon-functions` |
-| Model calls | `neon-ai-gateway` |
-| PostgREST / Supabase database client | parent Data API compatibility path |
-
 ## Setup Flow
 
 ### 1. Select the organization and project
