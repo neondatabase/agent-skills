@@ -39,7 +39,9 @@ Otherwise use the CLI (default) or MCP server to list organizations and projects
 
 ### 2. Get the connection string
 
-Use the CLI (default), `neon env pull`, or the MCP server to get the connection string. Store it in `.env` as `DATABASE_URL`. Read the file first before modifying it, to avoid overwriting existing values.
+If a `DATABASE_URL` is already supplied, use it. Do not fetch another through the CLI or MCP.
+
+Otherwise use the CLI (default), `neon env pull`, or the MCP server to get the connection string. Store it in `.env` as `DATABASE_URL`. Read the file first before modifying it, to avoid overwriting existing values.
 
 #### When to use pooled vs direct connections
 
@@ -59,7 +61,6 @@ Preserve the existing ORM and driver. For new TypeScript schema work with no est
 
 Driver notes:
 
-- Drizzle is a suggestion for new TypeScript schema work with no established choice (see https://neon.com/docs/guides/drizzle.md)
 - On Vercel, use `node-postgres` (`npm install pg`) with Vercel Fluid compute and `import { attachDatabasePool } from "@vercel/functions";`
 - On Cloudflare, use `node-postgres` with Cloudflare Hyperdrive
 - On Neon Functions, use `node-postgres`, as the functions are long-running and reuse the pool across requests.
