@@ -126,7 +126,7 @@ Checked 2026-09-17 against https://neon.com/docs/auth/guides/plugins.md, https:/
 | MCP / OAuth Provider | Not Managed Auth | Third-party MCP clients self-authorizing against your server. Keep existing login. See `neon-functions` [references/mcp.md](https://neon.com/docs/ai/skills/neon-functions/references/mcp.md). |
 | SSO / SAML | Not listed or exposed | If required: [self-managed.md](references/self-managed.md), after confirming the installed Better Auth version. |
 
-`anonymousTokenClient()` on the Managed client is a Neon-specific anonymous Data API JWT. It is not Better Auth's Anonymous-account plugin (`signIn.anonymous`).
+The default Managed client method is `getAnonymousToken()`. That JWT is a Neon anonymous Data API token. It is not Better Auth's Anonymous-account plugin (`signIn.anonymous`). `anonymousTokenClient()` is the SDK plugin factory, not a method on the public client. Do not call it, and do not call `getAnonymousToken()` on `SupabaseAuthAdapter()`.
 
 Trusted domains and webhooks are Neon settings, not installable Better Auth plugins.
 

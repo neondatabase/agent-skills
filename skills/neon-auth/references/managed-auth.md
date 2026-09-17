@@ -60,8 +60,10 @@ export const auth = createNeonAuth({
 ```typescript
 import { auth } from "@/lib/auth/server";
 
-export const { GET, POST } = auth.handler();
+export const { GET, POST, PUT, DELETE, PATCH } = auth.handler();
 ```
+
+Those five methods are what the installed SDK returns. Existing apps that export only `GET`/`POST` keep serving GET/POST routes.
 
 Browser client takes **no arguments** and talks to that same-origin proxy:
 

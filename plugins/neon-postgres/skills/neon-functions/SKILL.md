@@ -285,21 +285,31 @@ export default {
         headers: cors(request),
       });
     }
+    let userId: string;
     try {
       const { payload } = await jwtVerify(auth.slice(7), jwks, { issuer });
-      const userId = payload.sub; // scope the agent to this user
-      // ... run the agent, return result.toUIMessageStreamResponse({ headers: cors(request) })
+      if (!payload.sub) {
+        return new Response("Unauthorized", {
+          status: 401,
+          headers: cors(request),
+        });
+      }
+      userId = payload.sub;
     } catch {
       return new Response("Unauthorized", {
         status: 401,
         headers: cors(request),
       });
     }
+    // Authorize resource access by userId, then run the agent scoped to that user.
+    // ... return result.toUIMessageStreamResponse({ headers: cors(request) })
   },
 };
 ```
 
 That snippet is Managed Auth verification. Mint the bearer token with `.token()` (`data.token`) on the default client, or `getSession()` then `data.session.access_token` on `SupabaseAuthAdapter()`. For another identity, pass that app's JWKS URL and issuer through Function `env` (see [Environment Variables](#environment-variables)) and include `audience` only when that token contract requires it. https://neon.com/docs/compute/functions/authentication.md
+
+A valid token is not permission to read another user's rows. Exercise two users: each can access their own data; cross-user access is denied. Repeat after restarting the Function against stored rows. A request-supplied owner id cannot grant access.
 
 Persist anything you need to keep (generated images, history) in Postgres — module state doesn't survive eviction.
 
