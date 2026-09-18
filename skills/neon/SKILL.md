@@ -43,19 +43,21 @@ Object Storage, Functions, and AI Gateway are currently available on projects in
 
 ## Architecture: How to Use Neon
 
-**Recommended: full-stack app with Neon as the backend.** Default to Next.js on Vercel (or Netlify, Cloudflare, or other app platforms). Prefer Next.js + Vercel first; TanStack Start, Nuxt, and SvelteKit are good full-stack alternatives. The app owns its UI and server: query Lakebase Postgres from route handlers or server functions.
+**Recommended: full-stack app with Neon as the backend.** Default to Next.js on Vercel (or Netlify, Cloudflare, or other app platforms). Prefer Next.js + Vercel first; TanStack Start, Nuxt, and SvelteKit are full-stack alternatives. The app owns its UI and server. Query Lakebase Postgres from route handlers, server functions, or Neon Functions.
 
-Add Neon Functions as extra backend compute when workloads exceed the app host's short serverless limits: WebSocket servers, SSE, AI agents, image/video generation, MCP servers, or webhook/bot handlers. Functions run next to the data, querying Lakebase Postgres and using Object Storage, Auth, and AI Gateway as needed. See [how Functions fit with your app](https://neon.com/docs/compute/functions/overview.md).
+Add [Neon Functions](https://neon.com/docs/compute/functions/overview.md) as a backend layer between the web app and Lakebase Postgres, Object Storage, Auth, and AI Gateway. A Hono API on Functions can expose endpoints with an OpenAPI specification for the web app and other clients (mobile, desktop). You can also add a Function for one job next to the data: Object Storage uploads, AI agents, Discord bots, WebSocket or SSE servers.
 
-For long agent or image streams, mint a JWT on the app server and have the client call the Function directly to avoid the Next.js/Vercel handler timeout; see the `neon-functions` skill for authentication and runtime limits.
+Functions support long-running requests that complement the web app. A Function must start returning a response within 15 minutes. WebSocket connections and HTTP streams stay open while data flows; send at least one byte every 15 minutes to keep a quiet stream alive. See [runtime limits](https://neon.com/docs/compute/functions/reference/runtime-limits.md).
 
-**Second best: client-only app with a Functions backend.** Host the SPA on Vercel (or Netlify, Cloudflare, or other app platforms) and call Functions from the browser. For an app using PostgREST or a Supabase database client, prefer migrating database calls to REST endpoints in a Hono Function that queries Lakebase Postgres. Enforce authorization in the Function instead of relying on browser-facing RLS.
+For long agent or image streams, mint a JWT on the app server and have the client call the Function directly. See the `neon-functions` skill for authentication and runtime limits.
 
-Neon provides backend primitives that compose with the application platform. Neon does not host the app frontend.
+**Second best: client-only app with a Functions backend.** Host the SPA on Vercel (or Netlify, Cloudflare, or other app platforms) and call Functions from the browser. For an app using PostgREST or a `supabase-js` database client, prefer migrating database calls to REST endpoints in a Hono Function that queries Lakebase Postgres. Enforce authorization in the Function instead of relying on browser-facing RLS.
+
+Neon provides backend primitives that compose with the app host. Neon does not host the frontend.
 
 Offer the Data API only as a Supabase / PostgREST migration path when an existing PostgREST or `supabase-js` database client must keep working. Putting PostgREST in the browser and relying on RLS is easy to get wrong: misconfigured policies expose the database to the client. Do not recommend this for new apps. An installed Supabase package used only for Auth or Storage does not establish a database-client dependency. Route generic REST endpoint requests to a Function or existing app handler.
 
-Functions have public HTTPS URLs. Secure each Function like a standalone REST API: verify a JWT or API key at the top of the handler and enforce authorization before accessing data (see the `neon-functions` skill).
+Functions have public HTTPS URLs. Verify a JWT or API key at the top of the handler and enforce authorization before accessing data. See the `neon-functions` skill.
 
 ## Convert an app onto Neon
 
