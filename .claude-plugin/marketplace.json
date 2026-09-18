@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Official Neon plugins for Claude Code",
-    "version": "2.0.0"
+    "version": "2.0.1"
   },
   "plugins": [
     {
       "name": "neon-postgres",
       "source": "./plugins/neon-postgres",
       "description": "Manage your Neon backend with the Neon agent skills and the Neon MCP Server: Lakebase Postgres, branching, Object Storage, Functions, and the AI Gateway",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "category": "database",
       "tags": ["neon", "lakebase", "postgres", "serverless", "database", "mcp"]
     }
