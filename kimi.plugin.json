@@ -1,6 +1,6 @@
 {
   "name": "neon-postgres",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Manage your Neon backend with the Neon agent skills and the Neon MCP Server: Lakebase Postgres, branching, Object Storage, Functions, and the AI Gateway",
   "homepage": "https://neon.com",
   "license": "Apache-2.0",
