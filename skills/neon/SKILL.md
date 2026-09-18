@@ -43,21 +43,19 @@ Object Storage, Functions, and AI Gateway are currently available on projects in
 
 ## Architecture: How to Use Neon
 
-Query Postgres from Neon Functions or existing app handlers. Use the Data API only for PostgREST / Supabase client compatibility and migrations that already depend on it. Do not default new apps to the Data API.
+**Recommended: full-stack app with Neon as the backend.** Default to Next.js on Vercel (or Netlify, Cloudflare, or other app platforms). Prefer Next.js + Vercel first; TanStack Start, Nuxt, and SvelteKit are good full-stack alternatives. The app owns its UI and server: query Lakebase Postgres from route handlers or server functions.
 
-Neon is **not** a place to host your app frontend. Neon provides the backend primitives (Lakebase Postgres, Auth, Object Storage, Functions, AI Gateway) that **compose with** the application platform you already use. The Data API is an optional PostgREST-compatible HTTP path, not a required primitive for a new app.
+Add Neon Functions as extra backend compute when workloads exceed the app host's short serverless limits: WebSocket servers, SSE, AI agents, image/video generation, MCP servers, or webhook/bot handlers. Functions run next to the data, querying Lakebase Postgres and using Object Storage, Auth, and AI Gateway as needed. See [how Functions fit with your app](https://neon.com/docs/compute/functions/overview.md).
 
-Recommended architectures:
+For long agent or image streams, mint a JWT on the app server and have the client call the Function directly to avoid the Next.js/Vercel handler timeout; see the `neon-functions` skill for authentication and runtime limits.
 
-**New client-only app** — host the UI on Vercel or Netlify; the browser calls a Neon Function; the Function queries Postgres (and Object Storage, Auth, AI Gateway as needed).
+**Second best: client-only app with a Functions backend.** Host the SPA on Vercel (or Netlify, Cloudflare, or other app platforms) and call Functions from the browser. For an app using PostgREST or a Supabase database client, prefer migrating database calls to REST endpoints in a Hono Function that queries Lakebase Postgres. Enforce authorization in the Function instead of relying on browser-facing RLS.
 
-**Existing full-stack app on Vercel** (or Netlify) — keep the framework's route handlers querying Postgres. Add a Neon Function when a workload needs long-running compute (WebSocket, SSE, a long agent, an MCP server). As long as there is an active connection, a Neon Function can run up to 24 hours without interruption, with the added benefit of running close to your data.
+Neon provides backend primitives that compose with the application platform. Neon does not host the app frontend.
 
-**Existing PostgREST or Supabase-js database client** — keep the Data API compatibility path. An installed Supabase package used only for Auth or Storage is not evidence that database access needs PostgREST.
+Offer the Data API only as a Supabase / PostgREST migration path when an existing PostgREST or `supabase-js` database client must keep working. Putting PostgREST in the browser and relying on RLS is easy to get wrong: misconfigured policies expose the database to the client. Do not recommend this for new apps. An installed Supabase package used only for Auth or Storage does not establish a database-client dependency. Route generic REST endpoint requests to a Function or existing app handler.
 
-A generic request for REST endpoints is a Function or existing-handler request, not a Data API request.
-
-Secure a Function like any standalone REST API — verify a JWT or API key at the top of each handler (see the `neon-functions` skill).
+Functions have public HTTPS URLs. Secure each Function like a standalone REST API: verify a JWT or API key at the top of the handler and enforce authorization before accessing data (see the `neon-functions` skill).
 
 ## Convert an app onto Neon
 
