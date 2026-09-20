@@ -157,8 +157,23 @@ Worker:
   separately so a request path cannot change the authority.
 - Apply Cloudflare DDoS / WAF / rate-limiting rules on that Worker hostname.
   The forwarding snippet does not configure those rules.
+- Disable the Worker's `workers.dev` route and Preview URLs. Hostname-scoped
+  rules do not apply to those endpoints, and they still run this forwarding
+  code. Inventory clients on those URLs first.
+  https://developers.cloudflare.com/workers/configuration/routing/workers-dev.md
+  Dashboard: Worker → Settings → Domains & Routes. A later Wrangler deploy
+  without `workers_dev: false` turns `workers.dev` back on.
 - Do not buffer a streaming body. Do not add a browser challenge MCP or API
   clients cannot pass.
+
+Wrangler:
+
+```jsonc
+{
+  "workers_dev": false,
+  "preview_urls": false
+}
+```
 
 ```typescript
 const FUNCTION_ORIGIN = "https://<invocation-host>"; // neon functions get
