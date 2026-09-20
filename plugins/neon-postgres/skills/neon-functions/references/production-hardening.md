@@ -89,7 +89,14 @@ Declare `ORIGIN_SECRET` in `neon.ts` `env` and on the app host.
 Buffer the incoming body on the app-server `fetch`. Node `fetch` throws
 `duplex option is required when sending a body` if you pass a streamed
 `request.body`. `duplex: "half"` is Node-only; this hop is short, so
-buffer instead.
+buffer instead. `redirect: "manual"` keeps `X-Secret` from following a
+cross-origin redirect.
+
+`NEON_FUNCTION_URL` is `invocation_url` from `neon functions get`. It ends
+with `/`. This example calls that root. For a Function path, concatenate
+onto that slash (`new URL("orders?limit=2", functionUrl)`). Do not copy the
+app request's host or pathname onto the Function; a Next.js `/api/...` route
+is not the Function path.
 
 ```typescript
 const functionUrl = process.env.NEON_FUNCTION_URL;
@@ -108,10 +115,9 @@ return fetch(functionUrl, {
   method: request.method,
   headers,
   body: request.body ? await request.arrayBuffer() : undefined,
+  redirect: "manual",
 });
 ```
-
-Copy `NEON_FUNCTION_URL` from `neon functions get` (`invocation_url`).
 
 ## Function Triggers only
 
