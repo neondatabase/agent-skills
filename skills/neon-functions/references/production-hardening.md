@@ -84,8 +84,12 @@ export default {
 };
 ```
 
-Declare `ORIGIN_SECRET` in `neon.ts` `env` and on the app host. App-server
-call:
+Declare `ORIGIN_SECRET` in `neon.ts` `env` and on the app host.
+
+Buffer the incoming body on the app-server `fetch`. Node `fetch` throws
+`duplex option is required when sending a body` if you pass a streamed
+`request.body`. `duplex: "half"` is Node-only; this hop is short, so
+buffer instead.
 
 ```typescript
 const functionUrl = process.env.NEON_FUNCTION_URL;
@@ -103,7 +107,7 @@ if (authorization) headers.set("authorization", authorization);
 return fetch(functionUrl, {
   method: request.method,
   headers,
-  body: request.body,
+  body: request.body ? await request.arrayBuffer() : undefined,
 });
 ```
 
