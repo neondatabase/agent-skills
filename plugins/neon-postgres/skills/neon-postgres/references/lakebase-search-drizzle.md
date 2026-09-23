@@ -2,7 +2,7 @@
 
 When the user wants Lakebase Search managed through Drizzle, treat the SQL in [Vector Search](vector-search.md), [Full-Text Search](full-text-search.md), and [Hybrid Search](hybrid-search.md) as the source of truth and apply it as below. Use Drizzle for all schema and migration management unless the user says otherwise.
 
-Requires `drizzle-orm` 0.36+ and `drizzle-kit` 0.27+: the schema below returns its indexes as an array from the `pgTable` extra-config callback, which 0.36/0.27 introduced. Those versions also include generated-column support for the `tsvector` column, the custom-method `.using(...).op(...)` index API for `lakebase_ann`, the `vector` column type, and the `cosineDistance` helper.
+Requires `drizzle-orm` 0.36+ and `drizzle-kit` 0.27+: the schema below returns its indexes as an array from the `pgTable` extra-config callback. Those versions also include generated-column support for the `tsvector` column, the custom-method `.using(...).op(...)` index API for `lakebase_ann`, the `vector` column type, and the `cosineDistance` helper.
 
 Contents:
 
