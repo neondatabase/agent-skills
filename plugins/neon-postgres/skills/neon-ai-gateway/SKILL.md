@@ -31,7 +31,7 @@ neon skills -s neon -y
 
 Currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`.
 
-The Neon AI Gateway brings LLM and embedding inference to your Neon branch. One API and one Neon credential give you access to frontier and open-source LLMs plus embedding models, all hosted and powered by Databricks. The catalog shifts over time, so treat `/v1/models` and the [models.dev Neon page](https://models.dev/providers/neon) as the source of truth rather than a fixed provider list. Your existing OpenAI/Anthropic/Gemini SDK works by changing only the base URL.
+The Neon AI Gateway brings LLM and embedding inference to your Neon branch. One API and one Neon credential give you access to frontier and open-source LLMs plus embedding models, all hosted and powered by Databricks. The catalog shifts over time: use `/v1/models` and the [models.dev Neon page](https://models.dev/providers/neon) for LLM IDs, and the [embeddings guide](https://neon.com/docs/ai-gateway/embeddings) for embedding model IDs and dimensions. Your existing OpenAI/Anthropic/Gemini SDK works by changing only the base URL.
 
 Use this skill to help the user send model calls through the gateway, wire it into the AI SDK or Mastra, and switch providers without rewiring code. Deliver a working inference request, a configured agent, or a precise answer from the official Neon docs.
 
@@ -67,7 +67,7 @@ The AI Gateway is credential-gated rather than a provisioning step, but two plan
 - **Free plan → provisioning is blocked.** `neon config apply` / `deploy` and `neon checkout` **refuse** to enable the gateway on a Free plan (the gateway can't serve requests there), with a friendly "upgrade to a paid plan, or remove `aiGateway`" error. A dry-run `neon config plan` and `neon env pull` don't provision, so they only **warn**. So: to use the gateway the project's account must be on a paid Neon plan.
 - **Paid plan with a reduced model catalog.** On a paid plan the gateway provisions and serves, but an account can start with a trimmed catalog — some flagship models (e.g. Anthropic Opus, OpenAI Codex / `*-pro`) are missing from `GET /v1/models`. This is expected; `neon env pull` (and the env pull bundled into `apply` / `deploy` / `checkout`) warns and links the user to their branch's AI Gateway page in the Neon Console (`https://console.neon.tech/app/projects/<project-id>/branches/<branch-id>/ai-gateway`) to request access to more models. Verify what's actually available for the branch by reading `/v1/models` (see the models section below) rather than assuming the full catalog.
 
-When helping a user debug "the gateway isn't working" or "a model is missing", use `/v1/models` plus the account's plan to distinguish these two cases — a Free plan blocks provisioning entirely, while a reduced catalog on a paid plan just needs a model-access request.
+When helping a user debug LLM access, use `/v1/models` plus the account's plan to distinguish these two cases — a Free plan blocks provisioning entirely, while a reduced catalog on a paid plan just needs a model-access request. For embeddings, check the [embeddings guide](https://neon.com/docs/ai-gateway/embeddings) and try the model directly; `/v1/models` may omit callable embedding models.
 
 ## Setup
 
@@ -244,7 +244,7 @@ Use a model's catalog ID directly in the `model` field — e.g. `claude-sonnet-4
 
 ## List Available Models at Runtime (`/v1/models`)
 
-The gateway also exposes the model catalog **live from your own branch endpoint**, so an app or agent can discover exactly which models this branch serves without hard-coding the list. It is an OpenAI-compatible list endpoint, served **only on the unified dialect** (`/v1`):
+The gateway also exposes a model catalog **live from your own branch endpoint**. It is an OpenAI-compatible list endpoint, served **only on the unified dialect** (`/v1`). For embedding models, consult the [embeddings guide](https://neon.com/docs/ai-gateway/embeddings): a callable embedding model may be absent from this list.
 
 ```bash
 curl "$NEON_AI_GATEWAY_BASE_URL/v1/models" \
@@ -297,7 +297,7 @@ Any Neon credential (`nt_live_...`) valid for the branch works as the bearer tok
 }
 ```
 
-> Note: `context_length`, `pricing`, and `per_request_limits` are currently `null` and `created` is `0` for every entry — for context windows, pricing, and capabilities use the models.dev catalog above. Use `/v1/models` when you need the live, branch-scoped list of servable model IDs (e.g. to populate a model picker or validate a `model` before a request).
+> Note: `context_length`, `pricing`, and `per_request_limits` are currently `null` and `created` is `0` for every entry — for context windows, pricing, and capabilities use the models.dev catalog above. Use `/v1/models` for a live, branch-scoped LLM model picker; do not use its absence as proof that an embedding model cannot be called.
 
 ## Neon Documentation
 

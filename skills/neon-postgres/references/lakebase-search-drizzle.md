@@ -129,7 +129,7 @@ const aiGateway = new OpenAI({
   apiKey,
   baseURL: `${gatewayBaseUrl}/v1`,
 });
-const embeddingModel = "qwen3-embedding-0-6b"; // example; choose from the gateway catalog
+const embeddingModel = "qwen3-embedding-0-6b"; // example; see the AI Gateway embeddings docs for model IDs
 
 async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
   if (inputs.length === 0) return [];
