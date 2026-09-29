@@ -113,7 +113,7 @@ CREATE INDEX documents_body_bm25 ON documents USING lakebase_bm25 (body_tsv);
 
 ## Generate and Store Embeddings
 
-Embedding generation is an application call to the AI Gateway, not a Drizzle API. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `openai` and `dotenv` (`npm install openai dotenv`), then configure the OpenAI client and an application helper:
+Your application sends an HTTP request to the AI Gateway through the OpenAI SDK to generate embeddings; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `openai` and `dotenv` (`npm install openai dotenv`), then configure the OpenAI client and an application helper:
 
 ```typescript
 import "dotenv/config";
@@ -173,7 +173,7 @@ await db.insert(documents).values(
 );
 ```
 
-Chunk large imports within gateway input and rate limits and database write limits. Generate query embeddings with the same model and dimensions, following its query-input conventions. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
+Chunk large imports within gateway input and rate limits and database write limits. The same `generateEmbeddings()` helper handles document and query text; format each input according to the selected model's conventions. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
 
 ## Query
 
