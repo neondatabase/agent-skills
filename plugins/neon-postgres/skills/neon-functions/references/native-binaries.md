@@ -37,7 +37,7 @@ export default defineConfig({
 });
 ```
 
-esbuild leaves `import sharp from "sharp"` unresolved. At deploy, the CLI installs the version of `sharp` from your project with `npm install --cpu=arm64 --os=linux --libc=glibc --ignore-scripts` into a temp directory, traces the files it reaches with `@vercel/nft`, and copies them into the archive under `node_modules/` with the tree layout intact. Your own `node_modules` is never read or modified.
+esbuild leaves `import sharp from "sharp"` unresolved. At deploy, the CLI installs the version of `sharp` from your project with `npm install --cpu=arm64 --os=linux --libc=glibc --ignore-scripts` into a temp directory, traces the files it reaches with `@vercel/nft`, and copies them into the archive under `node_modules/` with the tree layout intact. Only the installed version is read from your `node_modules`; the shipped files come from the temp install, and your `node_modules` is not modified.
 
 The deploy fails with a named error when:
 
