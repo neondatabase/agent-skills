@@ -8,7 +8,7 @@ The default deploy bundles `source` into a single `index.mjs` with esbuild. A co
 | A file your own build step produces: a `.node` addon, a `.so`, a `.wasm`, model weights    | [`bundler: "none"`](#bundler-none-ship-a-prebuilt-directory) or a [custom `bundler`](#custom-bundler-return-the-file-map) |
 | A standalone executable you spawn (`ffmpeg`, a Go or Rust CLI)                              | A custom `bundler` or `"none"`, plus [a copy to `/run` at startup](#standalone-executables) |
 
-Needs `neon` CLI 4.12 or newer and `@neon/config` 1.1 or newer.
+The examples use top-level `functions`, which needs `neon` CLI 4.20 or newer and `@neon/config` 1.6 or newer.
 
 ## The runtime a binary lands on
 
@@ -24,6 +24,8 @@ The filesystem layout is observed behavior, not documented by Neon. Re-check it 
 
 ```typescript
 // neon.ts
+import { defineConfig } from "@neon/config/v1";
+
 export default defineConfig({
   functions: {
     resize: {
@@ -40,10 +42,12 @@ esbuild leaves `import sharp from "sharp"` unresolved. At deploy, the CLI instal
 The deploy fails with a named error when:
 
 - the package is not installed in your project (no version to pin)
-- the package has no linux-arm64 glibc build, or compiles from source at install time
+- the declared package itself does not install for linux-arm64 glibc (`EBADPLATFORM`)
 - a staged `.node` or `.so` is not an AArch64 ELF binary
 - `npm` is not on `PATH`
 - the archive exceeds the [size limits](#size-limits)
+
+It does not fail when a platform-specific optional dependency is silently skipped, or when a package that compiles from source at install time ships no binary (the staging install runs with `--ignore-scripts`). Those deploy and then fail at invoke. Use packages that publish a linux-arm64 glibc prebuild (`sharp` does), and invoke the deployed function once to confirm the addon loads.
 
 A deploy and `neon dev` print an advisory warning for any bundled package that carries native code and is not declared. A package with a working JavaScript fallback (`ws` with `bufferutil`) triggers it too and needs no change. Do not silence it with `{ name, includeFiles: false }`: that externalizes the package and ships nothing, so a reached import throws `Cannot find module` on every invoke. `includeFiles: false` is only for an import the function never evaluates.
 
@@ -65,6 +69,8 @@ dist/fn/
 
 ```typescript
 // neon.ts
+import { defineConfig } from "@neon/config/v1";
+
 export default defineConfig({
   functions: {
     api: { name: "API", source: "./dist/fn", bundler: "none" },
@@ -161,7 +167,11 @@ export default {
 };
 ```
 
-`neon dev` runs this code on your machine, where `/run` may not exist and a linux-arm64 binary cannot execute. Set `FFMPEG_PATH` to a host install in your local env file and leave it out of the function's deployed `env`.
+`neon dev` runs this code on your machine, where `/run` may not exist and a linux-arm64 binary cannot execute. Point it at a host install from the shell, and leave `FFMPEG_PATH` out of the function's deployed `env`:
+
+```bash
+FFMPEG_PATH="$(command -v ffmpeg)" neon dev
+```
 
 The binary must be statically linked, or its shared libraries must exist in the runtime image. The copy costs memory: `/run` is RAM-backed and counts against the function's 2048 MiB.
 
@@ -175,4 +185,4 @@ The binary must be statically linked, or its shared libraries must exist in the 
 | Total uncompressed bytes | 64 MiB  |
 | Files in the archive     | 4,096   |
 
-Exceeding one fails the deploy and lists the four largest files. Check an executable's size before building around it: a single static binary can use most of the 64 MiB.
+Exceeding one fails the deploy. The byte-limit errors list the four largest files. Check an executable's size before building around it: a single static binary can use most of the 64 MiB.
