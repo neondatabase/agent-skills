@@ -22,6 +22,34 @@ Rules to keep in mind when touching these files:
 
 `npm run validate:agent-plugin` (part of `validate:ci`) enforces the manifest, MCP, and skill-discovery rules above. The last two bullets are packaging conventions rather than checked rules, though `validate:versions` does hold `kimi.plugin.json` to the version in `package.json` like every other manifest.
 
+### Portable plugin release ZIP
+
+Build the distributable Agent Plugins v1 ZIP from the repository root. Name it `dist/neon-<package-version>.zip`, using the version from `package.json`. The `dist/` directory is gitignored; never commit generated ZIP files.
+
+Include these portable package entries at the ZIP root, with no wrapping directory:
+
+- `plugin.json`
+- `mcp.json`
+- `skills/`
+- `assets/`
+- `LICENSE`
+
+Do not include `README.md`, `package.json`, client-specific app mappings or overlays such as `.app.json`, hooks, marketplace catalogs, compatibility manifests, `.DS_Store`, or other repository files.
+
+Create and verify the archive with:
+
+```bash
+VERSION=$(node -p "require('./package.json').version")
+OUT="dist/neon-${VERSION}.zip"
+mkdir -p dist
+rm -f "$OUT"
+zip -q -r "$OUT" plugin.json mcp.json skills assets LICENSE \
+  -x '*/.DS_Store' '*.DS_Store'
+unzip -t "$OUT"
+```
+
+Before distributing the ZIP, run `npm run validate:ci` and confirm `plugin.json` and `mcp.json` appear at the archive root with `unzip -l "$OUT"`.
+
 ## Pi, and the npm publish
 
 The [Pi coding agent](https://pi.dev) loads this repo through the `pi` block in [`package.json`](package.json) — `"pi": { "skills": ["./skills"] }` (see the [Pi package docs](https://github.com/earendil-works/pi/tree/main/packages/coding-agent/docs/packages.md)). Pi would auto-discover a top-level `skills/` by convention even without the block, but the explicit path is self-documenting and matches how every other channel here names its skills source.
