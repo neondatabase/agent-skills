@@ -33,7 +33,7 @@ A Pi package declares extensions, skills, prompt templates, and themes — not M
 **The skills are published to npm as [`@neon/skills`](https://www.npmjs.com/package/@neon/skills), and the README leads with `pi install npm:@neon/skills`** (it still lists the `git:` install as an alternative). Three fields in `package.json` shape that publish:
 
 - `keywords` includes `"pi-package"` — the tag the [pi.dev/packages](https://pi.dev/packages) gallery crawls npm for. A git install works but never appears in the gallery, so the npm publish is what earns the listing (once Pi's next crawl runs). Keep it in mind if you ever reformat `keywords`.
-- `files` narrows the tarball to `skills/`, `plugin.json`, and `mcp.json` (npm always adds `package.json`, `README.md`, and `LICENSE`). Without it a publish would ship the whole tree — `evals/`, `.github/`, `scripts/`, everything.
+- `files` narrows the tarball to `skills/`, `assets/`, `plugin.json`, and `mcp.json` (npm always adds `package.json`, `README.md`, and `LICENSE`). Without it a publish would ship the whole tree — `evals/`, `.github/`, `scripts/`, everything.
 - `publishConfig.access` is `public`, because npm defaults a **scoped** package to a restricted (paid) publish and rejects it.
 
 None of these carries a version, so `sync-versions.mjs` neither reads nor writes them, and no validator enforces them. The publish itself is currently a manual `npm publish` rather than automation in this repo — Neon otherwise ships its npm packages from a private mirror — so wiring an automated release from source is still a follow-up.
