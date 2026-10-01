@@ -17,7 +17,7 @@
         "displayName": "Neon",
         "shortDescription": "Manage your Neon backend",
         "longDescription": "Manage Neon projects directly through ChatGPT. Run SQL and transactions on Lakebase Postgres, inspect and diff table schemas, apply migrations on a temporary branch before committing them, and provision Auth and the Data API. Create copy-on-write branches for isolated work, query logs from Serverless Functions and Object Storage for debugging, tune slow queries, and search Neon docs all through natural language commands. Connect with OAuth. During authorization, choose read-only or full access. Always review and authorize actions before execution.",
-        "developerName": "Neon",
+        "developerName": "Neon (A Databricks, Inc. company)",
         "category": "Developer Tools",
         "capabilities": ["Read", "Write"],
         "websiteURL": "https://neon.com",
