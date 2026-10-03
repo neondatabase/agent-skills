@@ -194,7 +194,7 @@ Then inspect credentials without printing secrets. `NEON_API_KEY` or a `neon pro
 
 ### Combined setup: `neon init`
 
-When both agent tooling and project setup are needed, use authenticated `neon init`. It sets up the current directory in place and does not scaffold starter files. `--agent` takes the coding-agent name. `-y` skips prompts but does not supply project selection or credentials.
+When both agent tooling and project setup are needed, use authenticated `neon init`. It sets up the current directory in place. `--agent` takes the coding-agent name. `-y` skips prompts but does not supply project selection or credentials.
 
 Link an existing project:
 
