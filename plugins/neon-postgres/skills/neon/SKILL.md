@@ -194,26 +194,26 @@ Then inspect credentials without printing secrets. `NEON_API_KEY` or a `neon pro
 
 ### Combined setup: `neon init`
 
-When both agent tooling and project setup are needed, use authenticated `neon init`. `--agent` takes the coding-agent name. `-y` skips prompts but does not supply project selection or credentials. `--skip-template` skips scaffolding a starter app.
+When both agent tooling and project setup are needed, use authenticated `neon init`. It sets up the current directory in place and does not scaffold starter files. `--agent` takes the coding-agent name. `-y` skips prompts but does not supply project selection or credentials.
 
 Link an existing project:
 
 ```bash
-neon init --skip-template --agent cursor \
+neon init --agent cursor \
   --org-id <org-id> --project-id <project-id> -y
 ```
 
 Create and link a project:
 
 ```bash
-neon init --skip-template --agent cursor \
+neon init --agent cursor \
   --org-id <org-id> --project-name my-app \
   --region-id aws-us-east-2 -y
 ```
 
 `--services` may declare `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
 
-With `-y`, `init` installs the Neon plugin globally for agents that support plugins (Cursor, Claude Code, Codex, VS Code, GitHub Copilot CLI, Grok Build). The plugin declares the MCP server by URL, so the agent signs in with OAuth. For other agents, `init` installs skills and the MCP server globally, using an API key when the CLI is signed in and OAuth otherwise. Passing `--mcp-auth oauth|api-key` or `--mcp-config-location global|project` installs skills and the MCP server instead of the plugin, with that auth and location. Every combination is supported; see [Install the Neon MCP Server](#2-install-the-neon-mcp-server).
+With `-y`, `init` installs the Neon plugin globally for agents that can take it (for example Cursor, Claude Code, and Codex). The plugin declares the MCP server by URL, so the agent signs in with OAuth. Agents without the plugin get skills and the MCP server globally, using an API key when the CLI is signed in and OAuth otherwise. Passing `--mcp-auth oauth|api-key` or `--mcp-config-location global|project` installs skills and the MCP server instead of the plugin; those flags set the MCP auth and config location only. Every MCP combination is supported; see [Install the Neon MCP Server](#2-install-the-neon-mcp-server).
 
 If `init` already installed the Neon plugin, do not also run `neon mcp` and `neon skills` for the same agent.
 
@@ -233,8 +233,8 @@ Use the install check above. Do not run `neon login` unattended. MCP remains the
 | Project (this directory) | `neon mcp --oauth --project --agent <agent> -y` | `neon mcp --project --agent <agent> -y` |
 
 - **Global** config serves every project the agent opens, so one install covers all of them. Global with an API key is the `neon mcp -y` default. Global with OAuth and global with an API key are equally good choices.
-- **OAuth** writes only the server URL. The agent opens Neon sign-in on first use, and the consent page lets the user allow or deny writes, pick one project, and choose tool categories. Sign-in needs a human, so an unattended agent that installs with `--oauth` has a configured server but no MCP session until someone completes it.
-- **API key** needs no sign-in in the agent. The CLI reuses a key already in a Neon MCP entry at that config location; otherwise it mints a key (the CLI must be signed in) and prints its id and the revoke command, `neon api-keys revoke <id>`. A minted key reaches every project in every organization the account can access. `--project-id <id>` pins the tools to one project and limits a newly minted key to it.
+- **OAuth** writes only the server URL. The agent opens Neon sign-in on first use. On the default URL, the consent page lets the user allow or deny writes, pick one project, and choose tool categories; with `--read-only`, `--project-id`, or `--category` in the URL, consent confirms that fixed grant instead. Sign-in needs a human, so an unattended agent that installs with `--oauth` has a configured server but no MCP session until someone completes it.
+- **API key** needs no sign-in in the agent. The CLI reuses a key already in a Neon MCP entry at that config location; otherwise it mints a key (the CLI must be signed in) and prints its id and the exact revoke command to run later. A minted key reaches every project in every organization the account can access. `--project-id <id>` pins the tools to one project and limits a newly minted key to it.
 - **Project scope: use OAuth.** Project config lives in the repository (for example `.cursor/mcp.json`), where an API key can end up in git. The CLI refuses to write an API key into a project config file that git already tracks.
 
 `--agent` limits the install to the named agent. Without it, `-y` writes to every agent installed on the machine (global) or detected in the directory (project), falling back to the agent running the command. Name the agent to avoid writing into agents the user did not ask for. `--project` selects project-level config and is not a Neon project ID; antigravity, cline, cline-cli, goose, and windsurf support only global config. `--read-only` and `--category` narrow the tools; `neon mcp --help` lists every flag.
