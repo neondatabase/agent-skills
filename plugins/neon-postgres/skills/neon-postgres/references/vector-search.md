@@ -59,6 +59,9 @@ const client = new OpenAI({
 });
 
 const embeddingModel = "qwen3-embedding-0-6b"; // example; see the AI Gateway embeddings docs for model IDs
+// Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
+const queryPrompt =
+  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery:";
 
 async function embedBatch(inputs: string[]): Promise<number[][]> {
   if (inputs.length === 0) return [];
@@ -83,8 +86,10 @@ async function embed(input: string): Promise<number[]> {
 }
 
 const documentEmbeddings = await embedBatch(documentBodies); // store by input index
-const queryEmbedding = await embed(queryText); // bind to $1 in the queries below
+const queryEmbedding = await embed(`${queryPrompt}${queryText}`); // bind to $1 below
 ```
+
+For Neon documentation search, the example adapts the task instruction in Qwen3's stored `query` prompt from [config_sentence_transformers.json](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/blob/main/config_sentence_transformers.json). Its `document` prompt is empty, so document text stays unprefixed. The OpenAI SDK does not apply SentenceTransformers prompts automatically. Keep the original `queryText` for BM25, and use the selected model's own prompt conventions if you switch models.
 
 The OpenAI SDK uses the same `embeddings.create` method for document and query text; any difference is in the input formatting recommended by the selected model. Use a batch size within the endpoint's input and rate limits, and pair each vector with its source row using the response `index`. The [OpenAI JavaScript SDK v6](https://github.com/openai/openai-node/blob/v6.0.0/src/resources/embeddings.ts) defaults to requesting base64 and decodes the response as base64. If a compatible endpoint returns float arrays instead, that decoder can silently turn them into zeros. Pass `encoding_format: "float"` explicitly for the AI Gateway; the SDK then returns the float arrays directly. Base64 can reduce response size when an endpoint actually returns base64, but do not assume that format for this gateway.
 
@@ -134,7 +139,7 @@ For a large table, use `CREATE INDEX CONCURRENTLY` to avoid locking out writes w
 
 ## Query
 
-Generate the query embedding with the same model and dimensions used for stored documents, following the model's query-input conventions (for example, `await embed(queryText)` above), then bind it as a parameter:
+Generate the query embedding with the same model and dimensions used for stored documents, following the model's query-input conventions (using the Qwen3 query prompt shown above), then bind it as a parameter:
 
 ```sql
 SELECT id, title, embedding <=> $1::vector AS distance

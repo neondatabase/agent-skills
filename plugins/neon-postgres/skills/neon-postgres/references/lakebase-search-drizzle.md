@@ -62,7 +62,14 @@ The columns, the generated `tsvector`, and the `lakebase_ann` index all go in `s
 
 ```typescript
 // src/schema.ts
-import { pgTable, bigint, text, vector, index, customType } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  bigint,
+  text,
+  vector,
+  index,
+  customType,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 const tsvector = customType<{ data: string }>({
@@ -74,7 +81,9 @@ const tsvector = customType<{ data: string }>({
 export const documents = pgTable(
   "documents",
   {
-    id: bigint("id", { mode: "number" }).generatedByDefaultAsIdentity().primaryKey(),
+    id: bigint("id", { mode: "number" })
+      .generatedByDefaultAsIdentity()
+      .primaryKey(),
     title: text("title").notNull(),
     body: text("body").notNull(),
     embedding: vector("embedding", { dimensions: 1024 }),
@@ -130,6 +139,9 @@ const aiGateway = new OpenAI({
   baseURL: `${gatewayBaseUrl}/v1`,
 });
 const embeddingModel = "qwen3-embedding-0-6b"; // example; see the AI Gateway embeddings docs for model IDs
+// Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
+const queryPrompt =
+  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery:";
 
 async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
   if (inputs.length === 0) return [];
@@ -173,7 +185,7 @@ await db.insert(documents).values(
 );
 ```
 
-Chunk large imports within gateway input and rate limits and database write limits. The same `generateEmbeddings()` helper handles document and query text; format each input according to the selected model's conventions. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
+Chunk large imports within gateway input and rate limits and database write limits. The same `generateEmbeddings()` helper handles document and query text. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
 
 ## Query
 
@@ -183,7 +195,9 @@ Use the query builder with Drizzle's `cosineDistance` helper for vector search. 
 import { cosineDistance } from "drizzle-orm";
 import { documents } from "./schema";
 
-const [queryEmbedding] = await generateEmbeddings([queryText]);
+const [queryEmbedding] = await generateEmbeddings([
+  `${queryPrompt}${queryText}`,
+]);
 if (!queryEmbedding) throw new Error("Missing query embedding");
 const distance = cosineDistance(documents.embedding, queryEmbedding);
 
