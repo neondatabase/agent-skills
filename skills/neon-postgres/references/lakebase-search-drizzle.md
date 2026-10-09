@@ -10,6 +10,7 @@ Contents:
 - [Extensions](#extensions): custom migration required to create extensions (Drizzle can't)
 - [Schema](#schema): columns, generated `tsvector`, and the ANN index
 - [BM25 Index](#bm25-index): created after the corpus is seeded
+- [Generate and Store Embeddings](#generate-and-store-embeddings): call the AI Gateway and insert vectors with Drizzle
 - [Query](#query): vector, BM25, and hybrid reads
 - [Tune Per Query](#tune-per-query): per-query GUCs
 
@@ -22,18 +23,22 @@ Rules:
 
 ## Config
 
-`drizzle-kit generate` and `migrate` read `drizzle.config.ts`. Point `dbCredentials.url` at the **direct (unpooled)** connection string:
+`drizzle-kit generate` and `migrate` read `drizzle.config.ts`. If the connection string is in `.env`, install `dotenv` (`npm install dotenv`) and load it here. Point `dbCredentials.url` at the **direct (unpooled)** connection string:
 
 ```typescript
 // drizzle.config.ts
+import "dotenv/config";
 import { defineConfig } from "drizzle-kit";
+
+const databaseUrl = process.env.DATABASE_URL_UNPOOLED;
+if (!databaseUrl) throw new Error("Missing DATABASE_URL_UNPOOLED");
 
 export default defineConfig({
   schema: "./src/schema.ts",
   out: "./drizzle",
   dialect: "postgresql",
   // Direct (unpooled) URL. Neon exposes it as DATABASE_URL_UNPOOLED.
-  dbCredentials: { url: process.env.DATABASE_URL_UNPOOLED },
+  dbCredentials: { url: databaseUrl },
 });
 ```
 
@@ -57,7 +62,14 @@ The columns, the generated `tsvector`, and the `lakebase_ann` index all go in `s
 
 ```typescript
 // src/schema.ts
-import { pgTable, bigint, text, vector, index, customType } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  bigint,
+  text,
+  vector,
+  index,
+  customType,
+} from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 const tsvector = customType<{ data: string }>({
@@ -69,10 +81,12 @@ const tsvector = customType<{ data: string }>({
 export const documents = pgTable(
   "documents",
   {
-    id: bigint("id", { mode: "number" }).generatedByDefaultAsIdentity().primaryKey(),
+    id: bigint("id", { mode: "number" })
+      .generatedByDefaultAsIdentity()
+      .primaryKey(),
     title: text("title").notNull(),
     body: text("body").notNull(),
-    embedding: vector("embedding", { dimensions: 1536 }),
+    embedding: vector("embedding", { dimensions: 1024 }),
     bodyTsv: tsvector("body_tsv").generatedAlwaysAs(
       sql`to_tsvector('english', "body")`,
     ),
@@ -86,7 +100,7 @@ export const documents = pgTable(
 );
 ```
 
-Set the dimension to match your embedding model. Postgres maintains `body_tsv`, so never write it from the app. Generate and apply the migration after the extensions migration above:
+The 1024-dimensional column is an example; set it to the output dimension of your selected embedding model. Use the same model and dimensions for stored documents and queries. Postgres maintains `body_tsv`, so never write it from the app. Generate and apply the migration after the extensions migration above:
 
 ```bash
 npx drizzle-kit generate --name=lakebase_search
@@ -106,6 +120,73 @@ npx drizzle-kit generate --custom --name=bm25_index
 CREATE INDEX documents_body_bm25 ON documents USING lakebase_bm25 (body_tsv);
 ```
 
+## Generate and Store Embeddings
+
+Your application sends an HTTP request to the AI Gateway through the OpenAI SDK to generate embeddings; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `openai` and `dotenv` (`npm install openai dotenv`), then configure the OpenAI client and an application helper:
+
+```typescript
+import "dotenv/config";
+import OpenAI from "openai";
+
+const apiKey = process.env.NEON_AI_GATEWAY_TOKEN;
+const gatewayBaseUrl = process.env.NEON_AI_GATEWAY_BASE_URL;
+if (!apiKey || !gatewayBaseUrl) {
+  throw new Error("Missing Neon AI Gateway credentials");
+}
+
+const aiGateway = new OpenAI({
+  apiKey,
+  baseURL: `${gatewayBaseUrl}/v1`,
+});
+const embeddingModel = "qwen3-embedding-0-6b"; // example; see the AI Gateway embeddings docs for model IDs
+// Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
+const queryPrompt =
+  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery:";
+
+async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
+  if (inputs.length === 0) return [];
+  const response = await aiGateway.embeddings.create({
+    model: embeddingModel,
+    input: inputs,
+    encoding_format: "float",
+  });
+  const vectors: number[][] = [];
+  for (const item of response.data) vectors[item.index] = item.embedding;
+  return inputs.map((_, index) => {
+    const embedding = vectors[index];
+    if (!embedding) throw new Error(`Missing embedding for input ${index}`);
+    return embedding;
+  });
+}
+```
+
+Generate a document vector, then insert it with Drizzle:
+
+```typescript
+const [embedding] = await generateEmbeddings([body]);
+if (!embedding) throw new Error("Missing document embedding");
+await db.insert(documents).values({
+  title,
+  body,
+  embedding,
+});
+```
+
+For bulk ingestion, send multiple documents in one gateway request, then insert their vectors in the corresponding rows:
+
+```typescript
+const vectors = await generateEmbeddings(rows.map((row) => row.body));
+await db.insert(documents).values(
+  rows.map((row, index) => {
+    const embedding = vectors[index];
+    if (!embedding) throw new Error(`Missing embedding for row ${index}`);
+    return { ...row, embedding };
+  }),
+);
+```
+
+Chunk large imports within gateway input and rate limits and database write limits. The same `generateEmbeddings()` helper handles document and query text. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
+
 ## Query
 
 Use the query builder with Drizzle's `cosineDistance` helper for vector search. It emits the `<=>` operator, so keep the index on `vector_cosine_ops`:
@@ -114,7 +195,10 @@ Use the query builder with Drizzle's `cosineDistance` helper for vector search. 
 import { cosineDistance } from "drizzle-orm";
 import { documents } from "./schema";
 
-// queryEmbedding: number[] from the same model used for stored documents
+const [queryEmbedding] = await generateEmbeddings([
+  `${queryPrompt}${queryText}`,
+]);
+if (!queryEmbedding) throw new Error("Missing query embedding");
 const distance = cosineDistance(documents.embedding, queryEmbedding);
 
 const rows = await db
@@ -168,5 +252,6 @@ const rows = await db.transaction(async (tx) => {
 
 Sources:
 
+- [AI Gateway embeddings](https://neon.com/docs/ai-gateway/embeddings)
 - [Get started with Lakebase Search](https://neon.com/docs/ai/lakebase-search-get-started)
 - [Schema migration with Lakebase Postgres and Drizzle ORM](https://neon.com/docs/guides/drizzle-migrations)
