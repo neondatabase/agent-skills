@@ -10,8 +10,9 @@ description: >-
   or search. Child skill neon-auth wins for login, users, sessions, identity
   routing, and Managed Better Auth setup. Also use for object storage, S3, buckets, serverless functions,
   function triggers, cron, AI gateway, LLM calls, logs, Loki, Grafana,
-  observability, postgres, database, backend, Claimable Neon, neon.new, or a
-  no-signup database.
+  observability, postgres, database, backend, Claimable Neon, neon.new, a
+  no-signup database, or pairing Neon with Upstash for cache, Redis, rate
+  limiting, queues, or background jobs.
 metadata:
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon
 ---
@@ -83,11 +84,15 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Files, uploads, blobs (no existing object store) | Object Storage |
 | HTTP APIs, cron, WebSocket, SSE, long-running agents | Functions querying Postgres |
 | LLM calls | AI Gateway |
+| Caching hot reads, rate limits | Upstash Redis — [Cache, rate limits, and queues](references/upstash.md) |
+| Background jobs, queues, retries, delayed delivery | Upstash QStash delivering to a Function — [Cache, rate limits, and queues](references/upstash.md) |
 | SQL, schema, inspect, search | `neon-postgres` |
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
 Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth, Clerk, and Supabase Auth unless the user asked to migrate login. Auth cannot be enabled on a project with IP Allow or Private Networking.
+
+Neon has no built-in key-value store or message queue. For a cache, rate limiting, or background jobs, pair it with Upstash Redis and QStash, and keep any Redis or queue the app already uses. Setup, branch-scoped keys, and examples: [references/upstash.md](references/upstash.md).
 
 ## Neon Documentation
 

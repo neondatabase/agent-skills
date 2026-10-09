@@ -200,6 +200,10 @@ Key points:
 
 Link: https://neon.com/docs/introduction/scale-to-zero.md
 
+### Keep hot reads off Postgres
+
+Scale to zero only suspends an idle compute. When the same rarely changing rows (config, categories, feature flags) are read on every request, cache them outside Postgres, for example in [Upstash Redis](https://upstash.com/docs/redis) with a TTL. Cached reads cut egress and cold-start latency, and let an otherwise idle compute stay suspended. Prefix cache keys with the Neon branch name so branches don't share entries. Cache-aside example: the `neon-postgres-egress-optimizer` skill; setup, rate limits, and queues: the `neon` skill's `references/upstash.md`.
+
 ## Instant Restore
 
 Use this when the user needs point-in-time recovery or wants to restore data state without traditional backup restore workflows.
