@@ -122,7 +122,7 @@ CREATE INDEX documents_body_bm25 ON documents USING lakebase_bm25 (body_tsv);
 
 ## Generate and Store Embeddings
 
-Generate embeddings with AI SDK `embed` / `embedMany` and `@neon/ai-sdk-provider` 1.0.0+; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `@neon/ai-sdk-provider`, `ai` (6+), and `dotenv` (`npm install @neon/ai-sdk-provider ai dotenv`):
+Generate embeddings with [Vercel AI SDK](https://ai-sdk.dev) (`ai`) `embed` / `embedMany` and `@neon/ai-sdk-provider` 1.0.0+; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `@neon/ai-sdk-provider`, `ai` (6+), and `dotenv` (`npm install @neon/ai-sdk-provider ai dotenv`):
 
 ```typescript
 import "dotenv/config";
@@ -134,24 +134,16 @@ const providerOptions = { neon: { dimensions: 1024 } };
 // Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
 const queryPrompt =
   "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery: ";
-
-async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
-  if (inputs.length === 0) return [];
-  const { embeddings } = await embedMany({
-    model: embeddingModel,
-    values: inputs,
-    providerOptions,
-    maxParallelCalls: 1,
-  });
-  return embeddings;
-}
 ```
 
 Generate a document vector, then insert it with Drizzle:
 
 ```typescript
-const [embedding] = await generateEmbeddings([body]);
-if (!embedding) throw new Error("Missing document embedding");
+const { embedding } = await embed({
+  model: embeddingModel,
+  value: body,
+  providerOptions,
+});
 await db.insert(documents).values({
   title,
   body,
@@ -159,10 +151,15 @@ await db.insert(documents).values({
 });
 ```
 
-For bulk ingestion, send multiple documents in one gateway request, then insert their vectors in the corresponding rows:
+For bulk ingestion, use `embedMany` and insert each vector in its corresponding row. Skip empty imports before embedding or inserting:
 
 ```typescript
-const vectors = await generateEmbeddings(rows.map((row) => row.body));
+const { embeddings: vectors } = await embedMany({
+  model: embeddingModel,
+  values: rows.map((row) => row.body),
+  providerOptions,
+  maxParallelCalls: 1,
+});
 await db.insert(documents).values(
   rows.map((row, index) => {
     const embedding = vectors[index];
@@ -172,7 +169,7 @@ await db.insert(documents).values(
 );
 ```
 
-Chunk large imports within gateway input and rate limits and database write limits. `embedMany` preserves input order and splits calls at the provider's item limit; the helper above uses it for documents, while `embed` handles each query. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
+Chunk large imports within gateway input and rate limits and database write limits. `embedMany` preserves input order and splits calls at the provider's item limit; `embed` handles a single document or query. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
 
 ## Query
 

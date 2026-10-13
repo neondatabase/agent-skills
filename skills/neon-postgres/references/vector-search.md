@@ -43,7 +43,7 @@ Enable the AI Gateway on the branch and get `NEON_AI_GATEWAY_TOKEN` and the bare
 
 ### AI SDK (Recommended)
 
-For TypeScript apps, use `@neon/ai-sdk-provider` 1.0.0+ with AI SDK 6+ (`npm install @neon/ai-sdk-provider ai dotenv`). The provider reads `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` directly and sends embedding requests to `/v1/embeddings`. Load `.env` in a standalone app; Neon Functions inject the variables automatically.
+For TypeScript apps, use Neon's `@neon/ai-sdk-provider` 1.0.0+ with the [Vercel AI SDK](https://ai-sdk.dev) (`ai`, 6+) (`npm install @neon/ai-sdk-provider ai dotenv`). The provider reads `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` directly and sends embedding requests to `/v1/embeddings`. Load `.env` in a standalone app; Neon Functions inject the variables automatically.
 
 ```typescript
 import "dotenv/config";
@@ -56,18 +56,12 @@ const providerOptions = { neon: { dimensions: 1024 } };
 const queryPrompt =
   "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery: ";
 
-async function embedBatch(inputs: string[]): Promise<number[][]> {
-  if (inputs.length === 0) return [];
-  const { embeddings } = await embedMany({
-    model: embeddingModel,
-    values: inputs,
-    providerOptions,
-    maxParallelCalls: 1,
-  });
-  return embeddings;
-}
-
-const documentEmbeddings = await embedBatch(documentBodies); // store by input index
+const { embeddings: documentEmbeddings } = await embedMany({
+  model: embeddingModel,
+  values: documentBodies, // non-empty document batch; store vectors by input index
+  providerOptions,
+  maxParallelCalls: 1,
+});
 const { embedding: queryEmbedding } = await embed({
   model: embeddingModel,
   value: `${queryPrompt}${queryText}`,
@@ -75,7 +69,7 @@ const { embedding: queryEmbedding } = await embed({
 }); // bind to $1 below
 ```
 
-`embedMany` returns vectors in input order and splits requests according to the provider's item limit. For large imports, also split document text within the endpoint's token limits and keep database writes bounded.
+Skip empty imports before calling `embedMany`. It returns vectors in input order and splits requests according to the provider's item limit. For large imports, also split document text within the endpoint's token limits and keep database writes bounded.
 
 For Neon documentation search, the example adapts the task instruction in Qwen3's stored `query` prompt from [config_sentence_transformers.json](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/blob/main/config_sentence_transformers.json). Its `document` prompt is empty, so document text stays unprefixed. Neither SDK applies SentenceTransformers prompts automatically. Keep the original `queryText` for BM25, and use the selected model's own prompt conventions if you switch models.
 

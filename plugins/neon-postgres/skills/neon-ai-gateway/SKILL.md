@@ -289,16 +289,17 @@ Any Neon credential (`nt_live_...`) valid for the branch works as the bearer tok
 
 **Response shape** — OpenAI/OpenRouter-compatible list:
 
+<!-- prettier-ignore -->
 ```jsonc
 {
   "object": "list",
   "data": [
     {
-      "id": "claude-sonnet-4-6", // catalog model ID — use directly in the `model` field
+      "id": "claude-sonnet-4-6",              // catalog model ID — use directly in the `model` field
       "canonical_slug": "claude-sonnet-4-6",
-      "name": "Claude Sonnet 4.6", // human-readable display name
+      "name": "Claude Sonnet 4.6",            // human-readable display name
       "object": "model",
-      "owned_by": "anthropic", // provider slug, e.g. anthropic | openai | google | meta | alibaba | databricks | ... (non-exhaustive; read live)
+      "owned_by": "anthropic",                // provider slug, e.g. anthropic | openai | google | meta | alibaba | databricks | ... (non-exhaustive; read live)
       "created": 0,
       "enabled": true,
       "context_length": null,
@@ -306,19 +307,19 @@ Any Neon credential (`nt_live_...`) valid for the branch works as the bearer tok
         "modality": "text->text",
         "input_modalities": ["text"],
         "output_modalities": ["text"],
-        "tokenizer": "Claude", // Claude | Gemini | GPT | "" (empty for open-source)
-        "instruct_type": null,
+        "tokenizer": "Claude",                // Claude | Gemini | GPT | "" (empty for open-source)
+        "instruct_type": null
       },
       "top_provider": {
         "is_moderated": false,
         "context_length": null,
-        "max_completion_tokens": null,
+        "max_completion_tokens": null
       },
       "pricing": null,
-      "per_request_limits": null,
-    },
+      "per_request_limits": null
+    }
     // ... one entry per model in the branch's catalog
-  ],
+  ]
 }
 ```
 
