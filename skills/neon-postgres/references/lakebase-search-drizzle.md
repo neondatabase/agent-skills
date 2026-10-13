@@ -122,41 +122,28 @@ CREATE INDEX documents_body_bm25 ON documents USING lakebase_bm25 (body_tsv);
 
 ## Generate and Store Embeddings
 
-Your application sends an HTTP request to the AI Gateway through the OpenAI SDK to generate embeddings; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `openai` and `dotenv` (`npm install openai dotenv`), then configure the OpenAI client and an application helper:
+Generate embeddings with AI SDK `embed` / `embedMany` and `@neon/ai-sdk-provider` 1.0.0+; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `@neon/ai-sdk-provider`, `ai` (6+), and `dotenv` (`npm install @neon/ai-sdk-provider ai dotenv`):
 
 ```typescript
 import "dotenv/config";
-import OpenAI from "openai";
+import { neon } from "@neon/ai-sdk-provider";
+import { embed, embedMany } from "ai";
 
-const apiKey = process.env.NEON_AI_GATEWAY_TOKEN;
-const gatewayBaseUrl = process.env.NEON_AI_GATEWAY_BASE_URL;
-if (!apiKey || !gatewayBaseUrl) {
-  throw new Error("Missing Neon AI Gateway credentials");
-}
-
-const aiGateway = new OpenAI({
-  apiKey,
-  baseURL: `${gatewayBaseUrl}/v1`,
-});
-const embeddingModel = "qwen3-embedding-0-6b"; // example; see the AI Gateway embeddings docs for model IDs
+const embeddingModel = neon.embeddingModel("qwen3-embedding-0-6b");
+const providerOptions = { neon: { dimensions: 1024 } };
 // Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
 const queryPrompt =
-  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery:";
+  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery: ";
 
 async function generateEmbeddings(inputs: string[]): Promise<number[][]> {
   if (inputs.length === 0) return [];
-  const response = await aiGateway.embeddings.create({
+  const { embeddings } = await embedMany({
     model: embeddingModel,
-    input: inputs,
-    encoding_format: "float",
+    values: inputs,
+    providerOptions,
+    maxParallelCalls: 1,
   });
-  const vectors: number[][] = [];
-  for (const item of response.data) vectors[item.index] = item.embedding;
-  return inputs.map((_, index) => {
-    const embedding = vectors[index];
-    if (!embedding) throw new Error(`Missing embedding for input ${index}`);
-    return embedding;
-  });
+  return embeddings;
 }
 ```
 
@@ -185,7 +172,7 @@ await db.insert(documents).values(
 );
 ```
 
-Chunk large imports within gateway input and rate limits and database write limits. The same `generateEmbeddings()` helper handles document and query text. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
+Chunk large imports within gateway input and rate limits and database write limits. `embedMany` preserves input order and splits calls at the provider's item limit; the helper above uses it for documents, while `embed` handles each query. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
 
 ## Query
 
@@ -195,10 +182,11 @@ Use the query builder with Drizzle's `cosineDistance` helper for vector search. 
 import { cosineDistance } from "drizzle-orm";
 import { documents } from "./schema";
 
-const [queryEmbedding] = await generateEmbeddings([
-  `${queryPrompt}${queryText}`,
-]);
-if (!queryEmbedding) throw new Error("Missing query embedding");
+const { embedding: queryEmbedding } = await embed({
+  model: embeddingModel,
+  value: `${queryPrompt}${queryText}`,
+  providerOptions,
+});
 const distance = cosineDistance(documents.embedding, queryEmbedding);
 
 const rows = await db
@@ -214,16 +202,22 @@ BM25 has no Drizzle helper: `<@>` and `to_bm25query` require raw SQL. Reference 
 import { sql } from "drizzle-orm";
 
 const rows = await db.execute(sql`
-  SELECT id, title,
-    body_tsv <@> to_bm25query(
-      to_tsvector('english', ${queryText}),
-      'documents_body_bm25'::regclass
-    ) AS score
-  FROM documents
+  SELECT id, title, score
+  FROM (
+    SELECT id, title,
+      body_tsv <@> to_bm25query(
+        to_tsvector('english', ${queryText}),
+        'documents_body_bm25'::regclass
+      ) AS score
+    FROM documents
+  ) AS keyword_scored
+  WHERE score < 0
   ORDER BY score
   LIMIT ${k}
 `);
 ```
+
+Filter `score < 0` before the candidate cutoff: scalar BM25 scoring returns zero for non-matches, which must not become keyword hits. Partial query-term matches remain eligible.
 
 Run the [hybrid search](hybrid-search.md) RRF query the same way: raw SQL through `db.execute`.
 

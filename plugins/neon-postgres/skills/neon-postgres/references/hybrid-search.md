@@ -49,13 +49,17 @@ WITH vector_ranked AS (
 keyword_ranked AS (
   SELECT id, RANK() OVER (ORDER BY score) AS rank
   FROM (
-    SELECT
-      id,
-      body_tsv <@> to_bm25query(
-        to_tsvector('english', $2),
-        'documents_body_bm25'::regclass
-      ) AS score
-    FROM documents
+    SELECT id, score
+    FROM (
+      SELECT
+        id,
+        body_tsv <@> to_bm25query(
+          to_tsvector('english', $2),
+          'documents_body_bm25'::regclass
+        ) AS score
+      FROM documents
+    ) AS keyword_scored
+    WHERE score < 0
     ORDER BY score
     FETCH FIRST 40 ROWS WITH TIES
   ) AS keyword_candidates
@@ -72,6 +76,8 @@ WHERE v.id IS NOT NULL OR k.id IS NOT NULL
 ORDER BY rrf_score DESC, d.id
 LIMIT $3;
 ```
+
+Filter `score < 0` before the keyword cutoff. Scalar BM25 scoring returns zero for non-matches; including those rows would give unrelated documents a keyword contribution in RRF and can admit every zero-score boundary tie. Partial query-term matches remain eligible.
 
 `RANK()` gives tied retrieval scores the same rank. Sort by `rrf_score` descending and use the stable ID as a final tie-breaker.
 

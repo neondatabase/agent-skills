@@ -41,7 +41,47 @@ Enable the AI Gateway on the branch and get `NEON_AI_GATEWAY_TOKEN` and the bare
 - Without `neon.ts`, run `neon env pull --service ai-gateway --file .env` from a directory linked to the intended project and branch. This requests the gateway variables explicitly and skips other services.
 - Alternatively, get both values from the Neon Console. Neon Functions receive them automatically.
 
-For a standalone TypeScript app, install `openai` and `dotenv` (`npm install openai dotenv`), then embed a batch of documents and a query:
+### AI SDK (Recommended)
+
+For TypeScript apps, use `@neon/ai-sdk-provider` 1.0.0+ with AI SDK 6+ (`npm install @neon/ai-sdk-provider ai dotenv`). The provider reads `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` directly and sends embedding requests to `/v1/embeddings`. Load `.env` in a standalone app; Neon Functions inject the variables automatically.
+
+```typescript
+import "dotenv/config";
+import { neon } from "@neon/ai-sdk-provider";
+import { embed, embedMany } from "ai";
+
+const embeddingModel = neon.embeddingModel("qwen3-embedding-0-6b");
+const providerOptions = { neon: { dimensions: 1024 } };
+// Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
+const queryPrompt =
+  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery: ";
+
+async function embedBatch(inputs: string[]): Promise<number[][]> {
+  if (inputs.length === 0) return [];
+  const { embeddings } = await embedMany({
+    model: embeddingModel,
+    values: inputs,
+    providerOptions,
+    maxParallelCalls: 1,
+  });
+  return embeddings;
+}
+
+const documentEmbeddings = await embedBatch(documentBodies); // store by input index
+const { embedding: queryEmbedding } = await embed({
+  model: embeddingModel,
+  value: `${queryPrompt}${queryText}`,
+  providerOptions,
+}); // bind to $1 below
+```
+
+`embedMany` returns vectors in input order and splits requests according to the provider's item limit. For large imports, also split document text within the endpoint's token limits and keep database writes bounded.
+
+For Neon documentation search, the example adapts the task instruction in Qwen3's stored `query` prompt from [config_sentence_transformers.json](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/blob/main/config_sentence_transformers.json). Its `document` prompt is empty, so document text stays unprefixed. Neither SDK applies SentenceTransformers prompts automatically. Keep the original `queryText` for BM25, and use the selected model's own prompt conventions if you switch models.
+
+### OpenAI SDK Alternative
+
+For an existing OpenAI SDK integration, install `openai` and `dotenv` (`npm install openai dotenv`) and configure the client explicitly:
 
 ```typescript
 import "dotenv/config";
@@ -58,16 +98,12 @@ const client = new OpenAI({
   baseURL: `${gatewayBaseUrl}/v1`,
 });
 
-const embeddingModel = "qwen3-embedding-0-6b"; // example; see the AI Gateway embeddings docs for model IDs
-// Qwen3 query prompt adapted for Neon documentation search; documents stay unprefixed.
-const queryPrompt =
-  "Instruct: Given a question about Neon, retrieve documentation passages that answer the question\nQuery:";
-
 async function embedBatch(inputs: string[]): Promise<number[][]> {
   if (inputs.length === 0) return [];
   const response = await client.embeddings.create({
-    model: embeddingModel,
+    model: "qwen3-embedding-0-6b",
     input: inputs,
+    dimensions: 1024,
     encoding_format: "float",
   });
   const vectors: number[][] = [];
@@ -79,19 +115,12 @@ async function embedBatch(inputs: string[]): Promise<number[][]> {
   });
 }
 
-async function embed(input: string): Promise<number[]> {
-  const embedding = (await embedBatch([input]))[0];
-  if (!embedding) throw new Error("Missing embedding for input");
-  return embedding;
-}
-
-const documentEmbeddings = await embedBatch(documentBodies); // store by input index
-const queryEmbedding = await embed(`${queryPrompt}${queryText}`); // bind to $1 below
+const documentEmbeddings = await embedBatch(documentBodies);
+const [queryEmbedding] = await embedBatch([`${queryPrompt}${queryText}`]);
+if (!queryEmbedding) throw new Error("Missing query embedding");
 ```
 
-For Neon documentation search, the example adapts the task instruction in Qwen3's stored `query` prompt from [config_sentence_transformers.json](https://huggingface.co/Qwen/Qwen3-Embedding-0.6B/blob/main/config_sentence_transformers.json). Its `document` prompt is empty, so document text stays unprefixed. The OpenAI SDK does not apply SentenceTransformers prompts automatically. Keep the original `queryText` for BM25, and use the selected model's own prompt conventions if you switch models.
-
-The OpenAI SDK uses the same `embeddings.create` method for document and query text; any difference is in the input formatting recommended by the selected model. Use a batch size within the endpoint's input and rate limits, and pair each vector with its source row using the response `index`. The [OpenAI JavaScript SDK v6](https://github.com/openai/openai-node/blob/v6.0.0/src/resources/embeddings.ts) defaults to requesting base64 and decodes the response as base64. If a compatible endpoint returns float arrays instead, that decoder can silently turn them into zeros. Pass `encoding_format: "float"` explicitly for the AI Gateway; the SDK then returns the float arrays directly. Base64 can reduce response size when an endpoint actually returns base64, but do not assume that format for this gateway.
+Use the same `queryPrompt` defined above, only for query inputs. Keep each batch within the endpoint's input and rate limits, and pair each vector with its source row using the response `index`. The [OpenAI JavaScript SDK v6](https://github.com/openai/openai-node/blob/v6.0.0/src/resources/embeddings.ts) defaults to requesting base64 and decodes the response as base64. If a compatible endpoint returns float arrays instead, that decoder can silently turn them into zeros. Pass `encoding_format: "float"` explicitly for the AI Gateway; the SDK then returns the float arrays directly. Base64 can reduce response size when an endpoint actually returns base64, but do not assume that format for this gateway.
 
 Use the same model and output dimensions for stored documents and queries. Follow the model's input conventions: some models recommend a query instruction while document text remains unprefixed. If the model supports shorter vectors, compare retrieval quality, storage, and latency before changing dimensions; set the column and both embedding requests to the chosen size. Switching models requires re-embedding the corpus; changing dimensions also requires migrating the vector column and index. Generate embeddings in the application, outside SQL, unless the architecture already provides an in-database embedding function. Other embedding providers are also valid when their output matches the schema and index.
 
