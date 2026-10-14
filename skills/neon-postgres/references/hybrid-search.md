@@ -60,8 +60,8 @@ keyword_ranked AS (
       FROM documents
     ) AS keyword_scored
     WHERE score < 0
-    ORDER BY score
-    FETCH FIRST 40 ROWS WITH TIES
+    ORDER BY score, id
+    LIMIT 40
   ) AS keyword_candidates
 )
 SELECT
@@ -77,15 +77,13 @@ ORDER BY rrf_score DESC, d.id
 LIMIT $3;
 ```
 
-Filter `score < 0` before the keyword cutoff. Scalar BM25 scoring returns zero for non-matches; including those rows would give unrelated documents a keyword contribution in RRF and can admit every zero-score boundary tie. Partial query-term matches remain eligible.
+`score < 0` excludes BM25 non-matches. Many matching documents can share a BM25 score, so `WITH TIES` could admit a large group at the cutoff. `ORDER BY score, id LIMIT 40` keeps keyword candidates bounded and breaks boundary ties by ID. `RANK()` uses score alone so retained ties receive equal ranks.
 
-`RANK()` gives tied retrieval scores the same rank. Sort by `rrf_score` descending and use the stable ID as a final tie-breaker.
-
-`FETCH FIRST ... ROWS WITH TIES` keeps every candidate tied at the cutoff, so `RANK()` receives the complete boundary tie group. The candidate set can therefore exceed 40 rows. `lakebase_bm25.default_limit` defaults to `1000`; increase it only when the BM25 candidate set needs to exceed that value.
+Vector retrieval preserves cutoff ties and can exceed 40 candidates. `lakebase_bm25.default_limit` defaults to `1000`; the SQL limit bounds keyword rows entering fusion, not total scoring work.
 
 ## Adapt the Hybrid Search
 
-- Retrieve more candidates from each source than the final result count; otherwise one retriever can dominate before fusion has enough overlap. Keep `lakebase_bm25.default_limit` above the BM25 candidate target and allow room for boundary ties.
+- Retrieve more candidates from each source than the final result count; otherwise one retriever can dominate before fusion has enough overlap. Keep `lakebase_bm25.default_limit` at least as large as the BM25 candidate target.
 - Keep each retriever's operator and index configuration correct independently before tuning RRF.
 - Tune candidate counts and the RRF constant with judged or behavioral relevance data, plus latency measurements.
 - Add weights only when product evidence shows one retriever should contribute more. Weight the reciprocal-rank contributions, not the raw vector distance and negative BM25 score.

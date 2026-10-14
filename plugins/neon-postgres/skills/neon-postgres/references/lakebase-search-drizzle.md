@@ -122,7 +122,7 @@ CREATE INDEX documents_body_bm25 ON documents USING lakebase_bm25 (body_tsv);
 
 ## Generate and Store Embeddings
 
-Generate embeddings with [Vercel AI SDK](https://ai-sdk.dev) (`ai`) `embed` / `embedMany` and `@neon/ai-sdk-provider` 1.0.0+; Drizzle stores and queries the resulting vectors. Follow the [Vector search setup](vector-search.md#prepare-embeddings) to enable the gateway and pull its token and bare-host base URL into `.env`. For a standalone TypeScript app, install `@neon/ai-sdk-provider`, `ai` (6+), and `dotenv` (`npm install @neon/ai-sdk-provider ai dotenv`):
+Use the [Vercel AI SDK](https://ai-sdk.dev) (`ai`, 6+) with Neon's `@neon/ai-sdk-provider` 1.0.0+. Follow the [gateway setup](vector-search.md#prepare-embeddings), then install the packages with `npm install @neon/ai-sdk-provider ai dotenv`:
 
 ```typescript
 import "dotenv/config";
@@ -151,25 +151,34 @@ await db.insert(documents).values({
 });
 ```
 
-For bulk ingestion, use `embedMany` and insert each vector in its corresponding row. Skip empty imports before embedding or inserting:
+For bulk imports, skip blank rows and embed/insert one batch at a time:
 
 ```typescript
-const { embeddings: vectors } = await embedMany({
-  model: embeddingModel,
-  values: rows.map((row) => row.body),
-  providerOptions,
-  maxParallelCalls: 1,
-});
-await db.insert(documents).values(
-  rows.map((row, index) => {
-    const embedding = vectors[index];
-    if (!embedding) throw new Error(`Missing embedding for row ${index}`);
-    return { ...row, embedding };
-  }),
-);
+const batchSize = 64;
+const nonBlankRows = rows.filter((row) => row && row.body.trim().length > 0);
+
+for (let offset = 0; offset < nonBlankRows.length; offset += batchSize) {
+  const batch = nonBlankRows.slice(offset, offset + batchSize);
+  const { embeddings: vectors } = await embedMany({
+    model: embeddingModel,
+    values: batch.map((row) => row.body),
+    providerOptions,
+    maxParallelCalls: 1,
+  });
+  await db.insert(documents).values(
+    batch.map((row, index) => {
+      const embedding = vectors[index];
+      if (!embedding)
+        throw new Error(`Missing embedding for batch row ${index}`);
+      return { ...row, embedding };
+    }),
+  );
+}
 ```
 
-Chunk large imports within gateway input and rate limits and database write limits. `embedMany` preserves input order and splits calls at the provider's item limit; `embed` handles a single document or query. For Neon documentation search with Qwen3, prepend the task-specific `queryPrompt` only when embedding queries, as shown below; document inputs remain unprefixed. See [Vector search](vector-search.md#prepare-embeddings) for the official prompt configuration. Keep the original `queryText` for BM25. Use the selected model's own prompt conventions if you switch models. Use the same model and dimensions for both. Re-embed the corpus when changing models; a matching vector dimension alone does not make embeddings from different models comparable.
+`embedMany` splits embedding requests using the provider's per-request input limit. This loop also bounds database inserts and memory; tune `batchSize` for your workload. Chunk long documents before embedding. Earlier batches stay committed if a later batch fails.
+
+Apply `queryPrompt` only to queries, keeping the original text for BM25. Use the same model and dimensions for documents and queries; re-embed documents when switching models.
 
 ## Query
 
