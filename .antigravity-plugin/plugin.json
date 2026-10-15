@@ -1,7 +1,7 @@
 {
   "name": "neon",
   "displayName": "Neon",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Manage your Neon backend with agent skills and MCP tools for Lakebase Postgres, Auth, Realtime, Object Storage, Functions, the Data API, and AI Gateway.",
   "logo": "assets/neon-logomark-light.svg",
   "suggestedPrompts": [
