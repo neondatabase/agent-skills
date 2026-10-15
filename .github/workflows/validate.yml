@@ -1,7 +1,7 @@
 name: Validate
 
 # Skill and plugin validation, covering the root Agent Plugins v1 package and
-# the Claude/Cursor packaging under plugins/. Supply-chain hardened: SHA-pinned
+# the Antigravity, Claude, and Cursor packaging. Supply-chain hardened: SHA-pinned
 # actions, npm ci --ignore-scripts from package-lock.json, harden-runner egress
 # audit. Keep aligned with neondatabase/neon-for-agent-platforms — see AGENTS.md.
 
@@ -10,10 +10,13 @@ on:
     paths:
       - 'skills/**'
       - 'plugins/**'
+      - 'assets/**'
       - 'scripts/**'
       - 'plugin.json'
       - 'mcp.json'
+      - 'mcp_config.json'
       - 'kimi.plugin.json'
+      - '.antigravity-plugin/**'
       - '.claude-plugin/**'
       - '.cursor-plugin/**'
       - 'package.json'
@@ -26,10 +29,13 @@ on:
     paths:
       - 'skills/**'
       - 'plugins/**'
+      - 'assets/**'
       - 'scripts/**'
       - 'plugin.json'
       - 'mcp.json'
+      - 'mcp_config.json'
       - 'kimi.plugin.json'
+      - '.antigravity-plugin/**'
       - '.claude-plugin/**'
       - '.cursor-plugin/**'
       - 'package.json'

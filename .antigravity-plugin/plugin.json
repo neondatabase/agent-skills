@@ -1,0 +1,21 @@
+{
+  "name": "neon",
+  "displayName": "Neon",
+  "version": "2.2.0",
+  "description": "Manage your Neon backend with agent skills and MCP tools for Lakebase Postgres, Auth, Realtime, Object Storage, Functions, the Data API, and AI Gateway.",
+  "logo": "assets/neon-logomark-light.svg",
+  "suggestedPrompts": [
+    "Create a Neon database and add Neon Auth to my application.",
+    "Deploy a Neon Function that uses Neon Object Storage.",
+    "Add AI to my application with the Neon AI Gateway."
+  ],
+  "category": "Developer Tools",
+  "keywords": ["neon", "lakebase", "postgres", "serverless", "database", "mcp"],
+  "author": {
+    "name": "Neon",
+    "url": "https://neon.com"
+  },
+  "homepage": "https://neon.com",
+  "repository": "https://github.com/neondatabase/agent-skills",
+  "license": "Apache-2.0"
+}

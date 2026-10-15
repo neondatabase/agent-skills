@@ -88,6 +88,22 @@ The repository root is a portable [Agent Plugins v1](https://agent-plugins.org/s
 
 The Claude Code and Cursor packaging under `plugins/` remains available for clients that expect those formats.
 
+### Antigravity Plugin
+
+Antigravity reads its Marketplace metadata from [`.antigravity-plugin/plugin.json`](.antigravity-plugin/plugin.json) and its native Neon MCP Server configuration from [`mcp_config.json`](mcp_config.json). Install the plugin from this repository:
+
+```bash
+agy plugin install https://github.com/neondatabase/agent-skills
+```
+
+Confirm that Antigravity discovered the plugin, its skills, and the MCP server:
+
+```bash
+agy plugin list
+```
+
+Antigravity prompts you to authenticate with Neon through OAuth when you first use an MCP tool.
+
 ### Claude Code Plugin
 
 You can also install the skills as a Claude Code plugin, which bundles the Neon agent skills and the [Neon MCP Server](https://mcp.neon.tech) for natural language database management:
