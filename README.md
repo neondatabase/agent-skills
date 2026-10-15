@@ -102,7 +102,7 @@ Confirm that Antigravity discovered the plugin, its skills, and the MCP server:
 agy plugin list
 ```
 
-Antigravity prompts you to authenticate with Neon through OAuth when you first use an MCP tool.
+To authenticate, run `/mcp` in Antigravity, select the Neon MCP server, and complete the OAuth flow.
 
 ### Claude Code Plugin
 
