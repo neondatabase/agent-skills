@@ -151,6 +151,14 @@ Or straight from this repo:
 pi install git:github.com/neondatabase/agent-skills
 ```
 
+### Neotask
+
+You can also install the Neon plugin in Neotask, which uses your Neon connection in Neotask for the [Neon MCP Server](https://mcp.neon.tech) tools:
+
+```bash
+neotask construct install neon
+```
+
 ## Usage
 
 Example prompts:
