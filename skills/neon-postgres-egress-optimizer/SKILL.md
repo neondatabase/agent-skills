@@ -171,7 +171,25 @@ When adding pagination, check whether the consuming client already supports pagi
 
 Look for queries with extremely high call counts relative to other queries. Common examples: configuration tables, category lists, feature flags, user role definitions.
 
-**Fix:** Add a caching layer between the application and the database so it avoids hitting the database on every request.
+**Fix:** Add a caching layer between the application and the database so it avoids hitting the database on every request. Reuse a cache the app already has. Otherwise, a serverless Redis such as [Upstash Redis](https://upstash.com/docs/redis) works from serverless and edge runtimes without connection management. Use cache-aside with a TTL, and delete the key after writes to the underlying table:
+
+```typescript
+import { Redis } from "@upstash/redis";
+
+const redis = Redis.fromEnv(); // UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN
+const key = `myapp:${process.env.NEON_BRANCH ?? "local"}:categories:v1`;
+
+export async function getCategories() {
+  const cached = await redis.get<Category[]>(key);
+  if (cached !== null) return cached;
+
+  const rows = await db.select().from(categories);
+  await redis.set(key, rows, { ex: 300 });
+  return rows;
+}
+```
+
+Prefix keys with the Neon branch name so branches sharing one Redis database never read each other's rows. Cache only data that is the same for every caller; never cache per-user or authorization-dependent rows under a shared key. The `neon` skill's `references/upstash.md` covers invalidation and setup in more detail.
 
 ### Application-side aggregation
 
