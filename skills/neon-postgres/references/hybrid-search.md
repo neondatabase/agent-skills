@@ -81,6 +81,7 @@ Use Neon's provider with the Vercel AI SDK. Requirements:
 
 - Install the tested versions: `npm install @neon/ai-sdk-provider@1.1.0 ai@7.0.133`. Decision models require AI SDK 7.0.133+; pin versions and retest upgrades while `experimental_decide` is experimental.
 - Load the same `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` used for [embeddings](vector-search.md#prepare-embeddings); the provider handles the endpoint and credentials.
+- The AI Gateway requires a paid Neon plan with prepaid AI Gateway credits. Without them, use [RRF](#rrf-example).
 
 ```typescript
 import { neon } from "@neon/ai-sdk-provider";
