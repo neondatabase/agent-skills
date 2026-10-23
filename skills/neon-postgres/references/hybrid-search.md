@@ -31,15 +31,13 @@ Create and validate each retriever independently before combining them. Follow [
 Choose how to order the combined results:
 
 - **Jev reranking (recommended):** retrieve vector and full-text search candidates, deduplicate by document ID, score each candidate with Jev, and take the final top results.
-- **RRF:** combine the two retrievers' ranks in SQL and take the final top results, with no additional model call.
+- **Reciprocal Rank Fusion (RRF):** fuse the retrievers' ranks instead of their incomparable vector distances and BM25 scores, with no additional model call.
 
 Jev can score the deduplicated candidate pool directly. RRF is optional when you want to prioritize or trim a larger pool before reranking, or provide a model-free fallback. Measure relevance and added latency on your corpus to choose a path.
 
 ## Rerank with Jev (Recommended)
 
-Use the same branch-scoped `NEON_AI_GATEWAY_TOKEN` and bare-host `NEON_AI_GATEWAY_BASE_URL` as for [embeddings](vector-search.md#prepare-embeddings). Confirm `typesafeai-jev-1-14-0` is available through `GET /v1/models` or `GET /typesafe/v1/models`. The gateway serves this decision model at `POST /typesafe/v1/systemone`; the SDK below selects that endpoint automatically.
-
-As in the RRF example, retrieve up to 40 candidates per retriever and deduplicate with `UNION`. Bind the query embedding as `$1` and the original query text as `$2`:
+Retrieve up to 40 candidates per retriever and deduplicate with `UNION`. Bind the query embedding as `$1` and the original query text as `$2`:
 
 ```sql
 WITH vector_candidates AS (
@@ -79,7 +77,11 @@ Apply the same access-control and tenant filters inside both retrievers, before 
 
 Batch yes/no relevance questions with the query shared in `state` and each candidate in its own question's `instructions`. Sort the returned probabilities in descending order; equal probabilities keep the input order.
 
-Use Neon's `@neon/ai-sdk-provider` with the Vercel AI SDK: `neon.decisionModel()` handles the gateway endpoint and credentials, so no manual HTTP request is needed. Install the tested versions with `npm install @neon/ai-sdk-provider@1.1.0 ai@7.0.133`. Decision models require AI SDK 7.0.133+; `experimental_decide` is experimental, so pin versions and retest upgrades. Run with the gateway environment variables loaded (for example, `node --env-file=.env search.ts` on Node.js 24+):
+Use Neon's provider with the Vercel AI SDK. Requirements:
+
+- Install the tested versions: `npm install @neon/ai-sdk-provider@1.1.0 ai@7.0.133`. Decision models require AI SDK 7.0.133+; pin versions and retest upgrades while `experimental_decide` is experimental.
+- Load the same `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` used for [embeddings](vector-search.md#prepare-embeddings); the provider handles the endpoint and credentials.
+- Run on Node.js 24+, for example: `node --env-file=.env search.ts`.
 
 ```typescript
 import { neon } from "@neon/ai-sdk-provider";
@@ -151,13 +153,13 @@ The SDK's `boolean` answer exposes the probability of yes as `answer.probability
 
 `batchSize = 80` matches the maximum candidate pool above. Each request must fit Jev 1.14's 65,536-token context window, including all candidate text and questions; reduce the batch size for longer passages. Tune the shared timeout to the request's latency budget.
 
-This function propagates errors, including timeouts; it does not implement a fallback. The caller can catch these errors and run the RRF query below. Taking the first rows of the ID-ordered union is not a relevance-based fallback.
+The caller can catch reranking errors and use [RRF](#rrf-example) as a fallback.
 
 ## RRF Example
 
 Use this query on its own when you want hybrid search without an additional model call.
 
-For rank `r` and constant `k`, each retriever contributes `1 / (k + r)`. The documented starting point uses 40 candidates per retriever and `k = 60`; tune both for the corpus and workload.
+For rank `r` and constant `k`, each retriever contributes `1 / (k + r)`. Start with a target of 40 candidates per retriever and `k = 60`; vector cutoff ties can exceed that target. Tune both for the corpus and workload.
 
 Embed the query text through the same gateway model used for the stored documents, then bind that vector as `$1`, the original query text as `$2`, and the final result count as `$3`:
 
@@ -169,7 +171,7 @@ WITH vector_ranked AS (
     FROM documents
     WHERE embedding IS NOT NULL
     ORDER BY distance
-    LIMIT 40
+    FETCH FIRST 40 ROWS WITH TIES
   ) AS vector_candidates
 ),
 keyword_ranked AS (
@@ -203,7 +205,7 @@ ORDER BY rrf_score DESC, d.id
 LIMIT $3;
 ```
 
-`score < 0` excludes BM25 non-matches. Both examples cap each retriever at 40. Vector rows tied at the cutoff may be selected arbitrarily; BM25 breaks cutoff ties by ID, while `RANK()` uses score alone to give retained ties equal ranks. To retain every vector cutoff tie, replace `LIMIT 40` with `FETCH FIRST 40 ROWS WITH TIES` in both examples and revise the total candidate budget; ties can increase candidate counts beyond 80. `lakebase_bm25.default_limit` defaults to `1000`, so a SQL limit bounds returned candidates, not all scoring work.
+RRF preserves vector cutoff ties with `WITH TIES`, so its candidate pool can exceed 80. The Jev example uses a hard vector limit to bound inference cost. BM25 uses `score < 0` to exclude non-matches and `ORDER BY score, id LIMIT 40` to bound candidates; `RANK()` uses score alone to give retained ties equal ranks. `lakebase_bm25.default_limit` defaults to `1000`, so the SQL limit bounds returned keyword candidates, not all scoring work.
 
 ## Adapt the Hybrid Search
 
