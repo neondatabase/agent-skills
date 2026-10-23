@@ -81,6 +81,7 @@ Use Neon's provider with the Vercel AI SDK. Requirements:
 
 - Install the tested versions: `npm install @neon/ai-sdk-provider@1.1.0 ai@7.0.133`. Decision models require AI SDK 7.0.133+; pin versions and retest upgrades while `experimental_decide` is experimental.
 - Load the same `NEON_AI_GATEWAY_TOKEN` and `NEON_AI_GATEWAY_BASE_URL` used for [embeddings](vector-search.md#prepare-embeddings); the provider handles the endpoint and credentials.
+- The AI Gateway, for both Jev and embeddings, requires a paid Neon plan with prepaid AI Gateway credits. Without them, embed documents and queries with one model from another provider and use [RRF](#rrf-example).
 
 ```typescript
 import { neon } from "@neon/ai-sdk-provider";
@@ -160,7 +161,7 @@ Use this query on its own when you want hybrid search without an additional mode
 
 For rank `r` and constant `k`, each retriever contributes `1 / (k + r)`. Start with a target of 40 candidates per retriever and `k = 60`; vector cutoff ties can exceed that target. Tune both for the corpus and workload.
 
-Embed the query text through the same gateway model used for the stored documents, then bind that vector as `$1`, the original query text as `$2`, and the final result count as `$3`:
+Embed the query text with the same embedding model used for the stored documents, then bind that vector as `$1`, the original query text as `$2`, and the final result count as `$3`:
 
 ```sql
 WITH vector_ranked AS (

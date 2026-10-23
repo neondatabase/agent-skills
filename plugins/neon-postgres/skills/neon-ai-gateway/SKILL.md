@@ -58,16 +58,16 @@ If the user already has a deep, single-provider integration and no interest in N
 
 Check these preconditions before setting anything up:
 
-The AI Gateway is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Foundation model access requires a paid Neon plan. Confirm the user's project is in one of these regions.
+The AI Gateway is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Confirm the user's project is in one of these regions.
 
-### Enabling the gateway: plan and model-catalog gating
+The AI Gateway is available on paid Neon plans only (Launch and Scale) and draws down prepaid AI Gateway credits. Any paid account with prepaid credits can call every model in the catalog. See https://neon.com/docs/ai-gateway/prepaid-credits.md.
 
-The AI Gateway is credential-gated rather than a provisioning step, but two plan limits gate it — one blocks provisioning, the other only trims the catalog — and the CLI surfaces each:
+### Enabling the gateway: plan and model access
+
+The AI Gateway is credential-gated rather than a provisioning step. The CLI surfaces both plan and model-access limits:
 
 - **Free plan → provisioning is blocked.** `neon config apply` / `deploy` and `neon checkout` **refuse** to enable the gateway on a Free plan (the gateway can't serve requests there), with a friendly "upgrade to a paid plan, or remove `aiGateway`" error. A dry-run `neon config plan` and `neon env pull` don't provision, so they only **warn**. So: to use the gateway the project's account must be on a paid Neon plan.
-- **Paid plan with a reduced model catalog.** On a paid plan the gateway provisions and serves, but an account can start with a trimmed catalog — some flagship models (e.g. Anthropic Opus, OpenAI Codex / `*-pro`) are missing from `GET /v1/models`. This is expected; `neon env pull` (and the env pull bundled into `apply` / `deploy` / `checkout`) warns and links the user to their branch's AI Gateway page in the Neon Console (`https://console.neon.tech/app/projects/<project-id>/branches/<branch-id>/ai-gateway`) to request access to more models. Verify what's actually available for the branch by reading `/v1/models` (see the models section below) rather than assuming the full catalog.
-
-When helping a user debug "the gateway isn't working" or "a model is missing", use `/v1/models` plus the account's plan to distinguish these two cases — a Free plan blocks provisioning entirely, while a reduced catalog on a paid plan just needs a model-access request.
+- **Paid plan with locked models.** `GET /v1/models` lists every catalog model and marks the ones the account can't call yet with `enabled: false`. `neon env pull` (and the env pull bundled into `apply` / `deploy` / `checkout`) warns when some models are enabled but no flagship model (e.g. Anthropic Opus, OpenAI Codex / `*-pro`) is among them, and links to the branch's AI Gateway page in the Neon Console (`https://console.neon.tech/app/projects/<project-id>/branches/<branch-id>/ai-gateway`). That page lists locked models under **Some models are restricted**, grouped by reason, each with its fix: **Upgrade plan** for a paid plan, **Add credits** for prepaid credits, or Support for an account restriction or a model not available to the account. After the user upgrades or buys credits, models unlock once Neon confirms access. No CLI warning does not mean every model is enabled; check the model's `enabled` value. See https://neon.com/docs/ai-gateway/troubleshooting.md.
 
 ## Setup
 
@@ -323,7 +323,7 @@ Any Neon credential (`nt_live_...`) valid for the branch works as the bearer tok
 }
 ```
 
-> Note: `context_length`, `pricing`, and `per_request_limits` are currently `null` and `created` is `0` for every entry — for context windows, pricing, and capabilities use the models.dev catalog above. Use `/v1/models` when you need the live, branch-scoped list of servable model IDs (e.g. to populate a model picker or validate a `model` before a request).
+> Note: `context_length`, `pricing`, and `per_request_limits` are currently `null` and `created` is `0` for every entry — for context windows, pricing, and capabilities use the models.dev catalog above. Use `/v1/models` when you need the live, branch-scoped list of servable model IDs (e.g. to populate a model picker or validate a `model` before a request), and keep only entries with `enabled: true`.
 
 ## Neon Documentation
 
