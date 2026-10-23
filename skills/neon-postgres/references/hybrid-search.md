@@ -161,7 +161,7 @@ Use this query on its own when you want hybrid search without an additional mode
 
 For rank `r` and constant `k`, each retriever contributes `1 / (k + r)`. Start with a target of 40 candidates per retriever and `k = 60`; vector cutoff ties can exceed that target. Tune both for the corpus and workload.
 
-Embed the query text through the same gateway model used for the stored documents, then bind that vector as `$1`, the original query text as `$2`, and the final result count as `$3`:
+Embed the query text with the same embedding model used for the stored documents, then bind that vector as `$1`, the original query text as `$2`, and the final result count as `$3`:
 
 ```sql
 WITH vector_ranked AS (
