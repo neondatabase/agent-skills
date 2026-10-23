@@ -104,9 +104,9 @@ async function rerankWithJev(
 
   const model = neon.decisionModel("typesafeai-jev-1-14-0");
   const criteria = {
-    true: "The candidate supplies information that directly answers the specific query.",
+    true: "The candidate states the specific facts or steps the query asks for.",
     false:
-      "The candidate is unrelated or merely on a similar topic; it does not answer the specific query.",
+      "The candidate only shares keywords or a topic with the query, answers a different question, or lacks the requested information.",
   };
   const abortSignal = AbortSignal.timeout(10_000); // whole reranking budget
   const scored: { doc: Candidate; index: number; probability: number }[] = [];
@@ -121,7 +121,8 @@ async function rerankWithJev(
           {
             type: "boolean" as const,
             instructions: {
-              question: "Does the candidate passage answer the specific query?",
+              question:
+                "Given the search query in state.query, does this candidate passage supply the specific information the user is looking for?",
               candidate: { title: doc.title, body: doc.body },
             },
             criteria,
