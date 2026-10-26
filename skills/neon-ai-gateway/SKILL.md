@@ -13,7 +13,8 @@ description: >-
   "add AI to my app", "chat completion", "model routing", "LLM proxy/gateway",
   "one API for all
   models", "use Claude/GPT/Gemini", "AI SDK", "Mastra agent", "Neon AI
-  Gateway", "generate embeddings", and "log/rate-limit AI calls".
+  Gateway", "generate embeddings", "generate images", and "log/rate-limit AI
+  calls".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-ai-gateway
@@ -135,6 +136,7 @@ const result = streamText({
   messages,
   tools: {
     image_generation: neon.tools.imageGeneration({
+      model: "gpt-image-2",
       outputFormat: "jpeg",
       size: "1024x1024",
     }),
@@ -179,6 +181,36 @@ const { text } = await generateText({
 ```
 
 For a full AI SDK agent deployed as a Neon Function (streaming, tool calling, image generation, persistence), see the `neon-functions` skill's [references/ai-sdk.md](https://neon.com/docs/ai/skills/neon-functions/references/ai-sdk.md).
+
+## Generate Images
+
+Images come from the OpenAI Responses `image_generation` built-in tool on an OpenAI model, on the `/openai/v1/responses` route. The gateway has no image model endpoint, so the AI SDK's `generateImage()` throws `NoSuchModelError`. Every image request follows two rules:
+
+- **Set the image model to `gpt-image-2`.** Pass it explicitly on every tool definition. `gpt-image-1` returns `502 INTERNAL_ERROR` through the gateway.
+- **Always stream.** A non-streaming response whose image is over 655,360 bytes fails with `400: The response content length cannot be greater than 655360 bytes long`, and most images are larger than that. Use `streamText`, never `generateText`, when the image tool is attached. With the plain OpenAI SDK, pass `stream: true` to `client.responses.create()`.
+
+```typescript
+import { neon } from "@neon/ai-sdk-provider";
+import { streamText } from "ai";
+
+const result = streamText({
+  model: neon("gpt-5-mini"),
+  prompt: "Generate an image of a red apple on a wooden table",
+  tools: {
+    image_generation: neon.tools.imageGeneration({ model: "gpt-image-2" }),
+  },
+});
+
+for await (const part of result.fullStream) {
+  if (
+    part.type === "tool-result" &&
+    "result" in part.output &&
+    typeof part.output.result === "string"
+  ) {
+    const png = Buffer.from(part.output.result, "base64"); // save or upload it
+  }
+}
+```
 
 ## Generate Embeddings with the AI SDK
 
