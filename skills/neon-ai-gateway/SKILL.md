@@ -204,6 +204,7 @@ const result = streamText({
 for await (const part of result.fullStream) {
   if (
     part.type === "tool-result" &&
+    !part.dynamic &&
     "result" in part.output &&
     typeof part.output.result === "string"
   ) {
