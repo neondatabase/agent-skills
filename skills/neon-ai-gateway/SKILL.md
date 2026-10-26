@@ -125,14 +125,14 @@ For typed, validated access to the injected credentials, pass the same `neon.ts`
 
 The [Vercel AI SDK](https://ai-sdk.dev) is the recommended way to call the gateway and build agents from TypeScript: one set of primitives (`generateText`, `streamText`, tool calling, structured output) over every catalog model, with first-class streaming for the long agent responses Neon Functions are built to host.
 
-The dedicated `@neon/ai-sdk-provider` reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` from the injected env with **zero config** and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow). On a Neon Function that streams text and generates images, just pick a catalog model:
+The dedicated `@neon/ai-sdk-provider` reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` from the injected env with **zero config** and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow). On a Neon Function that streams text and generates images, pick an OpenAI catalog model, since the image tool runs on the Responses route:
 
 ```typescript
 import { neon } from "@neon/ai-sdk-provider";
 import { streamText } from "ai";
 
 const result = streamText({
-  model: neon("gpt-5-mini"), // or claude-sonnet-4-6, gemini-3-flash, ...
+  model: neon("gpt-5-mini"),
   messages,
   tools: {
     image_generation: neon.tools.imageGeneration({
