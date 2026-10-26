@@ -97,7 +97,7 @@ const result = streamText({
   messages,
   tools: {
     image_generation: neon.tools.imageGeneration({
-      model: "gpt-image-2", // OpenAI has deprecated gpt-image-1
+      model: "gpt-image-2", // or gpt-image-1.5, gpt-image-1-mini
       outputFormat: "jpeg",
       size: "1024x1024",
     }),

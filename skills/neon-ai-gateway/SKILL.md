@@ -186,7 +186,7 @@ For a full AI SDK agent deployed as a Neon Function (streaming, tool calling, im
 
 Images come from the OpenAI Responses `image_generation` built-in tool on an OpenAI model, on the `/openai/v1/responses` route. The gateway has no image model endpoint, so the AI SDK's `generateImage()` throws `NoSuchModelError`. Every image request follows two rules:
 
-- **Set the image model to `gpt-image-2`.** Pass it explicitly on every tool definition. OpenAI has deprecated `gpt-image-1`; through the gateway it fails with `model_not_found` when streamed and `502 INTERNAL_ERROR` when not.
+- **Use a supported image model.** The gateway supports `gpt-image-2`, `gpt-image-1.5`, and `gpt-image-1-mini`. Set `model` explicitly on every tool definition, and use `gpt-image-2` unless the user asks for another.
 - **Always stream.** A non-streaming response whose image is over 655,360 bytes fails with `400: The response content length cannot be greater than 655360 bytes long`, and most images are larger than that. Use `streamText`, never `generateText`, when the image tool is attached. With the plain OpenAI SDK, pass `stream: true` to `client.responses.create()`.
 
 ```typescript
