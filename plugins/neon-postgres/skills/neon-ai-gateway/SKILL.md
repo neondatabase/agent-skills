@@ -13,7 +13,8 @@ description: >-
   "add AI to my app", "chat completion", "model routing", "LLM proxy/gateway",
   "one API for all
   models", "use Claude/GPT/Gemini", "AI SDK", "Mastra agent", "Neon AI
-  Gateway", "generate embeddings", and "log/rate-limit AI calls".
+  Gateway", "generate embeddings", "generate images", and "log/rate-limit AI
+  calls".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-ai-gateway
@@ -124,17 +125,18 @@ For typed, validated access to the injected credentials, pass the same `neon.ts`
 
 The [Vercel AI SDK](https://ai-sdk.dev) is the recommended way to call the gateway and build agents from TypeScript: one set of primitives (`generateText`, `streamText`, tool calling, structured output) over every catalog model, with first-class streaming for the long agent responses Neon Functions are built to host.
 
-The dedicated `@neon/ai-sdk-provider` reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` from the injected env with **zero config** and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow). On a Neon Function that streams text and generates images, just pick a catalog model:
+The dedicated `@neon/ai-sdk-provider` reads `NEON_AI_GATEWAY_BASE_URL` + `NEON_AI_GATEWAY_TOKEN` from the injected env with **zero config** and routes each model to the best endpoint (Anthropic → Messages, OpenAI/Codex → Responses, everything else → MLflow). On a Neon Function that streams text and generates images, pick an OpenAI catalog model, since the image tool runs on the Responses route:
 
 ```typescript
 import { neon } from "@neon/ai-sdk-provider";
 import { streamText } from "ai";
 
 const result = streamText({
-  model: neon("gpt-5-mini"), // or claude-sonnet-4-6, gemini-3-flash, ...
+  model: neon("gpt-5-mini"),
   messages,
   tools: {
     image_generation: neon.tools.imageGeneration({
+      model: "gpt-image-2",
       outputFormat: "jpeg",
       size: "1024x1024",
     }),
@@ -179,6 +181,37 @@ const { text } = await generateText({
 ```
 
 For a full AI SDK agent deployed as a Neon Function (streaming, tool calling, image generation, persistence), see the `neon-functions` skill's [references/ai-sdk.md](https://neon.com/docs/ai/skills/neon-functions/references/ai-sdk.md).
+
+## Generate Images
+
+Images come from the OpenAI Responses `image_generation` built-in tool on an OpenAI model, on the `/openai/v1/responses` route. The gateway has no image model endpoint, so the AI SDK's `generateImage()` throws `NoSuchModelError`. Every image request follows two rules:
+
+- **Use a supported image model.** The gateway supports `gpt-image-2`, `gpt-image-1.5`, and `gpt-image-1-mini`. Set `model` explicitly on every tool definition, and use `gpt-image-2` unless the user asks for another.
+- **Always stream.** A non-streaming response whose image is over 655,360 bytes fails with `400: The response content length cannot be greater than 655360 bytes long`, and most images are larger than that. Use `streamText`, never `generateText`, when the image tool is attached. With the plain OpenAI SDK, pass `stream: true` to `client.responses.create()`.
+
+```typescript
+import { neon } from "@neon/ai-sdk-provider";
+import { streamText } from "ai";
+
+const result = streamText({
+  model: neon("gpt-5-mini"),
+  prompt: "Generate an image of a red apple on a wooden table",
+  tools: {
+    image_generation: neon.tools.imageGeneration({ model: "gpt-image-2" }),
+  },
+});
+
+for await (const part of result.fullStream) {
+  if (
+    part.type === "tool-result" &&
+    !part.dynamic &&
+    "result" in part.output &&
+    typeof part.output.result === "string"
+  ) {
+    const png = Buffer.from(part.output.result, "base64"); // save or upload it
+  }
+}
+```
 
 ## Generate Embeddings with the AI SDK
 
