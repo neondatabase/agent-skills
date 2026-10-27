@@ -1,0 +1,3 @@
+# Skill installers hash checked-out skill folders and compare them with the bytes GitHub serves,
+# so a checkout must not rewrite line endings (core.autocrlf on Windows).
+* -text
