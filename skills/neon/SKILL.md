@@ -166,9 +166,20 @@ If the Neon CLI is not available, you can visit https://neon.com/.well-known/age
 
 ### Updating Skills
 
-Keep the skills up to date: for every new session, update them so you are working with the latest best practices.
+Keep the skills up to date: for every new session, check them and update the stale ones so you are working with the latest best practices.
 
-Run `neon skills update` to update all installed Neon skills, or `neon skills update -y` to skip prompts. If the skills were installed via a plugin, they are updated automatically.
+Run `neon skills status` (neon 8.12.0 or newer) to check the Neon skills in this directory's `skills-lock.json`, or `neon skills status --global` for user-level skills. It lists each skill as `up to date`, `outdated`, or `not found upstream`, and prints the update command when any are outdated. It exits 0 either way, so read the Status column:
+
+```
+$ neon skills status
+Skills
+Scope           Skill          Status
+this directory  neon           outdated
+this directory  neon-postgres  up to date
+Update them: neon skills update -y
+```
+
+Run `neon skills update` to update all installed Neon skills, or `neon skills update -y` to skip prompts. Add `--global` for user-level skills. If the skills were installed via a plugin, they are updated automatically.
 
 ## Getting Started with Neon
 
