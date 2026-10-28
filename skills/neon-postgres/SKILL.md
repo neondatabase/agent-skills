@@ -30,7 +30,7 @@ Lakebase Postgres is the database at the core of Neon. It runs on the lakebase a
 
 It is the same database whether you reach it through Neon or through Databricks; this skill covers the Neon access path.
 
-Login, users, sessions, and `@neondatabase/auth` belong in `neon-auth`.
+Login, users, sessions, and `@neon/auth` belong in `neon-auth`.
 
 Live queries, reactive UIs, and realtime data belong in `neon-realtime`.
 

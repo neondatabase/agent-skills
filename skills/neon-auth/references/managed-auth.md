@@ -23,9 +23,9 @@ SMS is separate: the Phone Number plugin needs an application `send.otp` webhook
 
 | Need | Package |
 | --- | --- |
-| Auth only | `@neondatabase/auth` |
+| Auth only | `@neon/auth` |
 | Already using the combined SDK | `@neondatabase/neon-js/auth` re-export |
-| Pre-built UI | `@neondatabase/auth-ui` |
+| Pre-built UI | Better Auth UI: `@better-auth-ui/react` plus shadcn/ui components (`npx shadcn add @better-auth-ui/auth`) |
 
 Keep an existing `SupabaseAuthAdapter()` caller on that API (`signInWithPassword`, `signInWithOAuth`). Do not mix those methods into default Better Auth examples. Password hashes do not migrate from Supabase; `updateUser()` cannot change email or password; email verification needs app UI. Guide: https://neon.com/docs/auth/migrate/from-supabase.md
 
@@ -44,10 +44,10 @@ The Managed client is Better Auth methods through Neon's wrapper. It is not inte
 
 ## Next.js
 
-`createNeonAuth` from `@neondatabase/auth/next/server`. Optional Next peer on current `@neondatabase/auth` is `>=16.0.0`; check the installed package before changing an existing app's router file.
+`createNeonAuth` from `@neon/auth/next/server`. Optional Next peer on current `@neon/auth` is `>=16.0.0`; check the installed package before changing an existing app's router file.
 
 ```typescript
-import { createNeonAuth } from "@neondatabase/auth/next/server";
+import { createNeonAuth } from "@neon/auth/next/server";
 
 export const auth = createNeonAuth({
   baseUrl: process.env.NEON_AUTH_BASE_URL!,
@@ -68,7 +68,7 @@ Those five methods are what the installed SDK returns. Existing apps that export
 Browser client takes **no arguments** and talks to that same-origin proxy:
 
 ```typescript
-import { createAuthClient } from "@neondatabase/auth/next";
+import { createAuthClient } from "@neon/auth/next";
 
 export const authClient = createAuthClient();
 ```
@@ -111,13 +111,13 @@ JWT: `const { data, error } = await auth.token();` then `data.token`. Do not cal
 
 ## Organization invitations
 
-`organization.inviteMember()` does not send email unless `send_invitation_email` is on (default `false`) and "Verify email at signup" is enabled. Accepting an emailed invite needs `/auth/accept-invitation?invitationId=` via `AuthView` or a custom flow that signs the recipient in and calls `organization.acceptInvitation({ invitationId })`. If email delivery stays off, use an in-app invitation list. https://neon.com/docs/auth/guides/plugins/organization.md
+`organization.inviteMember()` does not send email unless `send_invitation_email` is on (default `false`) and "Verify email at signup" is enabled. Accepting an emailed invite needs `/auth/accept-invitation?invitationId=` via Better Auth UI's organization plugin (`organizationPlugin()`, view `accept-invitation`) or a custom flow that signs the recipient in and calls `organization.acceptInvitation({ invitationId })`. If email delivery stays off, use an in-app invitation list. https://neon.com/docs/auth/guides/plugins/organization.md
 
 ## React / Vite
 
 ```typescript
-import { createAuthClient } from "@neondatabase/auth";
-import { BetterAuthReactAdapter } from "@neondatabase/auth/react/adapters";
+import { createAuthClient } from "@neon/auth";
+import { BetterAuthReactAdapter } from "@neon/auth/react/adapters";
 
 export const authClient = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL, {
   adapter: BetterAuthReactAdapter(),
@@ -132,16 +132,61 @@ JWT: `authClient.token()` then `data.token`.
 
 ## UI
 
-```typescript
-import "@neondatabase/auth-ui/css";
-import { NeonAuthUIProvider, AuthView } from "@neondatabase/auth-ui";
+Better Auth UI 1.7. The shadcn CLI copies its components into the app; `@better-auth-ui/react` is the data layer and needs TanStack Query:
+
+```bash
+npx shadcn@latest add @better-auth-ui/auth          # sign-in, sign-up, password reset
+npx shadcn@latest add @better-auth-ui/user-button   # optional
 ```
 
-Choose one CSS import: `/css` or `/tailwind`, never both. Current `@neondatabase/auth-ui` uses `<AuthView path={path} />`. Check installed types before copying a `pathname` example from older docs.
+```tsx
+import { getSafeRedirectTo, viewPaths } from "@better-auth-ui/core";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { Auth } from "@/components/auth/auth";
 
-UI flags (`emailOTP`, `magicLink`, social providers, organization) do not enable the Managed plugin. Configure the plugin on the branch, then the UI.
+<QueryClientProvider client={queryClient}>
+  <AuthProvider
+    authClient={authClient}
+    emailAndPassword={{ requireEmailVerification: false }}
+    navigate={({ to, replace }) => {
+      const path = getSafeRedirectTo(to, window.location.origin);
+      const target = path.startsWith("//") ? "/" : path;
+      if (replace) router.replace(target);
+      else router.push(target);
+    }}
+    Link={Link}
+    redirectTo="/"
+  >
+    {children}
+  </AuthProvider>
+</QueryClientProvider>
 
-Preserve existing `@neondatabase/auth/react/ui` imports rather than forcing a drive-by migration. New snippets use `@neondatabase/auth-ui`.
+// /auth/[path]: valid paths are Object.values(viewPaths.auth)
+<Auth path={path} />
+```
+
+- Pass the Neon `authClient` as is; it satisfies Better Auth UI's `AuthClient` type.
+- `navigate` receives the URL's `?redirectTo=` after sign-in. Validate it as above: `getSafeRedirectTo` alone returns `//host` for `/a/..//host`.
+- npm needs `overrides`. `@neon/auth` pins Better Auth exactly, and `@better-auth-ui/react` requires `@better-auth/api-key` and `@better-auth/passkey`, which npm installs at latest and which then fail with `ERESOLVE`. Hold the whole stack at one version:
+
+```json
+"overrides": {
+  "better-auth": "1.7.12",
+  "@better-auth/core": "1.7.12",
+  "@better-auth/oauth-provider": "1.7.12",
+  "better-call": "1.4.4",
+  "@better-auth/utils": "0.5.0",
+  "@better-auth/api-key": "1.7.12",
+  "@better-auth/passkey": "1.7.12"
+}
+```
+
+- Protect pages on the server (`auth.middleware()` / a route guard). Better Auth UI's `useAuthenticate` redirects while a stale signed-out session is still refetching, which sends a user who just signed up back to sign-in.
+- `@neon/auth` returns Supabase-style error codes (`invalid_credentials`), and Better Auth UI maps errors by Better Auth codes. A wrong password shows "Please sign in again", and the verify-email redirect never fires, so keep `requireEmailVerification: false`.
+- Better Auth UI plugins (`plugins={[...]}`) do not enable the Managed plugin. Configure the plugin on the branch, then the UI.
+
+Leave an existing app on `@neondatabase/auth-ui` alone rather than migrating it as a drive-by. New snippets use Better Auth UI.
 
 ## Cross-subdomain vs bearer JWT
 

@@ -4,7 +4,7 @@ description: >-
   Add authentication to a new app. Use for "add auth", "add login", Neon Auth
   (Managed Better Auth), identity routing, sign-up, sign-in, password reset,
   email OTP, magic links, organizations, phone OTP, OAuth, passkeys, MFA,
-  trusted domains, invalid domain, and @neondatabase/auth. No existing identity:
+  trusted domains, invalid domain, and @neon/auth. No existing identity:
   default to Managed Better Auth. Keep working Better Auth, Clerk, Supabase
   Auth, or another IdP. User asked to migrate from Supabase Auth: Managed
   Better Auth. A required plugin outside Managed support: self-managed Better
@@ -25,7 +25,7 @@ neon skills -s neon -y
 
 # Neon Auth
 
-Neon Auth is Managed Better Auth: users, sessions, and auth config live in the `neon_auth` schema on the branch's Lakebase Postgres, and auth state branches with the database. The client API is the Better Auth method set (`signIn.email`, `signIn.social`, `getSession`) through `@neondatabase/auth`. That wrapper is not a drop-in for bare `better-auth/client`: it pins the plugin list and adds Neon-specific OAuth verifier, iframe popup, and JWT handling. Stay on the wrapper while Auth is managed.
+Neon Auth is Managed Better Auth: users, sessions, and auth config live in the `neon_auth` schema on the branch's Lakebase Postgres, and auth state branches with the database. The client API is the Better Auth method set (`signIn.email`, `signIn.social`, `getSession`) through `@neon/auth`. That wrapper is not a drop-in for bare `better-auth/client`: it pins the plugin list and adds Neon-specific OAuth verifier, iframe popup, and JWT handling. Stay on the wrapper while Auth is managed.
 
 This skill chooses identity, then implements Managed Better Auth. It does not replace a working auth server in order to use Postgres, Functions, Object Storage, or the AI Gateway.
 
@@ -45,14 +45,14 @@ Google, GitHub, and Vercel social OAuth are offered on Managed Auth. They are no
 
 Before enabling Managed Auth, confirm the project is on AWS and does not use IP Allow or Private Networking. Leave those protections in place.
 
-Configure supported Managed plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neondatabase/auth`. Enabling `auth: true` is not implementing login.
+Configure supported Managed plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neon/auth`. Enabling `auth: true` is not implementing login.
 
 ## What It Does
 
 - **Managed identity in Postgres** — users and sessions in `neon_auth`, queryable with SQL, compatible with RLS.
 - **Auth emails without an app mailer** — verification, email OTP, magic links, and password reset. Getting started uses shared SMTP (`auth@mail.myneon.app`). You do not add Resend or SendGrid to implement login. Production needs custom SMTP: https://neon.com/docs/auth/production-checklist.md
 - **Branches with the database** — each branch has its own Auth URL and isolated auth state.
-- **Better Auth client methods via the Neon SDK** — `@neondatabase/auth` (auth only) or `@neondatabase/neon-js/auth` (combined SDK). Optional UI: `@neondatabase/auth-ui`.
+- **Better Auth client methods via the Neon SDK** — `@neon/auth` (auth only) or `@neondatabase/neon-js/auth` (combined SDK). Optional UI: Better Auth UI (`@better-auth-ui/react` with its shadcn/ui components).
 - **Fixed plugin set** — the Managed client does not accept a `plugins` option. See [plugin support](#plugin-support).
 
 ## Availability
@@ -106,7 +106,7 @@ A required plugin on the self-managed path is verified in that app's Better Auth
 
 ## Plugin support
 
-Checked 2026-09-17 against https://neon.com/docs/auth/guides/plugins.md, https://neon.com/docs/auth/roadmap.md, and the `@neondatabase/auth` client plugin list. Re-fetch those pages if this skill may be stale. An unlisted upstream plugin needs a live check; do not treat absence from this table as a dated roadmap item.
+Checked 2026-09-17 against https://neon.com/docs/auth/guides/plugins.md, https://neon.com/docs/auth/roadmap.md, and the `@neon/auth` client plugin list. Re-fetch those pages if this skill may be stale. An unlisted upstream plugin needs a live check; do not treat absence from this table as a dated roadmap item.
 
 "Not exposed" means the Managed SDK/UI contract. It is not a claim that every raw server request was tested.
 
