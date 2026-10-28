@@ -144,11 +144,12 @@ import { getSafeRedirectTo, viewPaths } from "@better-auth-ui/core";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/components/auth/auth-provider";
 import { Auth } from "@/components/auth/auth";
+import { Toaster } from "@/components/ui/sonner";
 
 <QueryClientProvider client={queryClient}>
   <AuthProvider
     authClient={authClient}
-    emailAndPassword={{ requireEmailVerification: false }}
+    emailAndPassword={{ requireEmailVerification: false }} // match the branch's "Verify email at signup"
     navigate={({ to, replace }) => {
       const path = getSafeRedirectTo(to, window.location.origin);
       const target = path.startsWith("//") ? "/" : path;
@@ -159,6 +160,7 @@ import { Auth } from "@/components/auth/auth";
     redirectTo="/"
   >
     {children}
+    <Toaster />
   </AuthProvider>
 </QueryClientProvider>
 
@@ -183,7 +185,9 @@ import { Auth } from "@/components/auth/auth";
 ```
 
 - Protect pages on the server (`auth.middleware()` / a route guard). Better Auth UI's `useAuthenticate` redirects while a stale signed-out session is still refetching, which sends a user who just signed up back to sign-in.
-- `@neon/auth` returns Supabase-style error codes (`invalid_credentials`), and Better Auth UI maps errors by Better Auth codes. A wrong password shows "Please sign in again", and the verify-email redirect never fires, so keep `requireEmailVerification: false`.
+- Render `<Toaster />`: the copied `AuthProvider` reports errors with Sonner's `toast.error()` and renders nothing itself.
+- Set `requireEmailVerification` to the branch's "Verify email at signup" setting (off by default). It decides whether sign-up shows the verify-email view.
+- `@neon/auth` returns Supabase-style error codes (`invalid_credentials`), and Better Auth UI maps errors by Better Auth codes. A wrong password shows "Please sign in again", and signing in with an unverified email doesn't redirect to the verify-email view.
 - Better Auth UI plugins (`plugins={[...]}`) do not enable the Managed plugin. Configure the plugin on the branch, then the UI.
 
 Leave an existing app on `@neondatabase/auth-ui` alone rather than migrating it as a drive-by. New snippets use Better Auth UI.
