@@ -9,7 +9,7 @@ description: >-
   Auth, or another IdP. User asked to migrate from Supabase Auth: Managed
   Better Auth. A required plugin outside Managed support: self-managed Better
   Auth on a Neon Function or the existing app host. Also use for auth APIs in
-  @neondatabase/neon-js.
+  @neon/neon-js.
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-auth
@@ -52,7 +52,7 @@ Configure supported Managed plugins through Neon (Console, API, or `neon neon-au
 - **Managed identity in Postgres** — users and sessions in `neon_auth`, queryable with SQL, compatible with RLS.
 - **Auth emails without an app mailer** — verification, email OTP, magic links, and password reset. Getting started uses shared SMTP (`auth@mail.myneon.app`). You do not add Resend or SendGrid to implement login. Production needs custom SMTP: https://neon.com/docs/auth/production-checklist.md
 - **Branches with the database** — each branch has its own Auth URL and isolated auth state.
-- **Better Auth client methods via the Neon SDK** — `@neon/auth` (auth only) or `@neondatabase/neon-js/auth` (combined SDK). Optional UI: Better Auth UI (`@better-auth-ui/react` with its shadcn/ui components).
+- **Better Auth client methods via the Neon SDK** — `@neon/auth` (auth only) or `@neon/neon-js/auth` (combined SDK). Optional UI: Better Auth UI (`@better-auth-ui/react` with its shadcn/ui components).
 - **Fixed plugin set** — the Managed client does not accept a `plugins` option. See [plugin support](#plugin-support).
 
 ## Availability

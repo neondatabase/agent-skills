@@ -24,7 +24,7 @@ SMS is separate: the Phone Number plugin needs an application `send.otp` webhook
 | Need | Package |
 | --- | --- |
 | Auth only | `@neon/auth` |
-| Already using the combined SDK | `@neondatabase/neon-js/auth` re-export |
+| Already using the combined SDK | `@neon/neon-js/auth` re-export |
 | Pre-built UI | Better Auth UI: `@better-auth-ui/react` plus shadcn/ui components (`npx shadcn add @better-auth-ui/auth`) |
 
 Keep an existing `SupabaseAuthAdapter()` caller on that API (`signInWithPassword`, `signInWithOAuth`). Do not mix those methods into default Better Auth examples. Password hashes do not migrate from Supabase; `updateUser()` cannot change email or password; email verification needs app UI. Guide: https://neon.com/docs/auth/migrate/from-supabase.md
@@ -168,9 +168,10 @@ import { Toaster } from "@/components/ui/sonner";
 <Auth path={path} />
 ```
 
+- `queryClient`, `router` and `Link` are the app's own TanStack Query client and its framework router's `push`/`replace` and `Link`; do not invent imports for them.
 - Pass the Neon `authClient` as is; it satisfies Better Auth UI's `AuthClient` type.
 - `navigate` receives the URL's `?redirectTo=` after sign-in. Validate it as above: `getSafeRedirectTo` alone returns `//host` for `/a/..//host`.
-- npm needs `overrides`. `@neon/auth` pins Better Auth exactly, and `@better-auth-ui/react` requires `@better-auth/api-key` and `@better-auth/passkey`, which npm installs at latest and which then fail with `ERESOLVE`. Hold the whole stack at one version:
+- npm needs `overrides`. `@neon/auth` pins exact Better Auth versions, and Better Auth UI needs 1.7.12 or newer. `@better-auth-ui/react` also requires `@better-auth/api-key` and `@better-auth/passkey`, which npm installs at latest and which then fail with `ERESOLVE`. Hold the whole stack at one version:
 
 ```json
 "overrides": {
@@ -184,6 +185,7 @@ import { Toaster } from "@/components/ui/sonner";
 }
 ```
 
+- Once `npm view @neon/auth dependencies` shows a Better Auth pin that meets that requirement, drop the `overrides` block.
 - Protect pages on the server (`auth.middleware()` / a route guard). Better Auth UI's `useAuthenticate` redirects while a stale signed-out session is still refetching, which sends a user who just signed up back to sign-in.
 - Render `<Toaster />`: the copied `AuthProvider` reports errors with Sonner's `toast.error()` and renders nothing itself.
 - Set `requireEmailVerification` to the branch's "Verify email at signup" setting (off by default). It decides whether sign-up shows the verify-email view.
@@ -219,4 +221,4 @@ export default defineConfig({
 });
 ```
 
-Do not enable Auth merely to satisfy a `dataApi` type error in an app that never needed the Data API. External JWKS on a Claimable project is accepted only after claim. Combined SDK `createClient({ dataApi: { url, getToken } })` is a query client without `.auth`; confirm the installed `@neondatabase/neon-js` docs before introducing it.
+Do not enable Auth merely to satisfy a `dataApi` type error in an app that never needed the Data API. External JWKS on a Claimable project is accepted only after claim. Combined SDK `createClient({ dataApi: { url, getToken } })` is a query client without `.auth`; confirm the installed `@neon/neon-js` docs before introducing it.

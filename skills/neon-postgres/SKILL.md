@@ -8,7 +8,7 @@ description: >-
   DATABASE_URL, SQL, schema, inspect, or search. New backends, Auth, files,
   Functions, and LLM calls go to the parent `neon` skill. Live queries, reactive
   UIs, and realtime data go to `neon-realtime`. Also use for
-  "@neondatabase/serverless", "@neondatabase/neon-js", "neon inspect db",
+  "@neondatabase/serverless", "@neon/neon-js", "neon inspect db",
   "semantic search", "vector search", "full-text search", "BM25", or
   "hybrid search".
 metadata:
