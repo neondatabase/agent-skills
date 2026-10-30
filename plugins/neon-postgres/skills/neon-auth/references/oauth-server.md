@@ -51,7 +51,7 @@ neon neon-auth oauth-client delete <client-id>
 - `confidential` (server-side apps, token endpoint auth `client_secret_basic`) or `public` (SPA, mobile, desktop, CLI; PKCE, no secret). The type cannot change after creation.
 - The `client_secret` of a confidential client is returned only by `create` and `rotate-secret`. Store it in a secret manager or the host's environment variables immediately. The old secret stops working at once on rotation. Never put it in client-side code, the repo, or logs.
 - Redirect URIs must match exactly: `https`, or `http` on `localhost`/`127.0.0.1`/`[::1]` when localhost access is enabled. No fragments, credentials, or custom schemes. Register only the URIs the app uses.
-- A branch has a cap on managed clients (see Limitations in the docs). Run `list` first and reuse or delete a client rather than creating duplicates; a create past the cap is rejected.
+- At most 100 OAuth clients per project (`OAUTH_CLIENT_LIMIT_REACHED` past that). Run `oauth-client list` before creating more, and reuse or delete a client rather than creating duplicates.
 - `--skip-consent` only for first-party confidential clients you control.
 - A new branch starts with its parent's clients (same IDs and secrets). Rotate secrets on branches that must differ.
 
