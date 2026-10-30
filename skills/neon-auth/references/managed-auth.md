@@ -73,19 +73,26 @@ import { createAuthClient } from "@neon/auth/next";
 export const authClient = createAuthClient();
 ```
 
-Protect routes with `auth.middleware({ loginUrl: "/auth/sign-in" })` from `proxy.ts` on Next 16. Earlier Next apps may still use `middleware.ts`; match the installed SDK. Always set `config.matcher` to the protected pages. A matcher that covers every path redirects JavaScript and CSS for unauthenticated visitors, so the login page cannot load:
+### Middleware
+
+Protect routes with `auth.middleware()` from `proxy.ts` on Next 16. Earlier Next apps may still use `middleware.ts`; match the installed SDK. Use the catch-all matcher and list only the app's own public pages in `publicRoutes`:
 
 ```typescript
 import { auth } from "@/lib/auth/server";
 
-export default auth.middleware({ loginUrl: "/auth/sign-in" });
+export default auth.middleware({
+  loginUrl: "/auth/sign-in",
+  publicRoutes: ["/"],
+});
 
 export const config = {
-  matcher: ["/account/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 ```
 
-Replace `/account/:path*` with the app's protected routes. Keep login, registration, recovery, `/api/auth`, and static assets accessible without a session.
+- `/api/auth` and every Better Auth UI signed-out view (sign-in, sign-up, forgot-password, reset-password, verify-email, magic-link, accept-invitation, and the rest) are public by default. `/auth` itself and `/settings/*` stay protected.
+- `publicRoutes` matches an exact path or its slash-delimited subpaths. `"/"` matches only `/`. Entries must start with `/`; `""` and `"//"` throw.
+- Do not write a custom `proxy.ts` wrapper or re-list the default skip routes.
 
 Before reading protected data or performing a mutation, check the session inside the Route Handler or Server Action and enforce the resource's authorization rules. Verify direct unauthenticated requests are denied, independently of page redirects:
 
@@ -124,6 +131,8 @@ export const authClient = createAuthClient(import.meta.env.VITE_NEON_AUTH_URL, {
 });
 ```
 
+Vite has no server middleware. Guard protected routes with a session check, for example a router loader that calls `authClient.getSession()` or `useSession()` in a layout component, and redirect to `/auth/sign-in` when there is no user. Add `http://localhost:5173` and the production origin as trusted domains first: see [Trusted domains](../SKILL.md#trusted-domains).
+
 Call adapter factories with `()`. Omit the adapter for vanilla Better Auth methods without `useSession`.
 
 Public calls: `signUp.email({ email, password, name })`, `signIn.email({ email, password })`, `signIn.social({ provider, callbackURL })`, `getSession()`, `signOut()`. Result shape is `{ data, error }`; user is `data.user`. Handle `error` and thrown HTTP errors, pending UI, and authenticated vs unauthenticated display.
@@ -132,9 +141,12 @@ JWT: `authClient.token()` then `data.token`.
 
 ## UI
 
+Neon hosts the auth server. Do NOT call `betterAuth()`, add a database adapter, or run Better Auth migrations.
+
 Better Auth UI 1.7. The shadcn CLI copies its components into the app; `@better-auth-ui/react` is the data layer and needs TanStack Query:
 
 ```bash
+npx shadcn@latest init                              # once, if the app has no components.json
 npx shadcn@latest add @better-auth-ui/auth          # sign-in, sign-up, password reset
 npx shadcn@latest add @better-auth-ui/user-button   # optional
 ```
@@ -171,26 +183,21 @@ import { Toaster } from "@/components/ui/sonner";
 - `queryClient`, `router` and `Link` are the app's own TanStack Query client and its framework router's `push`/`replace` and `Link`; do not invent imports for them.
 - Pass the Neon `authClient` as is; it satisfies Better Auth UI's `AuthClient` type.
 - `navigate` receives the URL's `?redirectTo=` after sign-in. Validate it as above: `getSafeRedirectTo` alone returns `//host` for `/a/..//host`.
-- npm needs `overrides`. `@neon/auth` pins exact Better Auth versions, and Better Auth UI needs 1.7.12 or newer. `@better-auth-ui/react` also requires `@better-auth/api-key` and `@better-auth/passkey`, which npm installs at latest and which then fail with `ERESOLVE`. Hold the whole stack at one version:
-
-```json
-"overrides": {
-  "better-auth": "1.7.12",
-  "@better-auth/core": "1.7.12",
-  "@better-auth/oauth-provider": "1.7.12",
-  "better-call": "1.4.4",
-  "@better-auth/utils": "0.5.0",
-  "@better-auth/api-key": "1.7.12",
-  "@better-auth/passkey": "1.7.12"
-}
-```
-
-- Once `npm view @neon/auth dependencies` shows a Better Auth pin that meets that requirement, drop the `overrides` block.
-- Protect pages on the server (`auth.middleware()` / a route guard). Better Auth UI's `useAuthenticate` redirects while a stale signed-out session is still refetching, which sends a user who just signed up back to sign-in.
+- Install with one command and let npm resolve it: `npm i @neon/auth @better-auth-ui/core @better-auth-ui/react @tanstack/react-query`. `@neon/auth` declares the Better Auth range, so npm installs a single compatible copy. Do not pin `better-auth` or its plugins, and do not add `overrides` or `resolutions`.
+- After the last `npx shadcn add`, run `npm i better-auth@~1.7.12`. The registry items install a bare `better-auth`, which resolves to a newer prerelease and leaves two copies; this range matches `@neon/auth`.
+- Protect pages on the server (`auth.middleware()`, see [Middleware](#middleware)). Better Auth UI's `useAuthenticate` redirects while a stale signed-out session is still refetching, which sends a user who just signed up back to sign-in.
 - Render `<Toaster />`: the copied `AuthProvider` reports errors with Sonner's `toast.error()` and renders nothing itself.
 - Set `requireEmailVerification` to the branch's "Verify email at signup" setting (off by default). It decides whether sign-up shows the verify-email view.
-- `@neon/auth` returns Supabase-style error codes (`invalid_credentials`), and Better Auth UI maps errors by Better Auth codes. A wrong password shows "Please sign in again", and signing in with an unverified email doesn't redirect to the verify-email view.
 - Better Auth UI plugins (`plugins={[...]}`) do not enable the Managed plugin. Configure the plugin on the branch, then the UI.
+
+Verify before reporting done:
+
+1. Sign up a new user.
+2. Sign out, then sign in again.
+3. The session survives a reload.
+4. A protected route redirects to `/auth/sign-in` while signed out.
+5. A wrong password shows an invalid-credentials message, not a generic one.
+6. `/auth/reset-password` loads while signed out.
 
 Leave an existing app on `@neondatabase/auth-ui` alone rather than migrating it as a drive-by. New snippets use Better Auth UI.
 
