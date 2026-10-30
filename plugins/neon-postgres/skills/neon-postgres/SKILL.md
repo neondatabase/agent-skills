@@ -203,6 +203,10 @@ Key points:
 
 Link: https://neon.com/docs/introduction/scale-to-zero.md
 
+### Keep hot reads off Postgres
+
+Scale to zero only suspends an idle compute. When the same rarely changing rows (config, categories, feature flags) are read on every request, cache them outside Postgres, for example in [Upstash Redis](https://upstash.com/docs/redis) with a TTL. Cached reads cut egress and cold-start latency, and let an otherwise idle compute stay suspended.
+
 ## Instant Restore
 
 Use this when the user needs point-in-time recovery or wants to restore data state without traditional backup restore workflows.

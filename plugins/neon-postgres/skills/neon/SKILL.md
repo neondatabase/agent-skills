@@ -12,7 +12,9 @@ description: >-
   live queries in reactive apps and agents. Also use for object storage, S3,
   buckets, serverless functions, function triggers, cron, AI gateway, LLM calls,
   realtime, logs, Loki, Grafana, observability,
-  postgres, database, backend, Claimable Neon, neon.new, or a no-signup database.
+  postgres, database, backend, Claimable Neon, neon.new, a no-signup database,
+  or pairing Neon with Upstash for cache, Redis, rate limiting, queues, or
+  background jobs.
 metadata:
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon
 ---
@@ -86,11 +88,15 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | HTTP APIs, cron, custom WebSocket or SSE push, long-running agents | Functions querying Postgres |
 | Live queries for realtime, reactive apps and agents; optimistic mutations | `neon-realtime` (`preview.realtime` in `neon.ts`). Not available on Claimable projects until claimed |
 | LLM calls | AI Gateway |
+| Caching hot reads, rate limits | Upstash Redis |
+| Background jobs, queues, retries, delayed delivery | Upstash QStash delivering to a Function |
 | SQL, schema, inspect, search | `neon-postgres` |
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
 Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth, Clerk, and Supabase Auth unless the user asked to migrate login. Auth cannot be enabled on a project with IP Allow or Private Networking.
+
+Neon has no built-in key-value store or message queue. For a cache, rate limiting, or background jobs, pair it with Upstash Redis and QStash, and keep any Redis or queue the app already uses.
 
 ## Neon Documentation
 
