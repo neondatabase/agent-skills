@@ -1,0 +1,155 @@
+diff --git a/src/routes/categories.ts b/src/routes/categories.ts
+index fd0b158..f025ebd 100644
+--- a/src/routes/categories.ts
++++ b/src/routes/categories.ts
+@@ -4,8 +4,17 @@ import { categories } from "../db/schema";
+ 
+ export const categoriesRoute = new Hono();
+ 
++type Category = { id: number; name: string; slug: string };
++let cachedCategories: Category[] | null = null;
++let cacheExpiry = 0;
++const CACHE_TTL_MS = 5 * 60 * 1000;
++
+ // GET /categories — list all categories
+ categoriesRoute.get("/", async (c) => {
+-  const allCategories = await db.select().from(categories);
+-  return c.json(allCategories);
++  const now = Date.now();
++  if (!cachedCategories || now > cacheExpiry) {
++    cachedCategories = await db.select().from(categories);
++    cacheExpiry = now + CACHE_TTL_MS;
++  }
++  return c.json(cachedCategories);
+ });
+diff --git a/src/routes/products.ts b/src/routes/products.ts
+index 7c01911..fc0587d 100644
+--- a/src/routes/products.ts
++++ b/src/routes/products.ts
+@@ -7,36 +7,51 @@ export const productsRoute = new Hono();
+ 
+ // GET /products — list all products
+ productsRoute.get("/", async (c) => {
+-  const allProducts = await db.select().from(products);
+-
+-  return c.json(
+-    allProducts.map((p) => ({
+-      id: p.id,
+-      name: p.name,
+-      price: p.price,
+-      imageUrls: p.imageUrls,
+-    })),
+-  );
++  const allProducts = await db
++    .select({
++      id: products.id,
++      name: products.name,
++      price: products.price,
++      imageUrls: products.imageUrls,
++    })
++    .from(products)
++    .limit(50)
++    .offset(0);
++
++  return c.json(allProducts);
+ });
+ 
+ // GET /products/:id — single product with reviews
+ productsRoute.get("/:id", async (c) => {
+   const id = Number(c.req.param("id"));
+ 
+-  const rows = await db
+-    .select()
++  const [product] = await db
++    .select({
++      id: products.id,
++      name: products.name,
++      price: products.price,
++      description: products.description,
++      imageUrls: products.imageUrls,
++      categoryId: products.categoryId,
++      createdAt: products.createdAt,
++    })
+     .from(products)
+-    .leftJoin(reviews, eq(reviews.productId, products.id))
+-    .where(eq(products.id, id));
++    .where(eq(products.id, id))
++    .limit(1);
+ 
+-  if (rows.length === 0) {
++  if (!product) {
+     return c.json({ error: "Not found" }, 404);
+   }
+ 
+-  const product = rows[0].products;
+-  const productReviews = rows
+-    .filter((r) => r.reviews !== null)
+-    .map((r) => r.reviews);
++  const productReviews = await db
++    .select({
++      id: reviews.id,
++      userName: reviews.userName,
++      rating: reviews.rating,
++      body: reviews.body,
++    })
++    .from(reviews)
++    .where(eq(reviews.productId, id));
+ 
+   return c.json({ ...product, reviews: productReviews });
+ });
+diff --git a/src/routes/stats.ts b/src/routes/stats.ts
+index 57747a2..1d94683 100644
+--- a/src/routes/stats.ts
++++ b/src/routes/stats.ts
+@@ -1,4 +1,5 @@
+ import { Hono } from "hono";
++import { eq, avg, count } from "drizzle-orm";
+ import { db } from "../db/client";
+ import { reviews, products } from "../db/schema";
+ 
+@@ -6,32 +7,20 @@ export const statsRoute = new Hono();
+ 
+ // GET /stats — review statistics per category
+ statsRoute.get("/", async (c) => {
+-  const allReviews = await db.select().from(reviews);
+-  const allProducts = await db.select().from(products);
++  const rawStats = await db
++    .select({
++      categoryId: products.categoryId,
++      avgRating: avg(reviews.rating),
++      reviewCount: count(reviews.id),
++    })
++    .from(reviews)
++    .innerJoin(products, eq(reviews.productId, products.id))
++    .groupBy(products.categoryId);
+ 
+-  const productCategoryMap = allProducts.reduce(
+-    (acc, product) => {
+-      acc[product.id] = product.categoryId;
+-      return acc;
+-    },
+-    {} as Record<number, number>,
+-  );
+-
+-  const statsMap = allReviews.reduce(
+-    (acc, review) => {
+-      const categoryId = productCategoryMap[review.productId];
+-      if (!acc[categoryId]) acc[categoryId] = { totalRating: 0, count: 0 };
+-      acc[categoryId].totalRating += review.rating;
+-      acc[categoryId].count += 1;
+-      return acc;
+-    },
+-    {} as Record<number, { totalRating: number; count: number }>,
+-  );
+-
+-  const stats = Object.entries(statsMap).map(([categoryId, s]) => ({
+-    categoryId: Number(categoryId),
+-    avgRating: s.totalRating / s.count,
+-    reviewCount: s.count,
++  const stats = rawStats.map((s) => ({
++    categoryId: s.categoryId,
++    avgRating: Number(s.avgRating),
++    reviewCount: s.reviewCount,
+   }));
+ 
+   return c.json(stats);
