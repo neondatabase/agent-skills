@@ -11,6 +11,7 @@ import {
 const EVALS_DIR = import.meta.dir;
 const TEST_RETRY_LIMIT = 5;
 const TEST_RETRY_DELAY_MS = 1500;
+const EVAL_MODEL = process.env["EVAL_MODEL"] ?? "claude-sonnet-4-6";
 
 const PROMPTS = {
   A: "My Neon bill spiked to $400 this month, most of it is data transfer. Help me figure out why.",
@@ -249,14 +250,39 @@ const exitWithSummary = async (exitCode: number, message?: string) => {
 await Bun.$`rm -rf ${evalDir}`.quiet();
 await Bun.$`mkdir -p ${evalDir}`;
 await Bun.$`cp -r ${EVALS_DIR}/fixtures/hono-drizzle-app/. ${evalDir}/`;
+const installProc = Bun.spawn(["bun", "install", "--frozen-lockfile"], {
+  cwd: evalDir,
+  stdin: "ignore",
+  stdout: "inherit",
+  stderr: "inherit",
+});
+const installExit = await installProc.exited;
+if (installExit !== 0) {
+  await exitWithSummary(
+    1,
+    `\nFixture dependency install exited with code ${installExit}. Aborting.`,
+  );
+}
 
+let installedSkillName: string | null = null;
 if (skill) {
   const skillSource = `${EVALS_DIR}/skill-versions/SKILL-v${skill}.md`;
   if (!(await Bun.file(skillSource).exists())) {
     await exitWithSummary(1, `Skill file not found: ${skillSource}`);
   }
-  await Bun.$`mkdir -p ${evalDir}/.claude/skills/neon-postgres-egress-optimizer`;
-  await Bun.$`cp ${skillSource} ${evalDir}/.claude/skills/neon-postgres-egress-optimizer/SKILL.md`;
+  const referenceSource = `${EVALS_DIR}/skill-versions/REFERENCE-v${skill}.md`;
+  const isConsolidated = await Bun.file(referenceSource).exists();
+
+  if (isConsolidated) {
+    installedSkillName = "neon-postgres";
+    await Bun.$`mkdir -p ${evalDir}/.claude/skills/neon-postgres/references`;
+    await Bun.$`cp ${skillSource} ${evalDir}/.claude/skills/neon-postgres/SKILL.md`;
+    await Bun.$`cp ${referenceSource} ${evalDir}/.claude/skills/neon-postgres/references/egress-optimization.md`;
+  } else {
+    installedSkillName = "neon-postgres-egress-optimizer";
+    await Bun.$`mkdir -p ${evalDir}/.claude/skills/neon-postgres-egress-optimizer`;
+    await Bun.$`cp ${skillSource} ${evalDir}/.claude/skills/neon-postgres-egress-optimizer/SKILL.md`;
+  }
 }
 
 await Bun.$`git init && git add . && git commit -m "baseline"`
@@ -268,7 +294,7 @@ const baselineSha = (
 ).trim();
 
 const claudePrompt = skill
-  ? `/neon-postgres-egress-optimizer ${PROMPTS[prompt]}`
+  ? `/${installedSkillName} ${PROMPTS[prompt]}`
   : PROMPTS[prompt];
 
 console.log("Starting Claude Code...\n");
@@ -277,7 +303,7 @@ const claudeExit = await runCommandToPhaseLog({
   cmd: [
     "claude",
     "--model",
-    "claude-sonnet-4-6",
+    EVAL_MODEL,
     "--effort",
     "high",
     "--permission-mode",
@@ -365,7 +391,7 @@ const scoreExit = await runCommandToPhaseLog({
   cmd: [
     "claude",
     "--model",
-    "claude-sonnet-4-6",
+    EVAL_MODEL,
     "--effort",
     "high",
     "--permission-mode",

@@ -26,7 +26,9 @@ An overview of Neon for apps and agents — Lakebase Postgres, Managed Better Au
 
 [![neon-postgres](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres.svg?variant=branded&size=xs&label=neon-postgres)](https://skills.sh/neondatabase/agent-skills/neon-postgres)
 
-A comprehensive index of documentation and best practices for Lakebase Postgres on Neon, to set your agents up for success.
+A comprehensive index of documentation and best practices for Lakebase Postgres on Neon, including branching workflows and egress optimization.
+
+> **Migration:** Branching and egress optimization now live in `neon-postgres`. If you previously installed `neon-postgres-branches` or `neon-postgres-egress-optimizer`, update `neon-postgres` and remove those stale local skill directories.
 
 ### Neon Auth
 
@@ -39,18 +41,6 @@ Neon Auth (Managed Better Auth) for login, users, and sessions that branch with 
 [![neon-postgres-agent-platforms](https://shieldcn.dev/skills/installs/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms.svg?variant=branded&size=xs&label=neon-postgres-agent-platforms)](https://skills.sh/neondatabase/neon-for-agent-platforms/neon-postgres-agent-platforms)
 
 For agent platforms, codegen tools, and multi-tenant SaaS products that provision and run Lakebase Postgres, Object Storage, Functions, Managed Better Auth, and/or AI Gateway access for their users. Includes a companion skill and samples in [neondatabase/neon-for-agent-platforms](https://github.com/neondatabase/neon-for-agent-platforms).
-
-### Neon Postgres Branches
-
-[![neon-postgres-branches](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-branches.svg?variant=branded&size=xs&label=neon-postgres-branches)](https://skills.sh/neondatabase/agent-skills/neon-postgres-branches)
-
-Choose and create the right Neon branch type for migration testing and isolated development workflows, including schema-only branches for sensitive data and reset-from-parent workflows to quickly realign child branches.
-
-### Neon Postgres Egress Optimizer
-
-[![neon-postgres-egress-optimizer](https://shieldcn.dev/skills/installs/neondatabase/agent-skills/neon-postgres-egress-optimizer.svg?variant=branded&size=xs&label=neon-postgres-egress-optimizer)](https://skills.sh/neondatabase/agent-skills/neon-postgres-egress-optimizer)
-
-Diagnose and fix excessive Postgres egress (network data transfer) in a codebase. Use when investigating high database bills, unexpected data transfer costs, or query overfetching.
 
 ### Neon Object Storage
 

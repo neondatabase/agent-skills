@@ -1,23 +1,18 @@
 # Evals runbook
 
-How to run and score evaluations for the neon-postgres-egress-optimizer skill.
+How to run and score egress-optimization evaluations for the consolidated neon-postgres skill. Historical versions v001–v003 still run under the retired neon-postgres-egress-optimizer name so their results remain reproducible.
 
 ## Skill versions
 
-Skill versions live in `skill-versions/` as numbered files: `SKILL-v001.md`, `SKILL-v002.md`, etc. Each eval run uses a specific version and records it in `results.csv`.
+Skill versions live in `skill-versions/` as numbered files. Historical standalone versions use one file (`SKILL-v001.md`, `SKILL-v002.md`, and `SKILL-v003.md`). Consolidated versions use a pair: `SKILL-v004.md` for the neon-postgres entry point and `REFERENCE-v004.md` for its egress reference. Each eval run uses a specific version and records it in `results.csv`.
 
 Workflow:
 
-1. Copy the current version or create a new one in `skill-versions/`
+1. Copy the current neon-postgres entry point and egress reference into a new numbered `SKILL-vXXX.md` / `REFERENCE-vXXX.md` pair
 2. Run evals against it
 3. Record results with the version number
-4. Iterate — create a new version for each change
-5. When a version consistently beats baseline, promote it:
-
-```bash
-# From the repo root:
-cp evals/neon-postgres-egress-optimizer/skill-versions/SKILL-vXXX.md skills/neon-postgres-egress-optimizer/SKILL.md
-```
+4. Iterate — create a new pair for each change
+5. When a version consistently beats baseline, promote both files to `skills/neon-postgres/SKILL.md` and `skills/neon-postgres/references/egress-optimization.md`
 
 ## Prompts
 
@@ -44,32 +39,36 @@ Tests passed on 89/89 baseline runs. Full results in `results.csv`.
 
 ## Results summary
 
-| Problem                          | baseline (89 runs) | v003 (42 runs) |
-| -------------------------------- | ------------------ | -------------- |
-| P1: SELECT \* unused columns     | 100%               | 100%           |
-| P2: Missing pagination           | 0%                 | 57%            |
-| P3: High-frequency query         | 0%                 | 12%            |
-| P4: Application-side aggregation | 98%                | 100%           |
-| P5: Join duplication             | 28%                | 100%           |
+| Problem                          | baseline (89 runs) | v003 (42 runs) | v004 smoke (2 runs) |
+| -------------------------------- | ------------------ | -------------- | ------------------- |
+| P1: SELECT \* unused columns     | 100%               | 100%           | 100%                |
+| P2: Missing pagination           | 0%                 | 57%            | 50%                 |
+| P3: High-frequency query         | 0%                 | 12%            | 50%                 |
+| P4: Application-side aggregation | 98%                | 100%           | 100%                |
+| P5: Join duplication             | 28%                | 100%           | 50%                 |
 
-P3 is expected to miss on prompts A/B — it requires pg_stat_statements data. Tests passed on all 139 runs. v001/v002 data (4 runs each) omitted due to small sample size; full history in `results.csv`.
+P3 is expected to miss on prompts A/B — it requires pg_stat_statements data. The two v004 runs are consolidation smoke tests, not a statistically meaningful comparison. Tests passed on all 141 runs. v001/v002 data (4 runs each) omitted due to small sample size; full history in `results.csv`.
 
 ## Running an eval
 
 ```bash
-./eval-run.ts --prompt A --skill 003    # skill run with v003
+./eval-run.ts --prompt A --skill 004    # consolidated neon-postgres run
+./eval-run.ts --prompt A --skill 003    # historical standalone replay
 ./eval-run.ts --prompt B                # baseline run (no --skill)
 ```
+
+The harness defaults to `claude-sonnet-4-6` to preserve the established comparison. If that model is unavailable in the current Claude Code account, set `EVAL_MODEL` explicitly, for example `EVAL_MODEL=sonnet ./eval-run.ts --prompt A --skill 004`, and record the resolved model in `results.csv`.
 
 The script handles the full lifecycle:
 
 1. Copies the fixture to a temp workspace (`/tmp/eval-...`)
-2. Installs the skill version (if `--skill` provided)
-3. Initializes git and launches Claude Code
-4. Captures a run-local diff artifact in the run log directory
-5. Runs `bun test` (with retry + short delay on failure)
-6. Captures a canonical diff to `diffs/` (race-safe for parallel runs)
-7. Launches Claude Code to score against `eval-rubric.md`
+2. Installs the fixture dependencies from its lockfile
+3. Installs the skill version (if `--skill` provided)
+4. Initializes git and launches Claude Code
+5. Captures a run-local diff artifact in the run log directory
+6. Runs `bun test` (with retry + short delay on failure)
+7. Captures a canonical diff to `diffs/` (race-safe for parallel runs)
+8. Launches Claude Code to score against `eval-rubric.md`
 
 Each run also writes phase logs and metadata to a log directory:
 
@@ -81,9 +80,9 @@ Each run also writes phase logs and metadata to a log directory:
 
 You can set this explicitly with `--log-dir` and `--run-id` (used by `eval-batch.ts` automatically).
 
-Verify Claude Code outputs "Skill(neon-postgres-egress-optimizer) — Successfully loaded skill" at the start of the run. If it doesn't, the skill didn't trigger and the run is effectively a baseline. Note this in the `results.csv` notes column.
+For v004 and later, verify Claude Code outputs "Skill(neon-postgres) — Successfully loaded skill" at the start of the run. Historical versions should still load "Skill(neon-postgres-egress-optimizer)". If the expected skill does not trigger, the run is effectively a baseline. Note this in the `results.csv` notes column.
 
-To force the skill, abort and re-run with: `claude "/neon-postgres-egress-optimizer <prompt>"`
+The harness forces the matching command automatically: `/neon-postgres` for consolidated versions and `/neon-postgres-egress-optimizer` for historical versions.
 
 ## Scoring
 
