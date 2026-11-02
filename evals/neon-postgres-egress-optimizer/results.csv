@@ -139,4 +139,4 @@ date,fixture,prompt,model,skill_version,diff_file,p1_detected,p1_fixed,p2_detect
 2026-03-15,hono-drizzle-app,A,opus-4.6-high-effort,v003,137_20260315_A_v003.diff,yes,yes,no,no,no,no,yes,yes,yes,yes,yes,
 2026-03-15,hono-drizzle-app,A,opus-4.6-high-effort,v003,139_20260315_A_v003.diff,yes,yes,yes,yes,no,no,yes,yes,yes,yes,yes,
 2026-11-02,hono-drizzle-app,A,claude-sonnet-4-6,v004,140_20261102_A_v004.diff,yes,yes,yes,yes,yes,yes,yes,yes,yes,yes,yes,
-2026-11-02,hono-drizzle-app,B,claude-sonnet-4-6,v004,141_20261102_B_v004.diff,yes,yes,no,no,no,no,yes,yes,no,no,yes,
+2026-11-02,hono-drizzle-app,B,claude-sonnet-4-6,v004,141_20261102_B_v004.diff,yes,yes,no,no,no,no,yes,yes,no,yes,yes,p5_fixed from the diff (JOIN split into two queries); p5_detected not re-scored
