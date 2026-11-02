@@ -8,11 +8,6 @@
       "skills": ["neon", "neon-postgres"]
     },
     {
-      "title": "Database Workflows",
-      "description": "Branch and optimize Lakebase Postgres projects on Neon.",
-      "skills": ["neon-postgres-branches", "neon-postgres-egress-optimizer"]
-    },
-    {
       "title": "Neon Services",
       "description": "Use Neon services beyond Lakebase Postgres.",
       "skills": ["neon-ai-gateway", "neon-functions", "neon-object-storage", "neon-realtime"]
