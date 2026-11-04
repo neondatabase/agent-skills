@@ -205,7 +205,7 @@ neon postgres computes update <compute-id> --cu 0.25-2 --suspend-timeout 300
 neon postgres computes restart <compute-id>  # also start, suspend, delete
 ```
 
-`update` sends only the flags you pass (`--cu`, `--suspend-timeout`, `--name`, `--disabled`) and fails when you pass none. Each change waits until Neon applies it, then prints the compute. With `--no-wait` the command returns once the API accepts the change; find the operation with `neon operations list` and check it with `neon operations get <operation-id>`. Add a compute, such as a read replica, with `neon branches add-compute <branch>`.
+`update` sends only the flags you pass (`--cu`, `--suspend-timeout`, `--name`, `--disabled`) and fails when you pass none. Each change waits until Neon applies it; `update`, `start`, `suspend`, and `restart` then print the compute. With `--no-wait` the command returns once the API accepts the change; find the operation with `neon operations list` and check it with `neon operations get <operation-id>`. Add a compute, such as a read replica, with `neon branches add-compute <branch>`.
 
 ## Autoscaling
 
@@ -221,7 +221,7 @@ Use this when optimizing idle costs and discussing suspend/resume behavior, incl
 
 Key points:
 
-- Idle computes suspend automatically after a default of 5 minutes. Change the timeout with `neon postgres computes update <compute-id> --suspend-timeout <seconds>`: `0` uses the plan default and `-1` disables suspension. Free cannot change it, Launch can only enable or disable suspension, and Scale can set any value.
+- Idle computes suspend automatically after a default of 5 minutes. Change the timeout with `neon postgres computes update <compute-id> --suspend-timeout <seconds>`: `0` uses the plan default and `-1` disables suspension. Free cannot change it, Launch can only enable or disable suspension, and Scale can set any value from 60 to 604800 (one week).
 - First query after suspend typically has a cold-start penalty (around hundreds of ms)
 - Storage remains active while compute is suspended.
 
