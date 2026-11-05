@@ -112,7 +112,7 @@ const user = session?.user;
 
 Do not destructure `{ user }` from the top-level result. Do not pass options into `createAuthClient()` from `/next`. Do not put `fetchOptions` on the Managed `createAuthClient` URL-style config; adapter factories accept fetch options inside `BetterAuthReactAdapter({ fetchOptions })` / `BetterAuthVanillaAdapter(...)`.
 
-JWT: `const { data, error } = await auth.token();` then `data.token`. Do not call `getJWTToken()` on the public client.
+JWT: `const { data, error } = await auth.getSession();` then `data?.session.token` (undefined when no one is signed in). Do not call `getJWTToken()` on the public client.
 
 **Phone OTP:** the browser client exposes `phoneNumber`. Existing users link a number, then sign in; there is no phone-first signup. Next.js `auth.handler()` forwards the catch-all path to Managed Auth, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. SMS e2e needs a configured `send.otp` webhook and custom UI.
 
@@ -137,7 +137,7 @@ Call adapter factories with `()`. Omit the adapter for vanilla Better Auth metho
 
 Public calls: `signUp.email({ email, password, name })`, `signIn.email({ email, password })`, `signIn.social({ provider, callbackURL })`, `getSession()`, `signOut()`. Result shape is `{ data, error }`; user is `data.user`. Handle `error` and thrown HTTP errors, pending UI, and authenticated vs unauthenticated display.
 
-JWT: `authClient.token()` then `data.token`.
+JWT: `authClient.getSession()` then `data?.session.token` (undefined when no one is signed in).
 
 ## UI
 

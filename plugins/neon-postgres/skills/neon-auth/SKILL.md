@@ -119,7 +119,7 @@ Checked 2026-10-30 against https://neon.com/docs/auth/guides/plugins.md, https:/
 | Email OTP | Supported | Managed delivery. `emailOtp.sendVerificationOtp`, `signIn.emailOtp`. |
 | Magic Link | Supported | Enable on the branch (off by default). `signIn.magicLink`. |
 | Organization | Partial, Beta | Members, invitations, owner/admin/member. No Teams, server hooks, custom roles/permissions, or dynamic access control. Emailed invitations: [managed-auth.md](references/managed-auth.md#organization-invitations). |
-| JWT | Supported | EdDSA (Ed25519), 15-minute expiry, no custom claims. Default client: `.token()` then `data.token`. `SupabaseAuthAdapter()`: `getSession()` then `data.session.access_token` (no `.token()`). |
+| JWT | Supported | EdDSA (Ed25519), 15-minute expiry, no custom claims. Default client: `getSession()` then `data.session.token`. `SupabaseAuthAdapter()`: `getSession()` then `data.session.access_token`. |
 | Open API | Supported | Server routes `/reference` and `/open-api/generate-schema`. |
 | Phone Number | Supported with constraints | Browser client: existing users link a number, then sign in; no phone-first signup; own SMS webhook; custom UI. Next.js `auth.handler()` forwards the catch-all path, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. https://neon.com/docs/auth/guides/plugins/phone-number.md |
 | MFA / Two-Factor | Roadmap | Unavailable on Managed Auth. If required: [self-managed.md](references/self-managed.md), after confirming the installed Better Auth version. |
@@ -159,6 +159,6 @@ The Managed SDK handles iframe OAuth popup and `neon_auth_session_verifier`. Kee
 
 A Function authenticates whoever already signs the user in. Do not switch identity to call a Function. Verify the token in the `neon-functions` skill and https://neon.com/docs/compute/functions/authentication.md.
 
-Managed Auth: injected `NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`. Token: default client `.token()` then `data.token`; `SupabaseAuthAdapter()` `getSession()` then `data.session.access_token`. A valid token is not permission to read another user's rows. Sign-out ends the browser session; do not claim it immediately revokes an already-issued JWT.
+Managed Auth: injected `NEON_AUTH_JWKS_URL`, and issuer and audience both the origin of `NEON_AUTH_BASE_URL`. Token: default client `getSession()` then `data.session.token`; `SupabaseAuthAdapter()` `getSession()` then `data.session.access_token`. A valid token is not permission to read another user's rows. Sign-out ends the browser session; do not claim it immediately revokes an already-issued JWT.
 
 Data API identity: [references/managed-auth.md](references/managed-auth.md). New apps query Postgres from Functions or existing handlers, not the Data API.
