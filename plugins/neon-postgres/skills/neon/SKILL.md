@@ -298,7 +298,7 @@ neon link --org-id <org-id> --project-name my-app --region-id aws-us-east-2
 3. `neon config init` — Initializes a `neon.ts` file, which declares how you provision and manage Neon services, in the root of the project.
 4. `neon env pull` — Fetches the current branch's Neon environment variables (`DATABASE_URL`, …) into your existing `.env`, or `.env.local` if you don't have one (override the target with `--file`). No branch ID needed; it reads `.neon`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
 
-   Without `neon.ts`, a **bare** `neon env pull` includes the default Gateway credential on claimed projects. Implicit pulls bundled into `link` / `checkout` / `apply` do **not** pull an undeclared Gateway token. Declaring `aiGateway` in `neon.ts` requests those variables. With `neon.ts`, pull includes only the services declared there and errors if the branch is missing one.
+   Without `neon.ts`, a **bare** `neon env pull` includes the default Gateway credential on claimed projects. Implicit pulls bundled into `link` / `checkout` / `apply` do **not** pull an undeclared Gateway token. Declaring `aiGateway` in `neon.ts` requests those variables. With `neon.ts`, pull includes only the services declared there and errors if the branch is missing one. Without `--service`, it also removes undeclared services' variables, so an app that uses Realtime declares `preview: { realtime: true }` too.
 
 ### Bootstrap a New Project
 
@@ -383,7 +383,7 @@ Use `neon functions deploy` when you are not applying `neon.ts`: a single functi
 
 ### Function Triggers
 
-A Function Trigger POSTs to a Neon Function on a cron (`type: "schedule"`) or when an object is created in a bucket (`type: "storage_object_created"`). Same regions as Functions. Prefer a `triggers` map in `neon.ts` (the record key is the trigger name) and `neon deploy`. CLI, MCP, REST, inherited-trigger behavior, and parsers: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon/references/function-triggers.md). Handler payload and Hono example: the `neon-functions` skill, `references/function-triggers.md`.
+A Function Trigger POSTs to a Neon Function on a cron (`type: "schedule"`) or when an object is created in a bucket (`type: "storage_object_created"`). Same regions as Functions. Prefer a `triggers` map in `neon.ts` (the record key is the trigger name) and `neon deploy`. CLI, MCP, REST, inherited-trigger behavior, and parsers: [references/function-triggers.md](https://neon.com/docs/ai/skills/neon/references/function-triggers.md). Handler payload and Hono example: the `neon-functions` skill (install it with `neon skills -s neon-functions`), `references/function-triggers.md`.
 
 ### Type-safe env vars with parseEnv
 
@@ -493,6 +493,7 @@ Neon exposes branch-scoped logs for Functions and Object Storage today (`aws-us-
 ```bash
 neon logs query --since 1h
 neon logs query --branch production --source function --minimum-severity error --since 6h
+neon logs query --branch production --source function --service-name neon-function/<slug> --since 1h
 ```
 
 CLI flags, LogQL, MCP fallback, Loki HTTP, Grafana URLs, and `@neon/sdk` pagination: [references/logs-loki.md](https://neon.com/docs/ai/skills/neon/references/logs-loki.md).
