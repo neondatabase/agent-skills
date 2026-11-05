@@ -144,7 +144,7 @@ function headings(markdown) {
 // footers, using the same patterns as the converter's stripNavigationContext().
 function stripNavigation(markdown, docPath) {
   let stripped = markdown.replace(
-    /^(?:> This page location:[^\n]*\n)?> Full Neon documentation index:[^\n]*\n(?:> IMPORTANT: If this page[^\n]*\n)?\n/,
+    /^(?:> This page location:[^\n]*\n)?> Full Neon documentation index:[^\n]*\n(?:>\n> Agent skills:[^\n]*\n)?(?:> IMPORTANT: If this page[^\n]*\n)?\n/,
     "",
   );
   stripped = stripped.replace(
