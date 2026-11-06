@@ -1,7 +1,7 @@
 ---
 name: neon-realtime
 description: >-
-  Neon Realtime makes any SQL query live. Build realtime, reactive apps and agents on Lakebase Postgres with live SQL queries and reactivity primitives. Use when app UI or agent state must update live from database rows (dashboards, feeds, collaboration, multi-user or multi-device sync), for optimistic mutations, or to replace polling or other realtime sync systems. Triggers include "live query", "subscribe", "sync engine", "useLiveQuery", "TanStack DB", "optimistic updates", "@neon/realtime". For push that doesn't come from database rows (presence, typing, LLM streams), use neon-functions.
+  Neon Realtime makes any SQL query live. Build realtime, reactive apps and agents on Lakebase Postgres with live SQL queries and reactivity primitives. Use when app UI or agent state must update live from database rows (dashboards, feeds, collaboration, multi-user or multi-device sync), for optimistic mutations, or to replace polling or other realtime sync systems. Triggers include "live query", "subscribe", "sync engine", "useLiveQuery", "TanStack DB", "optimistic updates", "@neon/realtime". For push that doesn't come from database rows (presence, typing, or LLM tokens you don't store), use neon-functions. To stream into a stored row, write the row and subscribe to it.
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-realtime
@@ -145,7 +145,7 @@ A live query replaces fetching app data from an API or another sync system. Reus
 | `drizzleAdapter()` from `@neon/realtime-drizzle`, or `kyselyAdapter()` from `@neon/realtime-kysely` | Queries written in Drizzle or Kysely |
 | `rawSql` from `@neon/realtime/server` | Any other ORM, or none |
 | `useLiveQuery` from `@neon/realtime-react` | React. Binds one sealed query to a component's state |
-| `realtimeCollectionOptions` from `@neon/realtime-tanstack` | Many views over the same data, or an app on TanStack DB. Oversync one broader query into a collection, then derive local live queries from it |
+| `realtimeCollectionOptions` from `@neon/realtime-tanstack` | Many views over the same data, or an app on TanStack DB. Oversync one broader query into a collection, then derive local live queries from it. An app that only uses collections doesn't need `RealtimeProvider` |
 | `client.subscribe()` from `@neon/realtime/client` | Other frameworks |
 | `realtime.subscribe()` from `@neon/realtime/server` | Agents and workers, in trusted backend code |
 
@@ -183,7 +183,7 @@ Read [references/reactivity.md](references/reactivity.md) before writing React o
 Realtime has no write path, so writes keep your backend's usual auth. Read [references/mutations.md](references/mutations.md) before writing mutations, for each layer.
 
 - [Return the txid from the write itself](references/mutations.md#returning-the-txid-from-your-backend): `` .returning({ txid: sql<string>`pg_current_xact_id()::text` }) ``, in one round trip on any Postgres driver. Write a batch in one statement, so there's one txid. Never open `db.transaction()` just to `select pg_current_xact_id()`: that's four round trips holding a pooled connection. When a write genuinely needs several statements, put the txid in the `RETURNING` of a write that always changes a row.
-- Always pass `awaitTxId()` a timeout: it keeps waiting through reconnects and renewals, and never settles if the txid doesn't reach the query.
+- Always pass `awaitTxId()` a timeout: it keeps waiting through reconnects and renewals.
 - A write that changes no rows has no txid, so skip `awaitTxId()` and let the optimistic state drop.
 
 ## Server-Side Rendering
