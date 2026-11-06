@@ -65,7 +65,7 @@ jobs:
       - name: Setup JFrog CLI with OIDC
         if: ${{ !github.event.pull_request.head.repo.fork }}
         id: setup-jfrog
-        uses: jfrog/setup-jfrog-cli@deda456d982fc5e9a7a020b63eb0d2968aedd33e # v5.1.0
+        uses: jfrog/setup-jfrog-cli@6ed45ef1a24199bd4c94d3fd55a7e8cb7e45985d # v5.3.2
         env:
           JF_URL: https://databricks.jfrog.io
         with:
