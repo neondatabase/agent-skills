@@ -1,6 +1,6 @@
 {
   "name": "neon",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Manage your Neon backend with the Neon agent skills and the Neon MCP Server: Lakebase Postgres, Managed Better Auth, Realtime, Object Storage, Functions, the Data API, and AI Gateway",
   "author": {
     "name": "Neon",
