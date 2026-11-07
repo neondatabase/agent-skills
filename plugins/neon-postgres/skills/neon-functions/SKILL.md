@@ -147,7 +147,7 @@ neon dev      # serves every function in neon.ts with hot reload; injects DATABA
 neon deploy --env <file>   # preferred full deploy from neon.ts; --env is the file Function env is read from
 ```
 
-Keep `.env` or `.env.local` up to date with every key under `functions.*.env`. `neon env pull` writes Neon-managed vars only; add Function secrets to that file, then pass it as `--env`. `neon deploy --env <file>` loads that file into `process.env` each time, then uploads those values. A missing value is `undefined` and `defineConfig` throws. Omit the key from `neon.ts` if you do not want to write it. Never coerce a missing `process.env` value to an empty string (that uploads `""` and deletes the live key). An empty assignment (`KEY=`) is also `""`. Use `process.env.X!` when TypeScript needs an assertion.
+Keep `.env` or `.env.local` up to date with every key under `functions.*.env`. `neon env pull` writes Neon-managed vars only; add Function secrets to that file, then pass it as `--env`. `neon deploy --env <file>` loads that file into `process.env` each time, then uploads the declared values. Declare each secret as `{ value: process.env.X, required: true }` (see "Your own secrets" below): an unset required value fails `neon deploy` and `neon dev` before anything changes, and never fails an import of `neon.ts`. Never coerce a missing value to `""` (that uploads `""` and deletes the live key); an empty assignment (`KEY=`) counts as unset.
 
 To deploy a single function without applying `neon.ts`: `neon functions deploy <slug> --src src/index.ts` (`--src` takes either the entry file or a directory containing `index.ts`, `index.mjs`, or `index.js`). That command's `--env` is `KEY=VALUE` (repeatable), not a file path. Use it for a targeted env update. Retrieve the public URL with `neon functions get <slug>` (the `invocation_url` field, of the form `https://<branch_id>-<slug>.compute.<cell>.us-east-2.aws.neon.tech`). Manage with `neon functions list|get|delete`.
 
@@ -205,17 +205,31 @@ Object storage (`AWS_*`) and AI Gateway (`NEON_AI_GATEWAY_*`) vars are also inje
 
 `neon env pull` / `neon-env run` / `neon dev` emit `NEON_BRANCH`, `NEON_BRANCH_ID`, `NEON_FUNCTION_HOST_SUFFIX` (and the connection strings) into your local dev environment too, so local runs mirror the deployed runtime.
 
-**Your own secrets** are per-deployment. Preferred path: declare them in `neon.ts` and run `neon deploy --env <file>`. `<file>` is the gitignored file env pull already writes (`.env` if that file exists, otherwise `.env.local`). Env pull writes Neon-managed vars only; add Function secrets to that file. All declared Function env keys must be present. Omit a key from `neon.ts` if you do not want to write it. `undefined` means you asked to write the key and the value is missing (`defineConfig` throws). Never coerce a missing `process.env` value to an empty string: that uploads `""` and deletes the live key. An empty assignment in the file (`KEY=`) is also `""`. If TypeScript needs an assertion, use `process.env.X!` and make sure the file has the value:
+**Your own secrets** are per-deployment. Preferred path: declare them in `neon.ts` and run `neon deploy --env <file>`. `<file>` is the gitignored file env pull already writes (`.env` if that file exists, otherwise `.env.local`). Env pull writes Neon-managed vars only; add Function secrets to that file. Declare each one with both `value` and `required` (needs `@neon/config` 1.13.0 and `neon` 9.2.0 or later):
 
 ```typescript
 functions: {
   todos: {
     name: "todo api",
     source: "src/index.ts",
-    env: { RESEND_API_KEY: process.env.RESEND_API_KEY! },
+    env: {
+      RESEND_API_KEY: { value: process.env.RESEND_API_KEY, required: true },
+      SENTRY_DSN: { value: process.env.SENTRY_DSN, required: "default-branch" },
+      LOG_LEVEL: "info",
+    },
   },
 }
 ```
+
+| `required` | Unset deploying the default branch | Unset deploying another branch | Unset in `neon dev` | `parseEnv(config, slug).function` |
+| --- | --- | --- | --- | --- |
+| `true` | fails before any change | fails before any change | fails before any function starts | `string` |
+| `"default-branch"` | fails before any change | removed from the deployment | runs without it | `string \| undefined` |
+| `false` | removed from the deployment | removed from the deployment | runs without it | `string \| undefined` |
+
+An undefined or empty value counts as unset; put a fallback in `value` (`process.env.X ?? "1"`). `"default-branch"` is the branch Neon marks as default, not a branch name. Add `onUndefined: "skip"` to a `required: false` or `"default-branch"` variable to keep its deployed value instead of removing it, for a value set with `neon functions deploy --env`. Keys `neon.ts` does not declare are left alone.
+
+Prefer a declaration over a string such as `process.env.X!`. A string is validated wherever `neon.ts` is imported, so a function that calls `parseEnv(config, "<slug>")` fails to load when another function's secret is missing from its runtime. A declaration is checked only when a command needs its value.
 
 `neon functions deploy --env KEY=VALUE` is the manual path (repeatable; `--env KEY=` deletes a key; unmentioned keys carry over). Use it for a targeted env update, not a full `neon.ts` apply.
 
