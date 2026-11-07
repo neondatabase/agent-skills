@@ -205,7 +205,7 @@ Object storage (`AWS_*`) and AI Gateway (`NEON_AI_GATEWAY_*`) vars are also inje
 
 `neon env pull` / `neon-env run` / `neon dev` emit `NEON_BRANCH`, `NEON_BRANCH_ID`, `NEON_FUNCTION_HOST_SUFFIX` (and the connection strings) into your local dev environment too, so local runs mirror the deployed runtime.
 
-**Your own secrets** are per-deployment. Preferred path: declare them in `neon.ts` and run `neon deploy --env <file>`. `<file>` is the gitignored file env pull already writes (`.env` if that file exists, otherwise `.env.local`). Env pull writes Neon-managed vars only; add Function secrets to that file. Declare each one with both `value` and `required` (needs `@neon/config` 1.13.0 and `neon` 9.2.0 or later):
+**Your own secrets** are per-deployment. Preferred path: declare them in `neon.ts` and run `neon deploy --env <file>`. `<file>` is the gitignored file env pull already writes (`.env` if that file exists, otherwise `.env.local`). Env pull writes Neon-managed vars only; add Function secrets to that file. Declare each one with both `value` and `required` (needs `@neon/config` 1.13.0 and `neon` 9.2.0 or later, and `@neon/env` 2.1.0 or later where the function calls `parseEnv`; older `parseEnv` treats every declared key as required):
 
 ```typescript
 functions: {
