@@ -6,7 +6,7 @@ MCP's **streamable HTTP transport** is a plain `POST`/`GET` on a single endpoint
 
 ## The server
 
-Two packages do the work: the official [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) (defines the server and its tools) and [`@hono/mcp`](https://github.com/honojs/middleware/tree/main/packages/mcp) (bridges MCP's streamable HTTP transport to a Hono route). Tools query Postgres through Drizzle on a module-scope `pg` pool, exactly like any other function (see [Connecting to Postgres](../SKILL.md#connecting-to-postgres)).
+Use the official [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) for both the server and its Web Standard streamable HTTP transport. Neon Functions and Hono expose Web Standard `Request` and `Response` objects, so no transport adapter is needed. Tools query Postgres through Drizzle on a module-scope `pg` pool, exactly like any other function (see [Connecting to Postgres](../SKILL.md#connecting-to-postgres)).
 
 ```typescript
 // src/index.ts
@@ -16,7 +16,7 @@ import { Pool } from "pg";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPTransport } from "@hono/mcp";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { attachDatabasePool } from "@neon/functions";
 import { contacts } from "./db/schema";
 
@@ -24,55 +24,63 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
 attachDatabasePool(pool);
 const db = drizzle(pool);
 
-const mcpServer = new McpServer({ name: "contacts", version: "1.0.0" });
+function createServer() {
+  const server = new McpServer({ name: "contacts", version: "1.0.0" });
 
-// Each tool: a name, a config (description + a Zod input schema), and a handler
-// that returns MCP content. The Zod shape becomes the tool's JSON schema, which
-// the client uses to call the tool correctly.
-mcpServer.registerTool(
-  "create_contact",
-  {
-    title: "Create contact",
-    description: "Create a new contact.",
-    inputSchema: {
-      name: z.string().describe("Full name (required)."),
-      email: z.string().optional().describe("Email address."),
+  // Each tool: a name, a config (description + a Zod input schema), and a handler
+  // that returns MCP content. The Zod shape becomes the tool's JSON schema, which
+  // the client uses to call the tool correctly.
+  server.registerTool(
+    "create_contact",
+    {
+      title: "Create contact",
+      description: "Create a new contact.",
+      inputSchema: {
+        name: z.string().describe("Full name (required)."),
+        email: z.string().optional().describe("Email address."),
+      },
     },
-  },
-  async ({ name, email }) => {
-    const [row] = await db.insert(contacts).values({ name, email }).returning();
-    return { content: [{ type: "text", text: JSON.stringify(row) }] };
-  },
-);
+    async ({ name, email }) => {
+      const [row] = await db
+        .insert(contacts)
+        .values({ name, email })
+        .returning();
+      return { content: [{ type: "text", text: JSON.stringify(row) }] };
+    },
+  );
 
-mcpServer.registerTool(
-  "delete_contact",
-  {
-    title: "Delete contact",
-    description: "Delete a contact by id.",
-    inputSchema: { id: z.number().int().positive() },
-  },
-  async ({ id }) => {
-    const [row] = await db
-      .delete(contacts)
-      .where(eq(contacts.id, id))
-      .returning();
-    return {
-      content: [
-        { type: "text", text: JSON.stringify(row ?? { error: "not found" }) },
-      ],
-    };
-  },
-);
+  server.registerTool(
+    "delete_contact",
+    {
+      title: "Delete contact",
+      description: "Delete a contact by id.",
+      inputSchema: { id: z.number().int().positive() },
+    },
+    async ({ id }) => {
+      const [row] = await db
+        .delete(contacts)
+        .where(eq(contacts.id, id))
+        .returning();
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(row ?? { error: "not found" }) },
+        ],
+      };
+    },
+  );
 
-// Connect the server to the transport once per isolate, then let the Hono route
-// hand every /mcp request (POST for calls, GET for the stream) to the transport.
-const transport = new StreamableHTTPTransport();
+  return server;
+}
+
 const app = new Hono();
 
 app.all("/mcp", async (c) => {
-  if (!mcpServer.isConnected()) await mcpServer.connect(transport);
-  return transport.handleRequest(c);
+  const server = createServer();
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  });
+  await server.connect(transport);
+  return transport.handleRequest(c.req.raw);
 });
 
 export default app;
@@ -80,7 +88,9 @@ export default app;
 
 Key points:
 
-- **Module scope.** Build the `McpServer`, register its tools, create the `StreamableHTTPTransport`, and open the `pg` pool once at module load — they're reused across every request the isolate serves (see [runtime limits](../SKILL.md#timeouts-and-runtime-limits)). Connect the transport lazily with the `isConnected()` guard so it happens once.
+- **Official transport.** Default to `WebStandardStreamableHTTPServerTransport`. It matches the Neon Functions runtime directly and sends SSE keep-alives every 15 seconds. The `@hono/mcp` transport waits 30 seconds before its first keep-alive, which can race a client's 30-second connection timeout.
+- **Strict headers.** The official transport enforces the MCP `Accept` headers. Use `@hono/mcp` only as a compatibility fallback for a known client that does not send the required headers.
+- **Per request.** Build a stateless server and transport for each request. Keep only the `pg` pool and other concurrency-safe resources at module scope (see [runtime limits](../SKILL.md#timeouts-and-runtime-limits)).
 - **State in Postgres.** Module memory doesn't survive isolate eviction, and several isolates run in parallel — so the source of truth for anything a tool reads or writes belongs in Postgres, not an in-memory structure.
 - **The URL.** After `neon deploy`, the server lives at `https://<branch_id>-<slug>.compute.…neon.tech/mcp`. Point any streamable-HTTP MCP client at that `/mcp` path.
 
@@ -120,13 +130,17 @@ app.all("/mcp", async (c) => {
   const userId = c.get("auth").sub;
   // Build a McpServer whose tools close over userId; stateless transport per request.
   const server = createServer(userId);
-  const transport = new StreamableHTTPTransport({ sessionIdGenerator: undefined });
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  });
   await server.connect(transport);
-  return transport.handleRequest(c);
+  return transport.handleRequest(c.req.raw, {
+    authInfo: c.get("authInfo"),
+  });
 });
 ```
 
-A per-request server and transport replace the module-scope server above because tools need the caller's `sub`; keep the `pg` pool at module scope. Pass `NEON_AUTH_BASE_URL` and `MCP_RESOURCE` via the function's `env` in `neon.ts` (see [Environment variables](../SKILL.md#environment-variables)). `/mcp` has no CORS or `OPTIONS` handling from `honoMcp`, so add it for browser-based clients.
+Keep the `pg` pool at module scope. Pass the raw Web Standard request and the verified MCP `AuthInfo` to the transport. Pass `NEON_AUTH_BASE_URL` and `MCP_RESOURCE` via the function's `env` in `neon.ts` (see [Environment variables](../SKILL.md#environment-variables)). `/mcp` has no CORS or `OPTIONS` handling from `honoMcp`, so add it for browser-based clients.
 
 ### Option 2 — API key or session JWT (simplest)
 
@@ -142,8 +156,12 @@ app.all("/mcp", async (c) => {
   const auth = c.req.header("authorization");
   if (!(await isValidApiKey(auth)))
     return c.json({ error: "unauthorized" }, 401);
-  if (!mcpServer.isConnected()) await mcpServer.connect(transport);
-  return transport.handleRequest(c);
+  const server = createServer();
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+  });
+  await server.connect(transport);
+  return transport.handleRequest(c.req.raw);
 });
 ```
 
