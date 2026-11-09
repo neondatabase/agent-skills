@@ -133,7 +133,7 @@ A per-request server and transport replace the module-scope server above because
 When the callers are your own agents/services or a personal MCP server, you don't need the OAuth flow. Either:
 
 - **API keys** — issue and store your own keys, and have the function verify the `Authorization: Bearer <key>` (or an `x-api-key` header) on every request; or
-- **Session JWT** — verify a Managed Auth JWT (`NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`) with `jose`, the same pattern used for the [agent backend](../SKILL.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks).
+- **Session JWT** — verify a Managed Auth JWT (`NEON_AUTH_JWKS_URL`, and issuer and audience both the origin of `NEON_AUTH_BASE_URL`) with `jose`, the same pattern used for the [agent backend](../SKILL.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks).
 
 Either way it's one check at the top of the `/mcp` route — reject anything that doesn't carry a valid key/token before connecting the transport:
 
