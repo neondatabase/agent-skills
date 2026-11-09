@@ -2,7 +2,7 @@
 
 Use this page when the request is "let MCP clients sign in my users", "protect my MCP server with OAuth", or "let another app or OAuth client call my API on behalf of my users". Managed Better Auth is the OAuth 2.1 / OIDC authorization server (the OAuth provider plugin, beta, available to all Managed projects). Do not move to self-managed Better Auth for this, and keep the app's existing login method.
 
-"OAuth server" and "OAuth clients" here are not the social providers (Google, GitHub, Microsoft, Vercel, Apple, Discord) of `neon neon-auth oauth-provider`. Those sign users in to Neon Auth. This page makes Neon Auth issue tokens to other apps.
+"OAuth server" and "OAuth clients" here are not the social sign-in providers (`signIn.social`). Those sign users in to Neon Auth. This page makes Neon Auth issue tokens to other apps.
 
 - Docs: https://neon.com/docs/auth/guides/plugins/oauth-provider.md
 - Configuration is per branch: each branch has its own issuer, clients, and settings.

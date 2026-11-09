@@ -133,12 +133,12 @@ Trusted domains and webhooks are Neon settings, not installable Better Auth plug
 
 ## Apple, Microsoft, and Discord OAuth
 
-These providers reject shared credentials; add them with your own via `neon neon-auth oauth-provider add|update` (Console and API work too). A multi-line secret goes in a file with `--oauth-client-secret-file`, not inline.
+Apple and Microsoft reject shared credentials; add them with your own via `neon neon-auth oauth-provider add|update` (Console and API work too). A multi-line secret goes in a file with `--oauth-client-secret-file`, not inline.
 
 - **Apple**: `client_id` is the Services ID, `client_secret` is the full `.p8` private key. Also pass `--apple-team-id` and `--apple-key-id` (10 characters). Neon Auth signs the client-secret JWT itself, so there is nothing to rotate. Rotating the key needs the new `--apple-key-id` in the same update. The return URL must be HTTPS (`https://<auth host>/<db>/auth/callback/apple`); Apple rejects localhost, so test through a tunnel or a deployed preview.
 - **Microsoft**: `client_id` and `client_secret` from the Entra app registration. `--microsoft-tenant-id` is optional: `common` (default), `organizations`, `consumers`, a tenant GUID, or a domain. The redirect URI is `<base_url>/callback/microsoft`.
 - **Microsoft email verification**: an email counts as verified only when the ID token carries `xms_edov` = true and `acct` = 0. Add `xms_edov` and `acct` as optional ID-token claims in Entra. Without them, a same-email existing user gets `account_not_linked`, `link-social` fails with `unable_to_link_account`, and new users stay unverified.
-- **Discord**: `client_id` and `client_secret` from your Discord application. Neon has no shared Discord credentials; shared is rejected on add, update, and provision. Better Auth only — legacy Stack Auth returns 422. Scopes are `identify` and `email`. The redirect URI is `<base_url>/callback/discord`.
+- **Discord**: API only for now. `POST /projects/{project_id}/branches/{branch_id}/auth/oauth_providers` with `id: discord`, `client_id`, and `client_secret` from your Discord application. Console, the `neon` CLI, and MCP tools do not accept `discord` yet. Neon has no shared Discord credentials; shared is rejected on add, update, and provision. Better Auth only. Legacy Stack Auth returns 422. Scopes are `identify` and `email`. The redirect URI is `<base_url>/callback/discord`.
 - **Discord email verification**: an email counts as verified only when Discord's `verified` is the boolean `true`. An unverified Discord email cannot auto-link to an existing same-email user, and a new user from it is stored as unverified. A Discord account with no email fails with `email_not_found`.
 
 ## Trusted domains
