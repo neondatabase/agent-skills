@@ -97,7 +97,7 @@ The user identity is the token's `sub`. Never trust a user id from tool argument
 Verify `iss` (the exact Auth URL of the branch) and `aud` (the exact MCP server URL) as well as the signature. All branches of a project share signing keys, so the signature alone does not identify the branch. `@neon/oauth` 0.3.0 or later (beta) does all three.
 
 ```bash
-npm install @neon/oauth @modelcontextprotocol/sdk hono
+npm install @neon/oauth @modelcontextprotocol/sdk@^1.30.0 hono
 ```
 
 On a Neon Function, the default export is a Hono app (see the `neon-functions` skill, [references/mcp.md](https://neon.com/docs/ai/skills/neon-functions/references/mcp.md)):
@@ -117,7 +117,20 @@ const mcpAuth = createMcpAuth({
 const app = new Hono<McpAuthVariables>();
 app.use(honoMcp(mcpAuth, { path: "/mcp" })); // metadata routes + bearer guard
 
-app.all("/mcp", async (c) => {
+// Stateless: no standalone SSE stream and no session to delete.
+app.on(["GET", "DELETE"], "/mcp", (c) =>
+  c.json(
+    {
+      jsonrpc: "2.0",
+      error: { code: -32000, message: "Method not allowed." },
+      id: null,
+    },
+    405,
+    { Allow: "POST" },
+  ),
+);
+
+app.post("/mcp", async (c) => {
   const userId = c.get("auth").sub; // verified identity; scope every query by it
   const server = new McpServer({ name: "my-mcp", version: "1.0.0" });
   // register tools that close over userId
@@ -133,9 +146,9 @@ app.all("/mcp", async (c) => {
 export default app;
 ```
 
-- Use the official Web Standard transport on Neon Functions. It matches the runtime's `Request` / `Response` interface directly and sends SSE keep-alives every 15 seconds. The `@hono/mcp` transport waits 30 seconds before its first keep-alive, which can race a client's 30-second connection timeout on Neon Functions.
-- The official transport enforces the MCP `Accept` headers. Use `@hono/mcp` only as a compatibility fallback for a known client that does not send the required headers.
-- Stateless: build the server and transport per request. Pass `c.req.raw` and `c.get("authInfo")` to `handleRequest`.
+- Use the official Web Standard transport on Neon Functions. It matches the runtime's `Request` / `Response` interface directly and, from SDK 1.30.0, sends SSE keep-alives every 15 seconds. `@hono/mcp` sends no keep-alives on POST responses, so a slow tool call can hit a client's 30-second connection timeout on Neon Functions.
+- The official transport enforces the MCP `Accept` headers. Use `@hono/mcp` only as a compatibility fallback for a known client that does not send the required headers. Its wiring is in the `neon-functions` skill, [references/mcp.md](https://neon.com/docs/ai/skills/neon-functions/references/mcp.md#fallback-for-non-compliant-clients).
+- Stateless: build the server and transport per request. Pass `c.req.raw` and `c.get("authInfo")` to `handleRequest`. Return `405` with `Allow: POST` for GET and DELETE, so a GET does not hold an idle SSE stream open. `honoMcp` still checks the token on those methods.
 - `c.get("auth")` is the verified result (`sub`, `clientId`, `scopes`, `claims`); `c.get("authInfo")` is the MCP SDK `AuthInfo`. Express, Next.js, and `node:http` adapters exist (`@neon/oauth/mcp/express`, `/next`, `/node`).
 - Set `NEON_AUTH_BASE_URL` and `MCP_RESOURCE` through the Function's `env` in `neon.ts`, and deploy with `neon deploy` (or `neon functions deploy <name> --src <file>`).
 - Known gaps: a request with no token gets a challenge with `error="invalid_token"` rather than a bare RFC 6750 challenge, and `/mcp` has no CORS or `OPTIONS` handling, so browser-based MCP clients need CORS added by you.
