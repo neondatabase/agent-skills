@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Official Neon plugins for Cursor",
-    "version": "3.0.6",
+    "version": "3.0.7",
     "pluginRoot": "plugins"
   },
   "plugins": [
