@@ -107,14 +107,14 @@ A required plugin on the self-managed path is verified in that app's Better Auth
 
 ## Plugin support
 
-Checked 2026-10-30 against https://neon.com/docs/auth/guides/plugins.md, https://neon.com/docs/auth/guides/plugins/oauth-provider.md, https://neon.com/docs/auth/roadmap.md, and the `@neon/auth` client plugin list. Re-fetch those pages if this skill may be stale. An unlisted upstream plugin needs a live check; do not treat absence from this table as a dated roadmap item.
+Checked 2026-11-11 against https://neon.com/docs/auth/guides/plugins.md, https://neon.com/docs/auth/guides/plugins/oauth-provider.md, https://neon.com/docs/auth/roadmap.md, the `@neon/auth` client plugin list, and https://neon.com/docs/reference/api/auth/add-branch-neon-auth-oauth-provider (Discord in the provider enum). Re-fetch those pages if this skill may be stale. An unlisted upstream plugin needs a live check; do not treat absence from this table as a dated roadmap item. https://neon.com/docs/auth/guides/setup-oauth.md still omits Discord as of that check; use [Apple, Microsoft, and Discord OAuth](#apple-microsoft-and-discord-oauth) for Discord until the public guide lists it.
 
 "Not exposed" means the Managed SDK/UI contract. It is not a claim that every raw server request was tested.
 
 | Feature | Managed Auth | Boundary |
 | --- | --- | --- |
 | Email/password | Supported | `signUp.email`, `signIn.email` |
-| Social OAuth (Google, GitHub, Microsoft, Vercel, Apple, Discord) | Supported | `signIn.social`. Shared Google credentials are for development; production and GitHub/Vercel need your own OAuth apps. Microsoft, Apple, and Discord always need your own ([details](#apple-microsoft-and-discord-oauth)). https://neon.com/docs/auth/guides/setup-oauth.md |
+| Social OAuth (Google, GitHub, Microsoft, Vercel, Apple, Discord) | Supported | `signIn.social`. Shared Google credentials are for development; production and GitHub/Vercel need your own OAuth apps. Microsoft, Apple, and Discord always need your own ([details](#apple-microsoft-and-discord-oauth)). Google–Apple: https://neon.com/docs/auth/guides/setup-oauth.md. Discord: API reference above; setup-oauth.md does not cover it yet (checked 2026-11-11). |
 | Admin | Supported | Admin session required. Plugin customization is on the roadmap. |
 | Email OTP | Supported | Managed delivery. `emailOtp.sendVerificationOtp`, `signIn.emailOtp`. |
 | Magic Link | Supported | Enable on the branch (off by default). `signIn.magicLink`. |
@@ -138,7 +138,26 @@ Apple and Microsoft reject shared credentials; add them with your own via `neon 
 - **Apple**: `client_id` is the Services ID, `client_secret` is the full `.p8` private key. Also pass `--apple-team-id` and `--apple-key-id` (10 characters). Neon Auth signs the client-secret JWT itself, so there is nothing to rotate. Rotating the key needs the new `--apple-key-id` in the same update. The return URL must be HTTPS (`https://<auth host>/<db>/auth/callback/apple`); Apple rejects localhost, so test through a tunnel or a deployed preview.
 - **Microsoft**: `client_id` and `client_secret` from the Entra app registration. `--microsoft-tenant-id` is optional: `common` (default), `organizations`, `consumers`, a tenant GUID, or a domain. The redirect URI is `<base_url>/callback/microsoft`.
 - **Microsoft email verification**: an email counts as verified only when the ID token carries `xms_edov` = true and `acct` = 0. Add `xms_edov` and `acct` as optional ID-token claims in Entra. Without them, a same-email existing user gets `account_not_linked`, `link-social` fails with `unable_to_link_account`, and new users stay unverified.
-- **Discord**: API only for now. `POST /projects/{project_id}/branches/{branch_id}/auth/oauth_providers` with `id: discord`, `client_id`, and `client_secret` from your Discord application. Console, the `neon` CLI, and MCP tools do not accept `discord` yet. Neon has no shared Discord credentials; shared is rejected on add, update, and provision. Better Auth only. Legacy Stack Auth returns 422. Scopes are `identify` and `email`. The redirect URI is `<base_url>/callback/discord`.
+- **Discord**: Always needs your own Discord application `client_id` and `client_secret`. Neon has no shared Discord credentials; shared is rejected on add, update, and provision. Better Auth only; legacy Stack Auth returns 422. Scopes are `identify` and `email`. Redirect URI `{NEON_AUTH_BASE_URL}/callback/discord`. Checked 2026-11-11 against neon-pkgs `main` (`packages/cli/src/commands/neon_auth.ts` `SUPPORTED_OAUTH_PROVIDERS` omits `discord`; OpenAPI/`@neon/tools` enums include it) and the live API reference: Console and `neon neon-auth oauth-provider` omit `discord` (CLI support is open in neon-pkgs#1092); Neon MCP `auth.oauthProviders.add|update|delete` already accept `discord`. Add, rotate the secret, or remove with the Auth OAuth provider API (`Authorization: Bearer $NEON_API_KEY`):
+
+```bash
+# add
+curl -X POST "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers" \
+  -H "Authorization: Bearer $NEON_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"id":"discord","client_id":"<client-id>","client_secret":"<client-secret>"}'
+
+# rotate credentials
+curl -X PATCH "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
+  -H "Authorization: Bearer $NEON_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"client_id":"<client-id>","client_secret":"<new-client-secret>"}'
+
+# remove
+curl -X DELETE "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
+  -H "Authorization: Bearer $NEON_API_KEY"
+```
+
 - **Discord email verification**: an email counts as verified only when Discord's `verified` is the boolean `true`. An unverified Discord email cannot auto-link to an existing same-email user, and a new user from it is stored as unverified. A Discord account with no email fails with `email_not_found`.
 
 ## Trusted domains

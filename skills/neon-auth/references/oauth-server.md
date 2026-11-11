@@ -176,7 +176,7 @@ Report any step you could not run.
 ## Do NOT
 
 - Do not move to self-managed Better Auth or the Better Auth MCP plugin for this. Managed supports it.
-- Do not confuse this with `neon neon-auth oauth-provider` (social login) or Generic OAuth.
+- Do not confuse this with `neon neon-auth oauth-provider` (`signIn.social` providers) or Generic OAuth.
 - Do not call `auth.oauth.resume()`, `getConsentRequest()`, or any resume helper. Use `oauth2.continue`, `oauth2.publicClient`, and `oauth2.consent`.
 - Do not put client secrets, or Neon API keys, in browser or mobile code.
 - Do not skip `iss` and `aud` checks, or trust a user id from tool input instead of `sub`.
