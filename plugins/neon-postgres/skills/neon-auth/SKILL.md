@@ -114,7 +114,7 @@ Checked 2026-11-11 against https://neon.com/docs/auth/guides/plugins.md, https:/
 | Feature | Managed Auth | Boundary |
 | --- | --- | --- |
 | Email/password | Supported | `signUp.email`, `signIn.email` |
-| Social OAuth (Google, GitHub, Microsoft, Vercel, Apple, Discord) | Supported | `signIn.social`. Shared Google credentials are for development; production and GitHub/Vercel need your own OAuth apps. Microsoft, Apple, and Discord always need your own ([details](#apple-microsoft-and-discord-oauth)). Google–Apple: https://neon.com/docs/auth/guides/setup-oauth.md. Discord: API reference above; setup-oauth.md does not cover it yet (checked 2026-11-11). |
+| Social OAuth (Google, GitHub, Microsoft, Vercel, Apple, Discord) | Supported | `signIn.social`. Shared Google credentials are for development; production and GitHub/Vercel need your own OAuth apps. Microsoft, Apple, and Discord always need your own ([details](#apple-microsoft-and-discord-oauth)). https://neon.com/docs/auth/guides/setup-oauth.md (Discord not on that page yet; use the details link). |
 | Admin | Supported | Admin session required. Plugin customization is on the roadmap. |
 | Email OTP | Supported | Managed delivery. `emailOtp.sendVerificationOtp`, `signIn.emailOtp`. |
 | Magic Link | Supported | Enable on the branch (off by default). `signIn.magicLink`. |
@@ -133,25 +133,25 @@ Trusted domains and webhooks are Neon settings, not installable Better Auth plug
 
 ## Apple, Microsoft, and Discord OAuth
 
-Apple and Microsoft reject shared credentials; add them with your own via `neon neon-auth oauth-provider add|update` (Console and API work too). A multi-line secret goes in a file with `--oauth-client-secret-file`, not inline.
+Apple, Microsoft, and Discord reject shared credentials. Add Apple and Microsoft with your own via `neon neon-auth oauth-provider add|update` (Console and API work too). A multi-line secret goes in a file with `--oauth-client-secret-file`, not inline.
 
 - **Apple**: `client_id` is the Services ID, `client_secret` is the full `.p8` private key. Also pass `--apple-team-id` and `--apple-key-id` (10 characters). Neon Auth signs the client-secret JWT itself, so there is nothing to rotate. Rotating the key needs the new `--apple-key-id` in the same update. The return URL must be HTTPS (`https://<auth host>/<db>/auth/callback/apple`); Apple rejects localhost, so test through a tunnel or a deployed preview.
 - **Microsoft**: `client_id` and `client_secret` from the Entra app registration. `--microsoft-tenant-id` is optional: `common` (default), `organizations`, `consumers`, a tenant GUID, or a domain. The redirect URI is `<base_url>/callback/microsoft`.
 - **Microsoft email verification**: an email counts as verified only when the ID token carries `xms_edov` = true and `acct` = 0. Add `xms_edov` and `acct` as optional ID-token claims in Entra. Without them, a same-email existing user gets `account_not_linked`, `link-social` fails with `unable_to_link_account`, and new users stay unverified.
-- **Discord**: Always needs your own Discord application `client_id` and `client_secret`. Neon has no shared Discord credentials; shared is rejected on add, update, and provision. Better Auth only; legacy Stack Auth returns 422. Scopes are `identify` and `email`. Redirect URI `{NEON_AUTH_BASE_URL}/callback/discord`. Checked 2026-11-11 against neon-pkgs `main` (`packages/cli/src/commands/neon_auth.ts` `SUPPORTED_OAUTH_PROVIDERS` omits `discord`; OpenAPI/`@neon/tools` enums include it) and the live API reference: Console and `neon neon-auth oauth-provider` omit `discord` (CLI support is open in neon-pkgs#1092); Neon MCP `auth.oauthProviders.add|update|delete` already accept `discord`. Add, rotate the secret, or remove with the Auth OAuth provider API (`Authorization: Bearer $NEON_API_KEY`):
+- **Discord**: Always needs your own Discord application `client_id` and `client_secret` (shared is rejected on add and update). Better Auth only; legacy Stack Auth returns 422. Scopes are `identify` and `email`. Redirect URI `<base_url>/callback/discord`. Checked 2026-11-11: Console and `neon neon-auth oauth-provider` omit `discord`. Prefer Neon MCP `auth.oauthProviders.add|update|delete` when available (they accept `discord`); otherwise use the Auth OAuth provider API with `Authorization: Bearer $NEON_API_KEY`. Put the JSON body in a file so the secret is not on the command line:
 
 ```bash
-# add
+# add — discord-provider.json: {"id":"discord","client_id":"...","client_secret":"..."}
 curl -X POST "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers" \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"id":"discord","client_id":"<client-id>","client_secret":"<client-secret>"}'
+  -d @discord-provider.json
 
-# rotate credentials
+# rotate secret — body may be only {"client_secret":"..."}; omitted fields stay
 curl -X PATCH "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"client_id":"<client-id>","client_secret":"<new-client-secret>"}'
+  -d @discord-provider-update.json
 
 # remove
 curl -X DELETE "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
