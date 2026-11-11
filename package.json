@@ -1,6 +1,6 @@
 {
   "name": "@neon/skills",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "description": "Agent Skills for Neon: Lakebase Postgres, Managed Better Auth, Realtime, Object Storage, Functions, the Data API, and AI Gateway",
   "license": "Apache-2.0",
   "repository": {
