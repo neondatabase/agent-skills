@@ -44,7 +44,7 @@ Inspect existing identity and the required login features before provisioning. A
 
 Google, GitHub, Microsoft, Vercel, and Apple social OAuth are offered on Managed Auth. They are not a reason to leave Managed Auth. Microsoft and Apple need your own credentials: [Apple and Microsoft OAuth](#apple-and-microsoft-oauth). Making Neon Auth the OAuth server for your own MCP server or third-party OAuth clients is supported: [references/oauth-server.md](references/oauth-server.md). Other OAuth providers, generic OAuth, MFA, passkeys, API keys, SSO, custom plugins, hooks, and custom JWT claims are the [plugin matrix](#plugin-support) check.
 
-Before enabling Managed Auth, confirm the project is on AWS and does not use IP Allow or Private Networking. Leave those protections in place.
+Before enabling Managed Auth, confirm the project is on AWS and does not use IP Allow or Private Networking. Those controls don't protect Managed Auth, and auth requests fail while either is enabled ([network controls](https://neon.com/docs/ai/skills/neon/references/network-controls.md)). Leave those protections in place.
 
 Configure supported Managed plugins through Neon (Console, API, or `neon neon-auth`), not by passing `plugins` into `@neon/auth`. Enabling `auth: true` is not implementing login.
 
@@ -58,7 +58,7 @@ Configure supported Managed plugins through Neon (Console, API, or `neon neon-au
 
 ## Availability
 
-Managed Better Auth is generally available. AWS regions only. It cannot be enabled on a project with IP Allow or Private Networking.
+Managed Better Auth is generally available. AWS regions only. It isn't supported on a project with IP Allow or Private Networking: those controls don't protect it, and auth requests fail ([network controls](https://neon.com/docs/ai/skills/neon/references/network-controls.md)).
 
 Organization is separately Partial / Beta. Hosting self-managed Better Auth in a Neon Function follows Functions availability and claim rules; use the `neon-functions` skill for that host. An unclaimed project that can enable Auth still cannot use Functions until claim.
 

@@ -63,6 +63,8 @@ If the workload is a pure static site, or something that must run outside the su
 
 Check this precondition before setting anything up: Neon Functions is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Confirm the user's Neon project is in one of these regions.
 
+IP Allow and Private Networking don't protect function URLs, and a function can't connect to Postgres while either is enabled ([network controls](https://neon.com/docs/ai/skills/neon/references/network-controls.md)). Check the project first and tell the user if either is on.
+
 ## Architecture: Where Functions Fit
 
 Neon (Functions included) is **backend primitives, not full-stack app hosting**. Host your app on a frontend hosting provider like **Vercel** (or Netlify, Cloudflare, etc.), or serve a small static page from a `public_read` bucket behind a CDN (see the `neon-object-storage` skill for caching); Functions are the long-running, stateful slice of your backend that lives next to your data. They compose with that platform in two ways:

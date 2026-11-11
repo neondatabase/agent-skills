@@ -56,6 +56,8 @@ If the files in question ship with the app itself — HTML, JS bundles, CSS, the
 
 Check this precondition before setting anything up: Neon Object Storage is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Confirm the user's Neon project is in one of these regions before proceeding. Region coverage: https://neon.com/docs/get-started/backend-overview.md
 
+IP Allow and Private Networking don't protect Object Storage. Requests from any network are served, so scoped credentials are the access control ([network controls](https://neon.com/docs/ai/skills/neon/references/network-controls.md)).
+
 ## Architecture: Where Object Storage Fits
 
 Neon (Object Storage included) is **backend primitives, not full-stack app hosting**. Object Storage holds the files the app and its users produce — uploads, attachments, avatars, documents, generated images, backups — keyed from Postgres rows on the same branch. Two boundaries follow from that:

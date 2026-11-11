@@ -45,6 +45,10 @@ Neon bundles several backend primitives for building apps and agents that all br
 
 Object Storage, Functions, AI Gateway, and Realtime are currently available on projects in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Before guiding a user through any of these services, confirm they are working in one of these regions. If not, they will need to create a new project in a supported region.
 
+### Network controls (IP Allow and Private Networking)
+
+IP Allow and Private Networking protect Postgres connections only. They don't protect the Data API, Realtime, Managed Better Auth, Object Storage, the AI Gateway, or function URLs. Realtime, Managed Better Auth, and Functions connecting to Postgres also fail while either is enabled. Before enabling any of these services, check the project's settings and tell the user if either control is on. Never turn the controls off to make a service work. Status by service and the checks to run: [references/network-controls.md](references/network-controls.md).
+
 ## Architecture: How to Use Neon
 
 **Recommended: full-stack app with Neon as the backend.** Default to Next.js on Vercel (or Netlify, Cloudflare, or other app platforms). Prefer Next.js + Vercel first; TanStack Start, Nuxt, and SvelteKit are full-stack alternatives. The app owns its UI and server. Query Lakebase Postgres from route handlers, server functions, or Neon Functions.
@@ -75,7 +79,7 @@ Inspect the repo before provisioning.
 
 Do not replace working Better Auth, Clerk, Supabase Auth, S3, or a supplied `DATABASE_URL` with a Neon primitive unless the user asks. Do not rewrite an existing `neon.ts`. If Neon credentials fail for an existing account, stop and ask the user to sign in; do not create a Claimable project as a substitute.
 
-A supplied `DATABASE_URL` with no Neon credentials is schema work: complete it without provisioning. Managed Better Auth cannot be enabled on a project that uses IP Allow or Private Networking. Leave those protections in place.
+A supplied `DATABASE_URL` with no Neon credentials is schema work: complete it without provisioning. Managed Better Auth isn't supported on a project that uses IP Allow or Private Networking: those controls don't protect it, and auth requests fail ([network controls](references/network-controls.md)). Leave those protections in place.
 
 New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for application traffic.
 
@@ -94,7 +98,7 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
 
-Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth, Clerk, and Supabase Auth unless the user asked to migrate login. Auth cannot be enabled on a project with IP Allow or Private Networking.
+Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth, Clerk, and Supabase Auth unless the user asked to migrate login. Auth isn't supported on a project with IP Allow or Private Networking ([network controls](references/network-controls.md)).
 
 Neon has no built-in key-value store or message queue. For a cache, rate limiting, or background jobs, pair it with Upstash Redis and QStash, and keep any Redis or queue the app already uses.
 

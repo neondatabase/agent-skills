@@ -61,6 +61,8 @@ Check these preconditions before setting anything up:
 
 The AI Gateway is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Confirm the user's project is in one of these regions.
 
+IP Allow and Private Networking don't protect the AI Gateway. Requests from any network are served, so scoped credentials are the access control ([network controls](https://neon.com/docs/ai/skills/neon/references/network-controls.md)).
+
 The AI Gateway is available on every Neon plan, including Free, and draws down prepaid AI Gateway credits. On the Free plan, the user adds a payment card and buys credits on the **Billing** page; the organization stays on Free. Any account with prepaid credits can call every model in the catalog, with no difference in pricing or model access between plans. See https://neon.com/docs/ai-gateway/prepaid-credits.md.
 
 ### Enabling the gateway: credits and model access

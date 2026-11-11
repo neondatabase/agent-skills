@@ -271,6 +271,8 @@ Link: https://neon.com/docs/connect/connection-pooling.md
 
 Use this when the user needs to restrict database access by trusted networks, IPs, or CIDR ranges.
 
+IP Allow and Private Networking protect Postgres connections only. They don't protect the Data API, Realtime, Managed Better Auth, Object Storage, the AI Gateway, or function URLs, and Realtime, Auth, and Functions connecting to Postgres fail while either is enabled. Tell the user before turning either on in a project that uses those services ([network controls](https://neon.com/docs/ai/skills/neon/references/network-controls.md)).
+
 Link: https://neon.com/docs/introduction/ip-allow.md
 
 ## Logical Replication
