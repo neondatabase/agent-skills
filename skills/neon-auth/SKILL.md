@@ -138,25 +138,25 @@ Apple, Microsoft, and Discord reject shared credentials. Add Apple and Microsoft
 - **Apple**: `client_id` is the Services ID, `client_secret` is the full `.p8` private key. Also pass `--apple-team-id` and `--apple-key-id` (10 characters). Neon Auth signs the client-secret JWT itself, so there is nothing to rotate. Rotating the key needs the new `--apple-key-id` in the same update. The return URL must be HTTPS (`https://<auth host>/<db>/auth/callback/apple`); Apple rejects localhost, so test through a tunnel or a deployed preview.
 - **Microsoft**: `client_id` and `client_secret` from the Entra app registration. `--microsoft-tenant-id` is optional: `common` (default), `organizations`, `consumers`, a tenant GUID, or a domain. The redirect URI is `<base_url>/callback/microsoft`.
 - **Microsoft email verification**: an email counts as verified only when the ID token carries `xms_edov` = true and `acct` = 0. Add `xms_edov` and `acct` as optional ID-token claims in Entra. Without them, a same-email existing user gets `account_not_linked`, `link-social` fails with `unable_to_link_account`, and new users stay unverified.
-- **Discord**: Always needs your own Discord application `client_id` and `client_secret` (shared is rejected on add and update). Better Auth only; legacy Stack Auth returns 422. Scopes are `identify` and `email`. Redirect URI `<base_url>/callback/discord`. Checked 2026-11-11: Console and `neon neon-auth oauth-provider` omit `discord`. Prefer Neon MCP `auth.oauthProviders.add|update|delete` when available (they accept `discord`); otherwise use the Auth OAuth provider API with `Authorization: Bearer $NEON_API_KEY`. Export the Discord credentials and build the JSON via `jq` `env.*` (no `--arg`, no credential file in the repo):
+- **Discord**: Always needs your own Discord application `client_id` and `client_secret` (shared is rejected on add and update). Better Auth only; legacy Stack Auth returns 422. Scopes are `identify` and `email`. Redirect URI `<base_url>/callback/discord`. Checked 2026-11-11: Console and `neon neon-auth oauth-provider` omit `discord`. Prefer Neon MCP `auth.oauthProviders.add|update|delete` when available (they accept `discord`); otherwise use the Auth OAuth provider API with `Authorization: Bearer $NEON_API_KEY`. In the same shell, export the Discord credentials and build JSON via `jq` `env.*` (no `--arg`, no credential file in the repo). `jq` errors if a required env var is unset, so a null secret is never posted:
 
 ```bash
-# add — export DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET first
-jq -n '{id:"discord",client_id:env.DISCORD_CLIENT_ID,client_secret:env.DISCORD_CLIENT_SECRET}' \
-| curl -X POST "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers" \
+# add — export DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET in this shell first
+jq -n '{id:"discord",client_id:(env.DISCORD_CLIENT_ID // error("DISCORD_CLIENT_ID unset")),client_secret:(env.DISCORD_CLIENT_SECRET // error("DISCORD_CLIENT_SECRET unset"))}' \
+| curl --fail-with-body -sS -X POST "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers" \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H "Content-Type: application/json" \
   -d @-
 
 # rotate secret — body may be only client_secret; omitted fields stay
-jq -n '{client_secret:env.DISCORD_CLIENT_SECRET}' \
-| curl -X PATCH "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
+jq -n '{client_secret:(env.DISCORD_CLIENT_SECRET // error("DISCORD_CLIENT_SECRET unset"))}' \
+| curl --fail-with-body -sS -X PATCH "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
   -H "Authorization: Bearer $NEON_API_KEY" \
   -H "Content-Type: application/json" \
   -d @-
 
 # remove
-curl -X DELETE "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
+curl --fail-with-body -sS -X DELETE "https://console.neon.tech/api/v2/projects/{project_id}/branches/{branch_id}/auth/oauth_providers/discord" \
   -H "Authorization: Bearer $NEON_API_KEY"
 ```
 
