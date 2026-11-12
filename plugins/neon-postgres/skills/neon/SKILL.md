@@ -453,6 +453,15 @@ Treat a `neon.ts` type error as the config telling you which services must go to
 
 See https://neon.com/docs/reference/neon-ts.md for documentation on the `neon.ts` file.
 
+### neon.ts or Terraform?
+
+Neon also has an official Terraform provider, `neondatabase/neon` (beta). Pick one tool per resource:
+
+- **`neon.ts`**: the default for an app. It lives in the app repo, declares the services every branch gets (Auth, Data API, AI Gateway, Functions, buckets, Realtime) plus branch policy, and is applied with `neon deploy`.
+- **Terraform**: use it when the user or team already manages infrastructure with Terraform, or for account-level resources `neon.ts` doesn't declare: projects, API keys, project permissions and member roles, VPC endpoints, and spending limits. Pin the beta exactly (`version = "0.19.0-beta.0"`); a range such as `~> 0.19` does not install it. Older examples using `kislerdm/neon`, `branch { }` blocks, or `"yes"`/`"no"` strings are outdated. Docs: https://neon.com/docs/reference/terraform.md
+
+Don't manage the same Function, bucket, trigger, Data API, or branch setting from both. Each tool reconciles the branch to its own declaration, so one overwrites the other, and Terraform shows the `neon.ts` changes as drift on its next plan. If a project already uses one, keep using it unless the user asks to switch.
+
 ## Branch-First Dev Flow
 
 Neon branches enable a branch-first development flow, which we recommend when using Neon services. This and `neon.ts` above are the two halves of the recommended setup — `neon.ts` declares what every branch should have, and the branch-first loop is how you move between those branches day to day. Each works on its own, and they compose.
