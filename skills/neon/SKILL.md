@@ -504,7 +504,7 @@ Use this when the user asks how much compute, storage, or network transfer a pro
 
 Check the organization's plan first (`neon orgs list -o json`). The consumption history API is paid plans only and returns HTTP 403 on Free.
 
-- **Free:** read the current billing period's totals from the project record with `neon projects get <project_id> -o json` or MCP `describe_project`. `compute_time_seconds / 3600` is CU-hours used, against an allowance of 100 CU-hours per project. `data_transfer_bytes` counts against 5 GB per project.
+- **Free:** read the current billing period's totals from the project record with `neon projects get <project_id> -o json` or MCP `describe_project`. `compute_time_seconds / 3600` is CU-hours used, against an allowance of 100 CU-hours per project. `data_transfer_bytes` counts against 5 GB per project. Free has no usage history, per-branch breakdown, or Functions and Object Storage usage in the API; say so instead of searching.
 - **Launch, Scale, Agent, Enterprise:** use MCP `get_project_consumption` or `get_branch_consumption`, or `neon api /consumption_history/v2/projects`. These metrics match the invoice.
 
 Metric conversions, per-plan rates, spending notifications (`neon orgs spending-limit`), per-project quotas, and what only the Console shows: [references/usage-and-billing.md](https://neon.com/docs/ai/skills/neon/references/usage-and-billing.md).

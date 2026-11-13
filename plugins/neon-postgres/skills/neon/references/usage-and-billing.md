@@ -52,6 +52,20 @@ neon branches list --project-id <project_id> -o json    # each branch has logica
 
 With MCP, use `list_branches`. Don't use the per-branch `compute_time_seconds` or `data_transfer_bytes` fields on branch records for usage: they can read `0` while the project total is non-zero. A per-branch breakdown needs the paid consumption API.
 
+**What Free can and can't answer.** Free gives running totals for the current month only. Say so up front instead of searching for more:
+
+| Question                                                        | On Free                                                              |
+| --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| How much compute or transfer this month, how close to the limit | Yes, from the project record                                         |
+| Storage used                                                    | Yes, sum of branch `logical_size`                                    |
+| Usage by day or hour, past months, trends                       | No history. Poll the project record and store snapshots to build one |
+| Which branch is using the most                                  | No. Per-branch metrics need a paid plan                              |
+| Public vs private transfer, root vs child storage               | No. Combined totals only                                             |
+| Functions, Object Storage, or Auth usage                        | No API. Neon Console only                                            |
+| Spend alerts or caps                                            | No. Spending notifications are Launch and Scale only                 |
+
+When the user needs a "No" row, point them to the Neon Console project **Overview** > **Usage** panel, or note that upgrading to Launch (no monthly minimum) unlocks the consumption history API.
+
 When a Free project has already run out of compute or transfer (SQLSTATE `53000`, HTTP `402`), the `neon-postgres` skill's Free Plan Limits section covers restoring service.
 
 ## Paid plans: consumption history
