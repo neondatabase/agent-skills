@@ -18,7 +18,7 @@ How to answer "how much have I used?" and "what will this cost?" for a Neon proj
 neon orgs list -o json        # each org has a "plan": free, launch, scale, ...
 ```
 
-With MCP, `describe_project` returns `owner.subscription_type` (for example `free_v3`). Anything that starts with `free` is the Free plan.
+With MCP, `describe_project` returns `owner.subscription_type` (for example `free_v3`). Anything that starts with `free` is the Free plan. To find which org a project belongs to, read `org_id` from `neon projects get <project_id> -o json` (no `--org-id` needed).
 
 | Plan                             | Use                                                                                                                         |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
@@ -60,17 +60,17 @@ When a Free project has already run out of compute or transfer (SQLSTATE `53000`
 
 **MCP:** `get_project_consumption` (per project, `org_id` required) or `get_branch_consumption` (per branch, `project_ids` required). Both return every page.
 
-**CLI:** no dedicated command; use the authenticated passthrough:
+**CLI:** no dedicated command; use the authenticated passthrough. Month to date, daily buckets, with `to` set to tomorrow:
 
 ```bash
 neon api /consumption_history/v2/projects \
   -Q org_id=<org_id> \
-  -Q from=2026-11-01T00:00:00Z -Q to=2026-12-01T00:00:00Z \
-  -Q granularity=monthly \
+  -Q from=2026-11-01T00:00:00Z -Q to=2026-11-14T00:00:00Z \
+  -Q granularity=daily -Q limit=100 \
   -Q metrics=compute_unit_seconds,root_branch_bytes_month,child_branch_bytes_month,public_network_transfer_bytes,extra_branches_month
 ```
 
-Required: `org_id`, `from`, `to`, `granularity` (`hourly`, `daily`, `monthly`), `metrics`. Optional: `project_ids` (up to 100), `limit` (projects per page, max 100), `cursor` (pass the returned `pagination.cursor` as-is with the same other parameters).
+Required: `org_id`, `from`, `to`, `granularity` (`hourly`, `daily`, `monthly`), `metrics`. Optional: `project_ids` (up to 100), `limit` (projects per page, default **10**, max 100), `cursor`. Unlike the MCP tools, the CLI returns one page: while the response has `pagination.cursor`, repeat the call with `-Q cursor=<value>` and the same other parameters, and sum across pages. `neon api <path> --describe` prints the endpoint's parameters (`--help` prints generic CLI help).
 
 | Metric                                    | Raw unit              | Project endpoint | Branch endpoint |
 | ----------------------------------------- | --------------------- | ---------------- | --------------- |
@@ -123,7 +123,7 @@ Rates and allowances as of November 2026. Confirm against [Neon plans](https://n
 | Object Storage            | 5 GB/project                      | $0.023/GB-month                          | $0.023/GB-month                          |
 | AI Gateway                | Prepaid credits                   | Prepaid credits                          | Prepaid credits                          |
 
-Agent plan rates match Scale, except compute at the Launch rate ($0.106/CU-hour). Enterprise matches Scale unless negotiated.
+Agent plan rates match Scale, except compute at the Launch rate ($0.106/CU-hour). Enterprise matches Scale unless negotiated. Launch and Scale have no base fee or monthly minimum: the bill is the sum of metered usage, and invoices under $0.50 are not collected.
 
 Allowances to subtract before multiplying:
 
@@ -131,6 +131,8 @@ Allowances to subtract before multiplying:
 - **Extra branches:** `extra_branches_month` counts **all** child branches. Per project and per time bucket, subtract `(branches_per_project - 1) x hours_in_bucket` (9 on Launch, 24 on Scale), floor at 0, sum, then divide by 744.
 
 Example: `compute_unit_seconds` of `500000` on Scale is `500000 / 3600 = 138.89` CU-hours, and `138.89 x $0.222 = $30.83`. Full worked examples: [Usage and cost calculations](https://neon.com/docs/introduction/usage-calculations.md).
+
+To project a month-end figure, scale the month-to-date total by days in the month over days elapsed, and say it assumes usage continues at the same rate.
 
 ## Alerts and hard caps
 
@@ -162,7 +164,7 @@ Example: `compute_unit_seconds` of `500000` on Scale is `500000 / 3600 = 138.89`
 
 ## Gotchas
 
-- `granularity=monthly` rounds `from` and `to` down to the month start. For the current month, set `to` to the first of next month, or the API rejects the range because `from` equals `to`.
+- `granularity=monthly` rounds `from` and `to` down to the month start. For the current month, set `to` to the first of next month (a future `to` is accepted), or the API rejects the range because `from` equals `to`. For month to date, `daily` with `to` set to tomorrow is simpler.
 - Metrics with a zero value are omitted from a bucket's `metrics` array, and buckets with no usage are omitted from `consumption`. Treat anything missing as `0`.
 - Results include deleted projects. Projects with no usage in the range come back with empty `periods`.
 - `neon projects list` does not carry the usage fields. Call `neon projects get <project_id> -o json` (or MCP `describe_project`) per project.
