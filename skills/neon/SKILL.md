@@ -11,7 +11,7 @@ description: >-
   routing, and Managed Better Auth setup. Child skill neon-realtime wins for
   live queries in reactive apps and agents. Also use for object storage, S3,
   buckets, serverless functions, function triggers, cron, AI gateway, LLM calls,
-  realtime, logs, Loki, Grafana, observability,
+  realtime, logs, Loki, Grafana, observability, usage, billing, CU-hours,
   postgres, database, backend, Claimable Neon, neon.new, a no-signup database,
   or pairing Neon with Upstash for cache, Redis, rate limiting, queues, or
   background jobs.
@@ -497,6 +497,17 @@ neon logs query --branch production --source function --minimum-severity error -
 ```
 
 CLI flags, LogQL, MCP fallback, Loki HTTP, Grafana URLs, and `@neon/sdk` pagination: [references/logs-loki.md](https://neon.com/docs/ai/skills/neon/references/logs-loki.md).
+
+## Usage and Billing
+
+Use this when the user asks how much compute, storage, or network transfer a project has used, how close it is to a Free plan limit, or what their usage will cost.
+
+Check the organization's plan first (`neon orgs list -o json`). The consumption history API is paid plans only and returns HTTP 403 on Free.
+
+- **Free:** read the current billing period's totals from the project record with `neon projects get <project_id> -o json` or MCP `describe_project`. `compute_time_seconds / 3600` is CU-hours used, against an allowance of 100 CU-hours per project. `data_transfer_bytes` counts against 5 GB per project.
+- **Launch, Scale, Agent, Enterprise:** use MCP `get_project_consumption` or `get_branch_consumption`, or `neon api /consumption_history/v2/projects`. These metrics match the invoice.
+
+Metric conversions, per-plan rates, spending notifications (`neon orgs spending-limit`), per-project quotas, and what only the Console shows: [references/usage-and-billing.md](https://neon.com/docs/ai/skills/neon/references/usage-and-billing.md).
 
 ## Manage Neon Resources
 

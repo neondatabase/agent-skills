@@ -119,6 +119,8 @@ To restore service before the monthly reset and stay on Free, upgrade the organi
 
 Without a plan change, CU-hours and network transfer reset at the start of the next monthly billing period. A temporary limit increase from the Neon team takes time to process and rarely lands before the reset; the plan change is faster.
 
+To check how close a project is to these limits, read `compute_time_seconds` (CU-seconds, so `/ 3600` for CU-hours) and `data_transfer_bytes` from `neon projects get <project_id> -o json` or MCP `describe_project`. Paid-plan consumption history, rates, and quotas: [usage and billing](https://neon.com/docs/ai/skills/neon/references/usage-and-billing.md).
+
 If network transfer ran out, fix the queries behind it first (see [Egress Optimization](#egress-optimization)), or the project hits the limit again.
 
 ## Troubleshooting and Neon-Specific Performance
