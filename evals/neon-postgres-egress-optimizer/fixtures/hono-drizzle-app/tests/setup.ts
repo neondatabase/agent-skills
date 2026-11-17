@@ -13,15 +13,19 @@ let provisioned = false;
 export async function provisionDatabase() {
   if (provisioned) return databaseUrl;
 
-  // Use existing DATABASE_URL if set, otherwise provision a Claimable Neon project
   if (process.env.DATABASE_URL) {
     databaseUrl = process.env.DATABASE_URL;
   } else {
     // claim create links its working directory and refuses an already linked one
     const dir = await mkdtemp(join(tmpdir(), "egress-eval-"));
-    await $`bunx neon@latest claim create --no-env-pull`.cwd(dir).quiet();
+    // Account credentials take precedence over the claimable project's identity
+    const { NEON_API_KEY, NEON_PROFILE, ...env } = process.env;
+    await $`bunx neon@latest claim create --no-env-pull`
+      .cwd(dir)
+      .env(env)
+      .quiet();
     databaseUrl = (
-      await $`bunx neon@latest connection-string`.cwd(dir).text()
+      await $`bunx neon@latest connection-string`.cwd(dir).env(env).text()
     ).trim();
     process.env.DATABASE_URL = databaseUrl;
   }
