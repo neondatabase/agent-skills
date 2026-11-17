@@ -370,7 +370,7 @@ neon config plan     # dry-run diff of what apply would change (read-only)
 neon deploy --env <file>  # apply neon.ts. Pass --env when Function env reads process.env. Alias for `neon config apply`
 ```
 
-`apply` / `deploy` provision the declared services **and then pull the branch's env into your local `.env.local`** (e.g. `Pulled 5 Neon variables into .env.local: DATABASE_URL, …`), so your local env always matches what's deployed.
+`apply` / `deploy` provision the declared services **and then pull the branch's env into your local env file** (`.env` if it exists, otherwise `.env.local`) (e.g. `Pulled 5 Neon variables into .env.local: DATABASE_URL, …`), so your local env always matches what's deployed.
 
 ### Function env and `neon deploy`
 
