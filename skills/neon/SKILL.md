@@ -220,10 +220,12 @@ Link an existing project:
 
 ```bash
 neon init --agent cursor \
-  --org-id <org-id> --project-id <project-id> -y
+  --org-id <org-id> --project-id <project-id> -y --no-config
 ```
 
-Create and link a project:
+Without `--no-config`, `-y` also writes a starter `neon.ts`, adds `@neon/config` and `@neon/env` to the app, and runs a package install. Linking an existing project needs none of that, and the env pull then reflects the branch's live services (or the repo's existing `neon.ts`, if it has one). When the task calls for `neon.ts`, run `neon config init --from-branch` to seed it from the branch's current services.
+
+Create and link a project (this writes the starter `neon.ts`, creating `package.json` if the directory has none, and installs its packages):
 
 ```bash
 neon init --agent cursor \
@@ -231,7 +233,7 @@ neon init --agent cursor \
   --region-id aws-us-east-2 -y
 ```
 
-`--services` may declare `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
+`--services` may declare `auth`, `data-api`, `functions`, `object-storage`, `ai-gateway`, and `realtime` (repeat the flag or comma-separate). Pass `postgres` alone for the starter policy. It writes `neon.ts`; it does not deploy or wire the app. `--services` cannot be combined with `--no-config`. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
 
 With `-y`, `init` installs the Neon plugin globally where the agent supports it (its MCP server signs in with OAuth). Other agents get skills and the MCP server globally, with an API key when the CLI is signed in. `--mcp-auth` and `--mcp-config-location` change the MCP setup; see `neon init --help`.
 
