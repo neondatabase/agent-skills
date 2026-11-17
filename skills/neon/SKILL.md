@@ -206,7 +206,7 @@ pnpm add -g neon    # pnpm
 
 For full CLI installation options, see https://neon.com/docs/cli/install.md
 
-Then inspect credentials without printing secrets. `NEON_API_KEY` or a `neon profile list -o json` row whose `account` is not `-` is an account. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not.
+Then inspect credentials without printing secrets. `NEON_API_KEY`, or the active `neon profile list -o json` row (`active: "*"`) with an `account` other than `-`, is an account. A `DEFAULT` row with `account: "-"` and `file: "missing"` is not.
 
 - Credentials already available: reuse them. Do not launch a browser.
 - A human needs to sign in: they run `neon login` (`neon auth` is an alias). An unattended agent must not launch browser authentication.
