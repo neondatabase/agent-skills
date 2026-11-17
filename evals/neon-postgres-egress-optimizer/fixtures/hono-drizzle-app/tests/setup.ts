@@ -3,6 +3,9 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { sql } from "drizzle-orm";
 import { categories, products, reviews } from "../src/db/schema";
 import { $ } from "bun";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 let databaseUrl: string;
 let provisioned = false;
@@ -10,17 +13,16 @@ let provisioned = false;
 export async function provisionDatabase() {
   if (provisioned) return databaseUrl;
 
-  // Use existing DATABASE_URL if set, otherwise provision via neon.new
+  // Use existing DATABASE_URL if set, otherwise provision a Claimable Neon project
   if (process.env.DATABASE_URL) {
     databaseUrl = process.env.DATABASE_URL;
   } else {
-    const res = await fetch("https://neon.new/api/v1/database", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ref: "agent-skills" }),
-    });
-    const data = await res.json();
-    databaseUrl = data.connection_string;
+    // claim create links its working directory and refuses an already linked one
+    const dir = await mkdtemp(join(tmpdir(), "egress-eval-"));
+    await $`bunx neon@latest claim create --no-env-pull`.cwd(dir).quiet();
+    databaseUrl = (
+      await $`bunx neon@latest connection-string`.cwd(dir).text()
+    ).trim();
     process.env.DATABASE_URL = databaseUrl;
   }
 
