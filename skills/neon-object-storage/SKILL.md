@@ -56,6 +56,8 @@ If the files in question ship with the app itself — HTML, JS bundles, CSS, the
 
 Check this precondition before setting anything up: Neon Object Storage is currently available in `aws-us-east-2`, `aws-us-east-1`, `aws-eu-central-1`, and `aws-ap-southeast-1`. Confirm the user's Neon project is in one of these regions before proceeding. Region coverage: https://neon.com/docs/get-started/backend-overview.md
 
+Object Storage also needs a Neon account. A Claimable Neon project (`neon claim create`, no account) gets no storage: `object-storage` comes back in `denied_capabilities`, and `neon deploy` refuses to create buckets. If there is no Neon account, ask the human to sign in (`neon login`) or provide `NEON_API_KEY` before you create anything, then create a regular project, not a Claimable one. A Claimable project that already exists gets storage only after a human claims it and the CLI is signed in to the claiming account. See https://neon.com/docs/reference/claimable-neon.md#capabilities
+
 ## Architecture: Where Object Storage Fits
 
 Neon (Object Storage included) is **backend primitives, not full-stack app hosting**. Object Storage holds the files the app and its users produce — uploads, attachments, avatars, documents, generated images, backups — keyed from Postgres rows on the same branch. Two boundaries follow from that:
