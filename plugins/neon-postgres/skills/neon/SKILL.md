@@ -462,7 +462,7 @@ Neon branches enable a branch-first development flow, which we recommend when us
 Create a Neon branch any time you would create a git branch. Use the following commands if you have CLI access:
 
 - `neon checkout <branch-name>` — Pins an existing branch by updating only the branch pointer in `.neon`. Pass `--create` to create a missing **name** (`neon checkout dev --create`). Run without a name for an interactive picker. It does not touch code or local Postgres.
-- `neon env pull` — Fetches the current branch's Neon environment variables into your `.env`. **`link` and `checkout` run this for you by default**, so you rarely call it directly.
+- `neon env pull` — Fetches the current branch's Neon environment variables into your local env file (`.env` if it exists, otherwise `.env.local`). **`link` and `checkout` run this for you by default**, so you rarely call it directly.
 - `neon diff` — Shows the schema diff between the child branch and its parent. Run this to see what changes have been made to the schema since the last branch was created and before you commit your changes.
 
 ```bash
@@ -470,7 +470,7 @@ neon link                     # once; also pulls the linked branch's env
 neon checkout dev-add-search --create  # per feature; also pulls the branch's env
 ```
 
-Because `link` and `checkout` pull env by default, the branch's `DATABASE_URL` lands in your local `.env` automatically — build against it, then `checkout` the next branch and repeat. As the agent, drive this loop yourself: run `checkout` between tasks.
+Because `link` and `checkout` pull env by default, the branch's `DATABASE_URL` lands in your local env file automatically — build against it, then `checkout` the next branch and repeat. As the agent, drive this loop yourself: run `checkout` between tasks.
 
 ### How checkout composes with neon.ts
 
