@@ -154,6 +154,7 @@ Migrating from Electric: Realtime is a drop-in replacement for Electric's role i
 ## Setup
 
 - **New app:** `neon bootstrap my-app --template realtime-react`, then `neon deploy` in `my-app`.
+- **Existing app:** [Add Realtime to an existing app](https://neon.com/docs/realtime/quickstart.md#add-realtime-to-an-existing-app) is one complete Next.js setup with raw SQL: install, `createRealtime()` without an adapter, a renewal Route Handler, and the browser client in `"use client"` files.
 - **Enable** it on the linked branch with [`neon realtime enable --allowed-origin <app origin>`](https://neon.com/docs/cli/realtime.md), or declare [`preview: { realtime: true }`](https://neon.com/docs/reference/neon-ts.md#realtime) in `neon.ts` (`neon config add realtime`) and run `neon deploy`. Child branches inherit it. It's unavailable on Claimable projects until claimed, or outside the [supported regions](https://neon.com/docs/realtime/overview.md#which-regions-is-it-enabled-in).
 - **Tables** need a [stable replica identity](references/queries.md#table-requirements); a primary key is enough. Leave [row-level security](references/queries.md#why-not-row-level-security) off on every table a live query reads: Realtime rejects those subscriptions with `unsupported query: row security`. For per-user data, authorize in the sealed query instead (see below).
 - **Environment:** `neon env pull --service postgres --service realtime` writes `DATABASE_URL`, `NEON_REALTIME_URL` and `NEON_REALTIME_SECRET`. Expose only the URL to the browser, under your framework's public prefix (like `VITE_`). `url` options take `NEON_REALTIME_URL`; `db` takes the database name from `DATABASE_URL`.
@@ -199,7 +200,7 @@ Read [references/ssr.md](references/ssr.md) before rendering live queries on the
 | --- | --- |
 | Beta scope, regions, pricing, FAQ, other systems | [Overview](https://neon.com/docs/realtime/overview.md) |
 | Architecture and consistency | [How it works](https://neon.com/docs/realtime/how-it-works.md) |
-| A first live query | [Quickstart](https://neon.com/docs/realtime/quickstart.md) |
+| A first live query, or Realtime in an existing Next.js app | [Quickstart](https://neon.com/docs/realtime/quickstart.md) |
 | Every SDK export | [TypeScript SDK reference](https://neon.com/docs/realtime/sdks/typescript.md) |
 | Full-stack apps with auth and SSR | [Next.js](https://neon.com/docs/realtime/examples/nextjs.md), [TanStack](https://neon.com/docs/realtime/examples/tanstack.md) |
 | Live agent workflows | [Mastra](https://neon.com/docs/realtime/examples/mastra.md) |
