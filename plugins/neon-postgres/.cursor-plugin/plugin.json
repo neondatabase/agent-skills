@@ -13,5 +13,5 @@
   "keywords": ["neon", "lakebase", "postgres", "serverless", "database", "mcp", "cursor"],
   "logo": "assets/logo.svg",
   "skills": "./skills/",
-  "mcpServers": "./mcp.json"
+  "mcpServers": "./.mcp.json"
 }

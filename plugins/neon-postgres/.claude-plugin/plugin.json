@@ -11,5 +11,5 @@
   "license": "Apache-2.0",
   "keywords": ["neon", "lakebase", "postgres", "serverless", "database", "mcp"],
   "skills": "./skills/",
-  "mcpServers": "./mcp.json"
+  "mcpServers": "./.mcp.json"
 }

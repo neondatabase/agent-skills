@@ -15,7 +15,7 @@ The root [`plugin.json`](plugin.json) and [`mcp.json`](mcp.json) make this repos
 Rules to keep in mind when touching these files:
 
 - The `plugin.json` schema is **closed**. Only `$schema`, `name`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`, and `extensions` are allowed. Client fields such as `skills`, `mcpServers`, `hooks`, or `logo` are nonconforming at the top level — MCP servers go in `mcp.json`, skills are discovered from `skills/`, and anything else client-specific goes under a reverse-domain `extensions` namespace owned by the client.
-- `mcp.json` transports are `stdio`, `streamable-http`, or `sse`. Note that this differs from `plugins/neon-postgres/mcp.json`, which uses Claude/Cursor's `http` spelling; the two files are intentionally not identical.
+- `mcp.json` transports are `stdio`, `streamable-http`, or `sse`. Note that this differs from `plugins/neon-postgres/.mcp.json`, which uses Claude/Cursor's `http` spelling; the two files are intentionally not identical.
 - Only immediate children of `skills/` are discovered, and each `SKILL.md` frontmatter `name` must match its directory.
 - Hooks, agents, commands, LSP servers, and the `marketplace.json` catalogs are **not** portable v1 components. Hooks and the rest belong inside a plugin under `plugins/`; the catalogs stay at the repo root in `.claude-plugin/` and `.cursor-plugin/`, where Claude Code and Cursor look for them, and point back into `plugins/`. v1 only claims `plugin.json`, `mcp.json`, and `skills/`, so conforming clients ignore those extra root directories.
 - [`kimi.plugin.json`](kimi.plugin.json) is Kimi Code's own manifest and is not a v1 component either, so the closed-schema rule above does not apply to it. It declares `skills` and `mcpServers` inline — nonconforming at the top level of a v1 manifest, but necessary because Kimi does not read `mcp.json` — and it points at the same `skills/` directory, so it needs no vendoring. Conforming v1 clients ignore it, the same way they ignore the catalogs.
@@ -238,6 +238,8 @@ The plugins under `plugins/` are distributed as git repositories, and Cursor/Cla
 When you add or change a skill that a plugin ships, run `npm run sync:plugins` (or just commit — the hook handles it).
 
 The root Agent Plugins package is the exception: it reads `skills/` directly, so it needs no vendoring and no sync step.
+
+A plugin's MCP configuration under `plugins/` lives in a hidden `.mcp.json` at the plugin root, and its Claude and Cursor manifests point `mcpServers` at `./.mcp.json`. `neon plugins` installs these plugins into Codex and Kimi Code through the third-party plugins CLI, which generates their manifests and copies MCP servers only from a file with that exact name; under any other name those agents get the skills and no Neon MCP Server. `npm run validate:claude-plugins` fails on any other `mcpServers` value. The root `mcp.json` belongs to the Agent Plugins package and keeps its name.
 
 ## Some skill references are generated from the docs
 
