@@ -80,11 +80,11 @@ attachDatabasePool(pool, {
 - **The two integrations:** `vercelAIIntegration({ force: true })` because `neon deploy` bundles your code, which defeats the integration's module detection; `httpIntegration({ disableIncomingRequestSpans: true })` because the request root span comes from the middleware in step 3 (the runtime's internal server would otherwise add a duplicate with an unhelpful name).
 - **Environment:** `NEON_BRANCH` is injected on every branch — including the default — and holds the branch **name** (e.g. `main`, `preview/add-auth`). Because it's always present, don't use it as a boolean flag; compare it against your default branch's name (passed in as `PRODUCTION_BRANCH`) so the default branch reads as `production` and other branches tag by name. Pass `SENTRY_ENVIRONMENT` explicitly per deploy to override.
 - **Flush on shutdown:** the runtime sends `SIGTERM`/`SIGINT` before evicting an idle isolate; Sentry buffers logs and batches spans, so flush or the tail gets dropped.
-- **Idle `pg` pool errors:** call `attachDatabasePool(pool)` (or pass `onUnexpectedError: (err) => Sentry.captureException(err)` on the first call). Don't `pool.end()` on SIGINT — Neon's pooler reclaims those connections. See [Connecting to Postgres](../SKILL.md#connecting-to-postgres).
+- **Idle `pg` pool errors:** call `attachDatabasePool(pool)` (or pass `onUnexpectedError: (err) => Sentry.captureException(err)` on the first call). Don't `pool.end()` on SIGINT — Neon's pooler reclaims those connections. See [Connecting to Postgres](postgres.md#connecting-to-postgres).
 
 ### 2. Provide the DSN as a deploy-time secret
 
-The DSN is your own secret, so set it per-deployment (see [Environment Variables](../SKILL.md#environment-variables)). Either pass it on deploy:
+The DSN is your own secret, so set it per-deployment (see [Environment Variables](environment-variables.md#environment-variables)). Either pass it on deploy:
 
 ```bash
 neon functions deploy <slug> --src src/index.ts \

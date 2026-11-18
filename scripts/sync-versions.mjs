@@ -284,7 +284,11 @@ async function main() {
 
   await planFile(LOCKFILE, "lockfile", version);
   await planFile("plugin.json", "manifest", version);
-  await planFile(".antigravity-plugin/plugin.json", "manifest", version);
+  await planFile(
+    "plugins/antigravity/.antigravity-plugin/plugin.json",
+    "manifest",
+    version,
+  );
   await planFile("kimi.plugin.json", "manifest", version);
   for (const catalog of CATALOGS) {
     await planFile(catalog, "catalog", version);

@@ -1,6 +1,6 @@
 # AI SDK agents on Neon Functions
 
-A Neon Function is a long-lived Node.js 24 process, which makes it a natural host for a [Vercel AI SDK](https://ai-sdk.dev) agent: the handler keeps streaming for the life of the request (15-minute budget, see [Timeouts](../SKILL.md#timeouts-and-runtime-limits)), so multi-step tool loops and image/video generation don't get cut off the way they do on lambda-style serverless. Point the model at the **Neon AI Gateway** (see the `neon-ai-gateway` skill) and there are no extra provider keys to manage — one Neon credential reaches the whole catalog.
+A Neon Function is a long-lived Node.js 24 process, which makes it a natural host for a [Vercel AI SDK](https://ai-sdk.dev) agent: the handler keeps streaming for the life of the request (15-minute budget, see [Timeouts](runtime-limits.md#timeouts-and-runtime-limits)), so multi-step tool loops and image/video generation don't get cut off the way they do on lambda-style serverless. Point the model at the **Neon AI Gateway** (see the `neon-ai-gateway` skill) and there are no extra provider keys to manage — one Neon credential reaches the whole catalog.
 
 The AI SDK is the **recommended** way to build agents on Functions from TypeScript: one set of primitives (`streamText`, `generateText`, tool calling, structured output) over every catalog model. For a memory- and workflow-heavy agent with built-in tracing, use Mastra instead (see [references/mastra-studio.md](mastra-studio.md)); both point at the same gateway.
 
@@ -121,7 +121,7 @@ Always stream image generation with `streamText`. A non-streaming response whose
 
 ## 4. Call it directly from the client (don't proxy the stream)
 
-So the long stream isn't cut off by your web host's serverless limits, have the **browser call the function directly** and authenticate at the top of the handler — see [Functions as an agent backend](../SKILL.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks) for the JWT-verify + CORS pattern and the AI SDK `DefaultChatTransport` wiring.
+So the long stream isn't cut off by your web host's serverless limits, have the **browser call the function directly** and authenticate at the top of the handler — see [Functions as an agent backend](agent-backend.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks) for the JWT-verify + CORS pattern and the AI SDK `DefaultChatTransport` wiring.
 
 ## 5. Run and deploy
 

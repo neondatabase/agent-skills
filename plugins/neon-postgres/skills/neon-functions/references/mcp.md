@@ -2,11 +2,11 @@
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server is a textbook Neon Functions workload: it's a long-running HTTP handler that an AI client (Cursor, Claude, ChatGPT, an agent) calls to discover and invoke tools, and those tools usually read and write a database. Running it as a Neon Function puts the MCP server's compute next to its Postgres data, gives it a public HTTPS URL, and lets it branch with the rest of your backend — each branch gets its own MCP server against its own isolated data.
 
-MCP's **streamable HTTP transport** is a plain `POST`/`GET` on a single endpoint (conventionally `/mcp`), so it maps directly onto a function's web-standard `fetch` handler — no `upgrade` method or extra protocol like [WebSockets](../SKILL.md#websocket-servers) needed. A Hono app is the simplest host.
+MCP's **streamable HTTP transport** is a plain `POST`/`GET` on a single endpoint (conventionally `/mcp`), so it maps directly onto a function's web-standard `fetch` handler — no `upgrade` method or extra protocol like [WebSockets](websockets.md#websocket-servers) needed. A Hono app is the simplest host.
 
 ## The server
 
-Use the official [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) for both the server and its Web Standard streamable HTTP transport. Neon Functions and Hono expose Web Standard `Request` and `Response` objects, so no transport adapter is needed. Tools query Postgres through Drizzle on a module-scope `pg` pool, exactly like any other function (see [Connecting to Postgres](../SKILL.md#connecting-to-postgres)).
+Use the official [`@modelcontextprotocol/sdk`](https://github.com/modelcontextprotocol/typescript-sdk) for both the server and its Web Standard streamable HTTP transport. Neon Functions and Hono expose Web Standard `Request` and `Response` objects, so no transport adapter is needed. Tools query Postgres through Drizzle on a module-scope `pg` pool, exactly like any other function (see [Connecting to Postgres](postgres.md#connecting-to-postgres)).
 
 ```bash
 npm install @modelcontextprotocol/sdk@^1.30.0 hono zod drizzle-orm pg @neon/functions
@@ -111,7 +111,7 @@ Key points:
 
 - **Official transport.** Default to `WebStandardStreamableHTTPServerTransport`. It matches the Neon Functions runtime directly and, from `@modelcontextprotocol/sdk` 1.30.0, sends SSE keep-alives every 15 seconds while a tool call runs. `@hono/mcp` sends no keep-alives on POST responses, so a slow tool call can hit a client's 30-second connection timeout.
 - **Strict headers.** The official transport enforces the MCP `Accept` headers. Use `@hono/mcp` only as a compatibility fallback for a known client that does not send the required headers (see [the fallback](#fallback-for-non-compliant-clients)).
-- **Per request.** Build a stateless server and transport for each request. Keep only the `pg` pool and other concurrency-safe resources at module scope (see [runtime limits](../SKILL.md#timeouts-and-runtime-limits)).
+- **Per request.** Build a stateless server and transport for each request. Keep only the `pg` pool and other concurrency-safe resources at module scope (see [runtime limits](runtime-limits.md#timeouts-and-runtime-limits)).
 - **POST only.** A stateless server answers each POST on that request's own response, so it has no use for the standalone GET stream or a DELETE that ends a session. Return `405` with an `Allow: POST` header for both, as the SDK's stateless examples do. Otherwise a GET opens an SSE stream that nothing ever writes to, and it stays open until the client leaves or the function times out.
 - **Cleanup.** No `close()` call is needed. The transport closes a POST's stream once the last response is sent, and clears the stream and its keep-alive timer if the client cancels. The per-request server and transport are then garbage collected.
 - **State in Postgres.** Module memory doesn't survive isolate eviction, and several isolates run in parallel — so the source of truth for anything a tool reads or writes belongs in Postgres, not an in-memory structure.
@@ -120,7 +120,7 @@ Key points:
 ## Authenticating the server
 
 > [!WARNING]
-> A Neon Function has a **public HTTPS URL — anyone can reach it.** An unauthenticated MCP server hands every caller your tools (and the database behind them). Authenticate at the top of the handler before touching the transport, exactly as for [any client-facing function](../SKILL.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks).
+> A Neon Function has a **public HTTPS URL — anyone can reach it.** An unauthenticated MCP server hands every caller your tools (and the database behind them). Authenticate at the top of the handler before touching the transport, exactly as for [any client-facing function](agent-backend.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks).
 
 Use **Managed Better Auth (Neon Auth) as the OAuth server** and guard the Function with `@neon/oauth` (0.3.0 or later). MCP clients that support OAuth (Cursor, Claude, ChatGPT) discover the server, sign the user in on a login and consent page you host, and call `/mcp` with an access token. Keep the app's existing login; the OAuth server sits beside it. The full path (CLI setup, clients, pages, verification) is [neon-auth references/oauth-server.md](https://neon.com/docs/ai/skills/neon-auth/references/oauth-server.md).
 
@@ -212,14 +212,14 @@ app.post("/mcp", async (c) => {
 export default app;
 ```
 
-Keep the `pg` pool at module scope. Never take the user id from tool arguments. Pass the raw Web Standard request and the verified MCP `AuthInfo` to the transport. Pass `NEON_AUTH_BASE_URL` and `MCP_RESOURCE` via the function's `env` in `neon.ts` (see [Environment variables](../SKILL.md#environment-variables)). `/mcp` has no CORS or `OPTIONS` handling from `honoMcp`, so add it for browser-based clients.
+Keep the `pg` pool at module scope. Never take the user id from tool arguments. Pass the raw Web Standard request and the verified MCP `AuthInfo` to the transport. Pass `NEON_AUTH_BASE_URL` and `MCP_RESOURCE` via the function's `env` in `neon.ts` (see [Environment variables](environment-variables.md#environment-variables)). `/mcp` has no CORS or `OPTIONS` handling from `honoMcp`, so add it for browser-based clients.
 
 ### Option 2 — API key or session JWT (simplest)
 
 When the callers are your own agents/services or a personal MCP server, you don't need the OAuth flow. Either:
 
 - **API keys** — issue and store your own keys, and have the function verify the `Authorization: Bearer <key>` (or an `x-api-key` header) on every request; or
-- **Session JWT** — verify a Managed Auth JWT (`NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`) with `jose`, the same pattern used for the [agent backend](../SKILL.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks).
+- **Session JWT** — verify a Managed Auth JWT (`NEON_AUTH_JWKS_URL`, issuer from `NEON_AUTH_BASE_URL`) with `jose`, the same pattern used for the [agent backend](agent-backend.md#functions-as-an-agent-backend-nextjs-and-similar-frameworks).
 
 Either way it's one check at the top of the `/mcp` route — reject anything that doesn't carry a valid key/token before connecting the transport:
 
