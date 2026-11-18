@@ -201,7 +201,7 @@ Read [references/ssr.md](references/ssr.md) before rendering live queries on the
 | Beta scope, regions, pricing, FAQ, other systems | [Overview](https://neon.com/docs/realtime/overview.md) |
 | Architecture and consistency | [How it works](https://neon.com/docs/realtime/how-it-works.md) |
 | A first live query | [Quickstart](https://neon.com/docs/realtime/quickstart.md) |
-| Every SDK export | [TypeScript SDK reference](https://neon.com/docs/realtime/sdks/typescript.md) |
+| Every SDK export, one page per module | [TypeScript SDK overview](https://neon.com/docs/realtime/sdks/typescript.md): [Backend](https://neon.com/docs/realtime/sdks/typescript/backend.md), [Client](https://neon.com/docs/realtime/sdks/typescript/client.md), [React](https://neon.com/docs/realtime/sdks/typescript/react.md), [TanStack DB](https://neon.com/docs/realtime/sdks/typescript/tanstack-db.md), [Drizzle and Drizzle client](https://neon.com/docs/realtime/sdks/typescript/drizzle.md), [Kysely](https://neon.com/docs/realtime/sdks/typescript/kysely.md) |
 | Full-stack apps with auth and SSR, or Realtime in an existing Next.js app | [Next.js](https://neon.com/docs/realtime/examples/nextjs.md), [TanStack](https://neon.com/docs/realtime/examples/tanstack.md) |
 | Live agent workflows | [Mastra](https://neon.com/docs/realtime/examples/mastra.md) |
 | ORM adapters | [Drizzle](https://neon.com/docs/realtime/examples/drizzle.md), [Kysely](https://neon.com/docs/realtime/examples/kysely.md) |
