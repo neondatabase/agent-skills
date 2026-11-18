@@ -233,7 +233,7 @@ neon init --agent cursor \
 
 `--services` may declare `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
 
-With `-y`, `init` installs the Neon plugin globally where the agent supports it (its MCP server signs in with OAuth). Other agents get skills and the MCP server globally, with an API key when the CLI is signed in. `--mcp-auth` and `--mcp-config-location` change the MCP setup; see `neon init --help`.
+With `-y`, `init` installs the Neon plugin globally where the agent supports it (its MCP server signs in with OAuth). Other agents get skills and the MCP server globally, with an API key when the CLI credential can mint one (`neon login` or a personal API key) and OAuth otherwise, such as with an organization or project-scoped `NEON_API_KEY`. `--mcp-auth` and `--mcp-config-location` change the MCP setup; see `neon init --help`. Omit `--mcp-auth` unless the user asks for a method: `--mcp-auth api-key` with a scoped key skips MCP and makes `init` exit 1 when the agent has no Neon MCP key yet. With `--mcp-config-location project`, pass `--mcp-auth oauth`, for the reason given under `neon mcp --project` below.
 
 If `init` already installed the Neon plugin, do not also run `neon mcp` and `neon skills` for the same agent.
 
