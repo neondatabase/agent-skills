@@ -74,7 +74,7 @@ function hasOriginSecret(request: Request): boolean {
   return timingSafeEqual(provided, expected);
 }
 
-export default {
+const handler = {
   async fetch(request: Request): Promise<Response> {
     if (!hasOriginSecret(request)) {
       return new Response("Unauthorized", { status: 401 });
@@ -82,6 +82,8 @@ export default {
     return Response.json({ ok: true });
   },
 };
+
+export default handler;
 ```
 
 Declare `ORIGIN_SECRET` in `neon.ts` `env` and on the app host.
@@ -178,7 +180,7 @@ Wrangler:
 ```typescript
 const FUNCTION_ORIGIN = "https://<invocation-host>"; // neon functions get
 
-export default {
+const handler = {
   async fetch(
     request: Request,
     env: { ORIGIN_SECRET: string },
@@ -200,6 +202,8 @@ export default {
     });
   },
 };
+
+export default handler;
 ```
 
 Function: require `X-Secret` first (same helper as above), then apply **that

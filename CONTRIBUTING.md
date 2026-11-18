@@ -62,7 +62,7 @@ npm ci --ignore-scripts
 npm run validate:ci
 ```
 
-This runs `npm run validate:agent-plugin` for the root Agent Plugins v1 package, plugin manifest validation under `plugins/`, `npm run validate:versions` to confirm every manifest matches the version in `package.json`, skill validation (`skills-ref` on every directory under `skills/`), the skill reference-graph check, and `npm run validate:skill-docs` for the docs-generated references. See `AGENTS.md` for the full CI/CD picture and the paired **neon-for-agent-platforms** repo.
+This runs `npm run validate:agent-plugin` for the root Agent Plugins v1 package, plugin manifest validation under `plugins/`, `npm run validate:versions` to confirm every manifest matches the version in `package.json`, skill validation (`skills-ref` on every directory under `skills/`), the skill reference-graph check, `npm run validate:skill-docs` for the docs-generated references, and `npm run validate:default-exports`, which fails on an anonymous default export (`export default { fetch }`) in a `neon-functions` code sample. See `AGENTS.md` for the full CI/CD picture and the paired **neon-for-agent-platforms** repo.
 
 The Agent Plugins manifest schema is closed, so none of `skills`, `mcpServers`, `hooks`, or `logo` may appear in the root `plugin.json`. MCP servers are declared in the root `mcp.json` and skills are discovered from the root `skills/`; `hooks` and `logo` are client-only and belong in the packaging under `plugins/`. `AGENTS.md` lists the full set of allowed fields.
 
