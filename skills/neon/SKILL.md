@@ -223,6 +223,8 @@ neon init --agent cursor \
   --org-id <org-id> --project-id <project-id> -y
 ```
 
+When the CLI is signed in and `init` links an existing project, it writes `neon.ts` from the branch's current services, adds `@neon/config` and `@neon/env` (they read that file), and runs the install. The env pull that follows writes the variables of every service in that file. Pass `--no-config` only when the user wants connection strings without `neon.ts`.
+
 Create and link a project:
 
 ```bash
@@ -231,7 +233,7 @@ neon init --agent cursor \
   --region-id aws-us-east-2 -y
 ```
 
-`--services` may declare `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway` (repeat the flag or comma-separate). Pass `none` for the bare starter policy. It writes `neon.ts`; it does not deploy or wire the app. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
+A new project gets the starter policy. `--services` may declare `auth`, `data-api`, `functions`, `object-storage`, `ai-gateway`, and `realtime` (repeat the flag or comma-separate), and on an existing project declares those services instead of reading them from the branch. `postgres` alone gives the starter policy. It writes `neon.ts`; it does not deploy or wire the app. Selecting `data-api` also declares Auth (the default Data API provider requires it). Use `data-api` only for PostgREST / Supabase database-client compatibility.
 
 With `-y`, `init` installs the Neon plugin globally where the agent supports it (its MCP server signs in with OAuth). Other agents get skills and the MCP server globally, with an API key when the CLI is signed in. `--mcp-auth` and `--mcp-config-location` change the MCP setup; see `neon init --help`.
 
