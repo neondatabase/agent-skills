@@ -6,17 +6,12 @@ import process from "node:process";
 
 const repoRoot = process.cwd();
 const errors = [];
-const warnings = [];
 
 const pluginNamePattern = /^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/;
 const marketplaceNamePattern = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
 function addError(message) {
   errors.push(message);
-}
-
-function addWarning(message) {
-  warnings.push(message);
 }
 
 async function pathExists(targetPath) {
@@ -234,10 +229,12 @@ async function main() {
 
     await checkNoSymlinks(pluginDir, entry.name);
 
-    const mcpPath = path.join(pluginDir, "mcp.json");
-    if (!(await pathExists(mcpPath))) {
-      addWarning(
-        `${entry.name}: no mcp.json file found in plugin root (only needed when using MCP servers).`,
+    if (
+      pluginManifest.mcpServers !== undefined &&
+      pluginManifest.mcpServers !== "./.mcp.json"
+    ) {
+      addError(
+        `${entry.name}: "mcpServers" must be "./.mcp.json"; Codex and Kimi Code installs read MCP servers only from that file.`,
       );
     }
   }
@@ -246,13 +243,6 @@ async function main() {
 }
 
 function summarizeAndExit() {
-  if (warnings.length > 0) {
-    console.log("Warnings:");
-    for (const warning of warnings) {
-      console.log(`- ${warning}`);
-    }
-    console.log("");
-  }
   if (errors.length > 0) {
     console.error("Validation failed:");
     for (const error of errors) {
