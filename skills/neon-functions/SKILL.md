@@ -53,7 +53,7 @@ If the workload is a pure static site, or something that must run outside the su
 ## What It Does
 
 - **Long-running & serverless** — Built for WebSocket servers (see [WebSocket Servers](#websocket-servers)), SSE endpoints (see [Server-Sent Events (SSE)](#server-sent-events-sse)), long agent HTTP streams, and APIs. Still scales to zero when idle.
-- **Web-standard handler** — A function is any default export with a `fetch(request)` method returning a `Response` (Workers/WinterTC-compatible). A Hono app exports exactly that shape, so `export default app` just works. Runs on Node.js 24, so all Node APIs are available.
+- **Web-standard handler** — A function is any default export with a `fetch(request)` method returning a `Response` (Workers/WinterTC-compatible). A Hono app exports exactly that shape, so `export default app` just works. Name a handler object before exporting it (`const handler = { fetch }; export default handler;`): Next.js's ESLint config flags `export default { fetch }` with `import/no-anonymous-default-export`. Runs on Node.js 24, so all Node APIs are available.
 - **Close to your database** — Runs in the branch's region; `DATABASE_URL` injected automatically when the branch has Postgres.
 - **Branchable** — Each branch runs its own function version at its own URL against its own isolated state.
 - **Same CLI/API** — Deploy and manage via `neon`, `neon.ts`, or the Neon API.
@@ -332,7 +332,7 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 const jwks = createRemoteJWKSet(new URL(process.env.NEON_AUTH_JWKS_URL!));
 const issuer = new URL(process.env.NEON_AUTH_BASE_URL!).origin;
 
-export default {
+const handler = {
   async fetch(request: Request) {
     if (request.method === "OPTIONS")
       return new Response(null, { status: 204, headers: cors(request) });
@@ -364,6 +364,8 @@ export default {
     // ... return result.toUIMessageStreamResponse({ headers: cors(request) })
   },
 };
+
+export default handler;
 ```
 
 That snippet is Managed Auth verification. Mint the bearer token with `.token()` (`data.token`) on the default client, or `getSession()` then `data.session.access_token` on `SupabaseAuthAdapter()`. For another identity, pass that app's JWKS URL and issuer through Function `env` (see [Environment Variables](#environment-variables)) and include `audience` only when that token contract requires it. https://neon.com/docs/compute/functions/authentication.md
@@ -381,7 +383,7 @@ A WebSocket server is the canonical Functions workload: a long-running handler h
 ```typescript
 import { upgradeWebSocket } from "@neon/functions";
 
-export default {
+const handler = {
   async fetch(req: Request): Promise<Response> {
     if (req.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       return new Response("expected a websocket upgrade", { status: 426 });
@@ -392,6 +394,8 @@ export default {
     return response;
   },
 };
+
+export default handler;
 ```
 
 `socket` is a standard [`WebSocket`](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket), so `addEventListener` and the `onopen`/`onmessage`/`onclose`/`onerror` properties both work. It is still `CONNECTING` when you get it — the runtime writes the `101` only once your handler returns `response`, and the socket opens then.
@@ -410,7 +414,7 @@ import { upgradeWebSocket } from "@neon/functions";
 
 const clients = new Set<WebSocket>();
 
-export default {
+const handler = {
   async fetch(request: Request): Promise<Response> {
     if (request.headers.get("upgrade")?.toLowerCase() !== "websocket") {
       return new Response("WebSocket endpoint — connect with ?token=<jwt>");
@@ -430,6 +434,8 @@ export default {
     return response;
   },
 };
+
+export default handler;
 ```
 
 **Subprotocols.** Pass `{ protocol }` to select one the client offered; it is echoed in `Sec-WebSocket-Protocol` and exposed as `socket.protocol`. Selecting one the client did not offer throws a `TypeError`. Omit it and no protocol is negotiated. No extensions are negotiated either — `socket.extensions` is always `""` and `permessage-deflate` is not available.
@@ -622,7 +628,7 @@ When you only need **server → client** streaming (live counters, notifications
 ```typescript
 // src/index.ts — minimal SSE endpoint
 const encoder = new TextEncoder();
-export default {
+const handler = {
   fetch: () => {
     let t: ReturnType<typeof setInterval>;
     return new Response(
@@ -647,6 +653,8 @@ export default {
     );
   },
 };
+
+export default handler;
 ```
 
 The same rules as WebSockets apply. **Heartbeat:** a stream stays open only while bytes flow — Neon's window is 15 minutes ([Timeouts and Runtime Limits](#timeouts-and-runtime-limits)) but proxies are usually far stricter, so emit a `: ping\n\n` comment every ~25–30s (shown above) to keep idle streams from being dropped. Keep state in Postgres, and fan out across isolates using one of the [fan-out strategies](#fan-out-across-isolates-do-not-skip-this) (hold a `Set` of stream controllers and `enqueue` to each). `EventSource` is GET-only and can't set headers, so authenticate with a `?token=` query param or cookie, exactly like the WebSocket case. [references/sse.md](https://neon.com/docs/ai/skills/neon-functions/references/sse.md) has the full pattern — Hono variant, cross-isolate fan-out, wire format, client, and caveats.

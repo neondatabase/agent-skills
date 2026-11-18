@@ -50,7 +50,8 @@
     "validate:skills": "node scripts/validate-skills.mjs",
     "validate:references": "node scripts/check-skill-references.mjs",
     "validate:skill-docs": "node scripts/sync-skill-docs.mjs --check",
-    "validate:ci": "npm run validate:agent-plugin && npm run validate:antigravity-plugin && npm run validate:plugins && npm run validate:versions && npm run validate:skills && npm run validate:references && npm run validate:skill-docs"
+    "validate:default-exports": "node scripts/check-default-exports.mjs",
+    "validate:ci": "npm run validate:agent-plugin && npm run validate:antigravity-plugin && npm run validate:plugins && npm run validate:versions && npm run validate:skills && npm run validate:references && npm run validate:skill-docs && npm run validate:default-exports"
   },
   "devDependencies": {
     "prettier": "3.9.6",

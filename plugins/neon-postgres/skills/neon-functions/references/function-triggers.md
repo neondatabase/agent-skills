@@ -150,7 +150,7 @@ Parsed (`@neon/functions` ≥ 0.11.0) is camelCase. `parseTriggerDelivery` also 
 ```typescript
 import { parseTriggerDelivery } from "@neon/functions/triggers";
 
-export default {
+const handler = {
   async fetch(request: Request): Promise<Response> {
     const parsed = await parseTriggerDelivery(request);
     if (!parsed.ok) {
@@ -171,6 +171,8 @@ export default {
     });
   },
 };
+
+export default handler;
 ```
 
 `parseTriggerDelivery(request)` clones the Request before `json()`, so `request.json()` still works. If you already have the body: `parseTriggerDelivery({ headers, body })` (sync). `parsed.error` is `missing_header`, `invalid_body`, or `invocation_id_mismatch`. Unknown `trigger.type` values fail as `invalid_body`.
@@ -201,7 +203,7 @@ app.post("/cron", async (c) => {
 ```typescript
 import { parseTriggerInvocation } from "@neon/functions/triggers";
 
-export default {
+const handler = {
   async fetch(request: Request): Promise<Response> {
     const parsed = await parseTriggerInvocation(request);
     if (!parsed.ok) {
@@ -214,6 +216,8 @@ export default {
     });
   },
 };
+
+export default handler;
 ```
 
 ## Local `neon dev`

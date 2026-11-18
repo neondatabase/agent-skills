@@ -12,7 +12,7 @@ A function's default export is `{ fetch }`; SSE needs nothing more. Return a `Re
 // src/index.ts
 const encoder = new TextEncoder();
 
-export default {
+const handler = {
   fetch(request: Request): Response {
     const url = new URL(request.url);
     if (url.pathname !== "/events") return new Response("ok");
@@ -43,6 +43,8 @@ export default {
     });
   },
 };
+
+export default handler;
 ```
 
 > `cancel()` is a method on the stream's underlying source; it fires when the client disconnects. Use it to drop the client from any broadcast set and clear timers. A cleanup function returned from `start()` is ignored, so it has to be a real `cancel()` method.

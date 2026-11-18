@@ -159,12 +159,14 @@ function ffmpegPath(): Promise<string> {
   return ffmpeg;
 }
 
-export default {
+const handler = {
   async fetch() {
     const { stdout } = await run(await ffmpegPath(), ["-version"]);
     return new Response(stdout);
   },
 };
+
+export default handler;
 ```
 
 `neon dev` runs this code on your machine, where `/run` may not exist and a linux-arm64 binary cannot execute. Point it at a host install from the shell, and leave `FFMPEG_PATH` out of the function's deployed `env`:

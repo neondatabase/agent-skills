@@ -41,7 +41,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
 attachDatabasePool(pool);
 const db = drizzle(pool);
 
-export default {
+const handler = {
   async fetch(request: Request) {
     if (request.method !== "POST") {
       return new Response("POST chat messages here", { status: 405 });
@@ -73,6 +73,8 @@ export default {
     });
   },
 };
+
+export default handler;
 ```
 
 `tool({ inputSchema, execute })` is the AI SDK v5+ shape (the parameter is `inputSchema`, not the old `parameters`). The tool's `execute` runs **inside the function**, right next to Postgres — no extra network hop.
