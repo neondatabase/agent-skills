@@ -101,7 +101,7 @@ Inventory the auth methods and database calls actually used:
 
 ## Verification
 
-Managed path: sign-up, sign-in, sign-out, session restoration after reload, and protected access, including error and loading states. Exercise email verification (code on shared SMTP) when it is on. Report any flow that remains unverified.
+Managed path: in Next.js, before reporting Auth as set up, run the app and confirm that, signed out, `GET /api/auth/get-session` returns status 200 with body `null`; any other status, including a 502 JSON error, fails the check, and a 404 page means the handler from [references/managed-auth.md](references/managed-auth.md#nextjs) is not mounted. On every framework, verify sign-up, sign-in, sign-out, session restoration after reload, and protected access, including error and loading states. Exercise email verification (code on shared SMTP) when it is on. Report any flow that remains unverified.
 
 A required plugin on the self-managed path is verified in that app's Better Auth setup, not as a Managed flow.
 

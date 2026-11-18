@@ -44,7 +44,15 @@ The Managed client is Better Auth methods through Neon's wrapper. It is not inte
 
 ## Next.js
 
-`createNeonAuth` from `@neon/auth/next/server`. Optional Next peer on current `@neon/auth` is `>=16.0.0`; check the installed package before changing an existing app's router file.
+Reading, logging, or displaying `NEON_AUTH_BASE_URL` does not wire Auth into the app. Auth is not set up until all of these hold; then run the flows in [Verification](../SKILL.md#verification):
+
+1. `@neon/auth` is installed with the project's package manager.
+2. `NEON_AUTH_COOKIE_SECRET` is set (see [Environment](#environment)).
+3. A `createNeonAuth` instance is configured with `NEON_AUTH_BASE_URL`.
+4. Its handler is mounted at `app/api/auth/[...path]/route.ts`.
+5. With the app running and signed out, `GET /api/auth/get-session` returns status 200 with body `null`. A 404 page means the handler is not mounted, a 500 means the route folder is not named `[...path]`, and a 502 JSON `{ error, code }` means the proxy could not reach `NEON_AUTH_BASE_URL`.
+
+`createNeonAuth` from `@neon/auth/next/server`. Optional Next peer on current `@neon/auth` is `>=16.0.0`, so installing it into a Next 15 app fails peer resolution; check the installed package before changing an existing app's router file.
 
 ```typescript
 import { createNeonAuth } from "@neon/auth/next/server";
@@ -63,7 +71,7 @@ import { auth } from "@/lib/auth/server";
 export const { GET, POST, PUT, DELETE, PATCH } = auth.handler();
 ```
 
-Those five methods are what the installed SDK returns. Existing apps that export only `GET`/`POST` keep serving GET/POST routes.
+Those five methods are what the installed SDK returns. Existing apps that export only `GET`/`POST` keep serving GET/POST routes. The folder must be named `[...path]`: the handler reads `params.path`.
 
 Browser client takes **no arguments** and talks to that same-origin proxy:
 
