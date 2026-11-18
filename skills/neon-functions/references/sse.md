@@ -1,6 +1,6 @@
 # Server-sent events (SSE) on Neon Functions
 
-SSE is the one-way (server → client) streaming counterpart to WebSockets: the browser opens a long-lived `GET` with [`EventSource`](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) and the server pushes text frames down it. On Neon Functions an SSE endpoint is just a normal `fetch` handler that returns a `Response` whose body is a `ReadableStream` with `Content-Type: text/event-stream` — there is no library to install and nothing to upgrade. The runtime holds the response open as long as bytes keep flowing (15-minute heartbeat, see [Timeouts](../SKILL.md#timeouts-and-runtime-limits)).
+SSE is the one-way (server → client) streaming counterpart to WebSockets: the browser opens a long-lived `GET` with [`EventSource`](https://developer.mozilla.org/en-US/docs/Web/API/EventSource) and the server pushes text frames down it. On Neon Functions an SSE endpoint is just a normal `fetch` handler that returns a `Response` whose body is a `ReadableStream` with `Content-Type: text/event-stream` — there is no library to install and nothing to upgrade. The runtime holds the response open as long as bytes keep flowing (15-minute heartbeat, see [Timeouts](runtime-limits.md#timeouts-and-runtime-limits)).
 
 Reach for SSE over WebSockets when you only need server → client updates (live counters, notifications, progress, token streams) — it's simpler to run (plain HTTP, no `upgrade`), and `EventSource` **reconnects on its own**, so there's no client backoff to write.
 
@@ -79,7 +79,7 @@ export default app;
 
 ## Push to every client, across isolates
 
-If the data is database rows (live dashboards, feeds, chat over stored messages), use Neon Realtime (the `neon-realtime` skill) instead of hand-rolling fan-out. Otherwise, the fan-out rule is identical to WebSockets ([Fan-out across isolates](../SKILL.md#fan-out-across-isolates-do-not-skip-this)): each isolate keeps its **own** set of open streams, so broadcasting in-process only reaches the clients on that isolate. Hold a `Set` of stream controllers and pick a strategy there — **poll Postgres** by default (keeps Scale to Zero), or `LISTEN`/`NOTIFY` (shown below) for lowest latency on always-on compute. Keep the source-of-truth state in Postgres — module state doesn't survive eviction.
+If the data is database rows (live dashboards, feeds, chat over stored messages), use Neon Realtime (the `neon-realtime` skill) instead of hand-rolling fan-out. Otherwise, the fan-out rule is identical to WebSockets ([Fan-out across isolates](websockets.md#fan-out-across-isolates-do-not-skip-this)): each isolate keeps its **own** set of open streams, so broadcasting in-process only reaches the clients on that isolate. Hold a `Set` of stream controllers and pick a strategy there — **poll Postgres** by default (keeps Scale to Zero), or `LISTEN`/`NOTIFY` (shown below) for lowest latency on always-on compute. Keep the source-of-truth state in Postgres — module state doesn't survive eviction.
 
 ```typescript
 import { attachDatabasePool } from "@neon/functions";
@@ -150,14 +150,14 @@ source.onerror = () => {
 // source.close() to stop.
 ```
 
-`EventSource` **reconnects automatically** with the server's `retry:` interval, replaying `Last-Event-ID` if you set `id:` — so unlike WebSockets you don't write a reconnect loop. Its constraints: it's **GET-only and can't set request headers**, so authenticate the same way as a [WebSocket](../SKILL.md#websocket-servers) — a `?token=` query param (verify with `jwtVerify` before streaming) or a cookie. (Use the modern `eventsource` polyfill if you need `Authorization` headers.)
+`EventSource` **reconnects automatically** with the server's `retry:` interval, replaying `Last-Event-ID` if you set `id:` — so unlike WebSockets you don't write a reconnect loop. Its constraints: it's **GET-only and can't set request headers**, so authenticate the same way as a [WebSocket](websockets.md#websocket-servers) — a `?token=` query param (verify with `jwtVerify` before streaming) or a cookie. (Use the modern `eventsource` polyfill if you need `Authorization` headers.)
 
 ## Caveats
 
-- **Heartbeat or it dies.** Streams stay open only while bytes flow — Neon's window is 15 min ([Timeouts](../SKILL.md#timeouts-and-runtime-limits)), but intermediary proxies are usually far stricter (tens of seconds). Emit a `: ping\n\n` comment every ~25–30s so the stream never goes quiet.
+- **Heartbeat or it dies.** Streams stay open only while bytes flow — Neon's window is 15 min ([Timeouts](runtime-limits.md#timeouts-and-runtime-limits)), but intermediary proxies are usually far stricter (tens of seconds). Emit a `: ping\n\n` comment every ~25–30s so the stream never goes quiet.
 - **`no-transform`.** Set `Cache-Control: no-cache, no-transform` so proxies don't buffer or rewrite the stream.
 - **Enqueue is synchronous.** `controller.enqueue()` doesn't return a promise, so broadcasting from the `LISTEN` handler can't interleave awaits mid-write — wrap each in `try/catch` and drop dead controllers.
 - **CORS.** A SPA hits the function cross-origin, so set `Access-Control-Allow-Origin`. `EventSource` sends no credentials by default, so `*` is fine for public streams.
-- **One-way only.** SSE is server → client. For client → server, the browser makes normal `fetch`/`POST` calls (often to the same function); reach for [WebSockets](../SKILL.md#websocket-servers) only when you need bidirectional, low-latency frames.
+- **One-way only.** SSE is server → client. For client → server, the browser makes normal `fetch`/`POST` calls (often to the same function); reach for [WebSockets](websockets.md#websocket-servers) only when you need bidirectional, low-latency frames.
 
 Together — a Hono `fetch` SSE endpoint, cross-isolate fan-out, heartbeat, a counter persisted in Postgres, and a client-only TanStack Router SPA consuming it with `EventSource` — these compose into a complete push backend on a single function, for push that doesn't come from database rows (presence, typing, LLM streams) or where Realtime isn't available. For persisted chat, feeds, and other live UIs over database rows, use Neon Realtime (the `neon-realtime` skill).

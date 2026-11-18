@@ -80,11 +80,13 @@ The Claude Code and Cursor packaging under `plugins/` remains available for clie
 
 ### Antigravity Plugin
 
-Antigravity reads its Marketplace metadata from [`.antigravity-plugin/plugin.json`](.antigravity-plugin/plugin.json) and its native Neon MCP Server configuration from [`mcp_config.json`](mcp_config.json). Install the plugin from this repository:
+The Antigravity plugin lives in [`plugins/antigravity/`](plugins/antigravity/). It holds only what the plugin ships: the Marketplace metadata in [`.antigravity-plugin/plugin.json`](plugins/antigravity/.antigravity-plugin/plugin.json), the native Neon MCP Server configuration in [`mcp_config.json`](plugins/antigravity/mcp_config.json), a README, the logos, and a copy of the skills. Install the plugin from that directory:
 
 ```bash
-agy plugin install https://github.com/neondatabase/agent-skills
+agy plugin install https://github.com/neondatabase/agent-skills/tree/main/plugins/antigravity
 ```
+
+Installing from the repository root no longer includes the Neon MCP Server. If you installed that way, run `agy plugin uninstall neon` (or `agy plugin uninstall neon-postgres`), then install from the URL above.
 
 Confirm that Antigravity discovered the plugin, its skills, and the MCP server:
 

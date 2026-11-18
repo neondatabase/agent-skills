@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Fail fast when a SKILL.md body is over Antigravity's 24,000-byte limit, so
+# the problem shows up before the push instead of in CI.
+node scripts/validate-skills.mjs --size-only
+
 # Keep vendored plugin skills in sync with the top-level source of truth so
 # committed plugins always ship real skill files. See CONTRIBUTING.md.
 #
@@ -10,7 +14,7 @@ set -e
 # The -d test matters because an unmatched glob is passed through literally,
 # and git add on a literal pattern aborts the commit with a pathspec error.
 node scripts/sync-plugin-skills.mjs
-for skills_dir in plugins/*/skills; do
+for skills_dir in plugins/*/skills plugins/antigravity/assets; do
   if [ -d "$skills_dir" ]; then
     git add "$skills_dir"
   fi

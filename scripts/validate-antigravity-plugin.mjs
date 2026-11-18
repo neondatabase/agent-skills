@@ -4,7 +4,9 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-const repoRoot = process.cwd();
+// plugins/antigravity is the package Antigravity installs. It holds only the
+// files the plugin needs, so repo files such as evals/ never ship.
+const pluginRoot = path.join(process.cwd(), "plugins", "antigravity");
 const manifestPath = ".antigravity-plugin/plugin.json";
 const problems = [];
 const warnings = [];
@@ -26,7 +28,7 @@ function isObject(value) {
 async function readJson(relativePath) {
   try {
     return JSON.parse(
-      await fs.readFile(path.join(repoRoot, relativePath), "utf8"),
+      await fs.readFile(path.join(pluginRoot, relativePath), "utf8"),
     );
   } catch (error) {
     fail(`${relativePath}: ${error.message}`);
@@ -35,8 +37,8 @@ async function readJson(relativePath) {
 }
 
 function localPath(value, field) {
-  const absolute = path.resolve(repoRoot, value);
-  const relative = path.relative(repoRoot, absolute);
+  const absolute = path.resolve(pluginRoot, value);
+  const relative = path.relative(pluginRoot, absolute);
   if (relative.startsWith("..") || path.isAbsolute(relative)) {
     fail(`${field} must resolve inside the plugin root: ${value}`);
     return null;
@@ -274,7 +276,7 @@ async function main() {
 
   try {
     const entries = await fs.readdir(
-      path.join(repoRoot, ".antigravity-plugin"),
+      path.join(pluginRoot, ".antigravity-plugin"),
     );
     const unexpected = entries.filter((entry) => entry !== "plugin.json");
     if (unexpected.length > 0) {
@@ -287,6 +289,53 @@ async function main() {
   }
 
   await validateComponentPaths(manifest);
+  await validateAllowedFiles();
+}
+
+// Only these paths may ship in plugins/antigravity. Anything else (evals,
+// scripts, stray notes) fails, so the installed plugin stays clean. Every
+// JSON file must also be plain JSON (no comments or trailing commas).
+const ALLOWED_FILES = new Set([
+  ".antigravity-plugin/plugin.json",
+  "mcp_config.json",
+  "README.md",
+]);
+const ALLOWED_DIRS = ["assets/", "skills/"];
+
+async function validateAllowedFiles() {
+  try {
+    await fs.access(path.join(pluginRoot, "README.md"));
+  } catch {
+    fail("README.md is required for Marketplace publishing");
+  }
+  const stack = [""];
+  while (stack.length > 0) {
+    const relDir = stack.pop();
+    const entries = await fs.readdir(path.join(pluginRoot, relDir), {
+      withFileTypes: true,
+    });
+    for (const entry of entries) {
+      const relPath = relDir ? `${relDir}/${entry.name}` : entry.name;
+      if (entry.name === ".DS_Store") continue;
+      if (entry.isDirectory()) {
+        stack.push(relPath);
+        continue;
+      }
+      if (
+        !ALLOWED_FILES.has(relPath) &&
+        !ALLOWED_DIRS.some((dir) => relPath.startsWith(dir))
+      ) {
+        fail(`file not allowed in plugins/antigravity: ${relPath}`);
+      }
+      if (relPath.endsWith(".json")) {
+        try {
+          JSON.parse(await fs.readFile(path.join(pluginRoot, relPath), "utf8"));
+        } catch (error) {
+          fail(`${relPath} is not valid JSON: ${error.message}`);
+        }
+      }
+    }
+  }
 }
 
 await main();

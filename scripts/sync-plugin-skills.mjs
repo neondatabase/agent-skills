@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 // Vendors real copies of the mapped skills from the top-level `skills/`
-// (the source of truth) into each plugin's `skills/` directory. Plugins are
+// (the source of truth) into each plugin's `skills/` directory, plus any
+// top-level directories listed in PLUGIN_DIRS (such as `assets/`). Plugins are
 // distributed as git repositories, and consumers (Cursor, Claude) reject or
 // ignore symlinks that escape the plugin root, so the copies must be real
 // files committed to the repo.
@@ -19,7 +20,15 @@ import process from "node:process";
 // automatically); an array vendors only the named skill directories, e.g.
 // ["neon", "neon-postgres"].
 const PLUGIN_SKILLS = {
+  antigravity: "*",
   "neon-postgres": "*",
+};
+
+// Other top-level directories each plugin vendors whole, keyed by plugin
+// directory name. plugins/antigravity is the clean package Antigravity
+// installs, so it gets the logos its manifest points at.
+const PLUGIN_DIRS = {
+  antigravity: ["assets"],
 };
 
 const repoRoot = process.cwd();
@@ -207,6 +216,19 @@ async function main() {
         process.stderr.write(
           `Synced skills/${skill} -> plugins/${plugin}/skills/${skill}\n`,
         );
+      }
+    }
+  }
+
+  for (const [plugin, dirs] of Object.entries(PLUGIN_DIRS)) {
+    for (const dir of dirs) {
+      const srcDir = path.join(repoRoot, dir);
+      const destDir = path.join(pluginsRoot, plugin, dir);
+      if (checkMode) {
+        await compareSkill(srcDir, destDir, `plugins/${plugin}/${dir}`);
+      } else {
+        await copySkill(srcDir, destDir);
+        process.stderr.write(`Synced ${dir} -> plugins/${plugin}/${dir}\n`);
       }
     }
   }
