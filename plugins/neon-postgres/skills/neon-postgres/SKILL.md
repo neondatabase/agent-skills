@@ -73,6 +73,19 @@ Driver notes:
 - On Vercel, use `node-postgres` (`npm install pg`) with Vercel Fluid compute and `import { attachDatabasePool } from "@vercel/functions";`
 - On Cloudflare, use `node-postgres` with Cloudflare Hyperdrive
 - On Neon Functions, use `node-postgres`, as the functions are long-running and reuse the pool across requests.
+- Neon connection strings, including the ones `neon env pull` writes and Neon Functions inject, carry `sslmode=require`. `pg` 8.23 and later log a `SECURITY WARNING` for that mode once per process, because pg v9 will give `require` libpq's meaning, which skips certificate verification. `pg` 8 already treats `require` as `verify-full`, so hand `pg` the URL with `verify-full` to keep the same checks without the warning. That includes the URL you pass to an ORM that uses `pg`, such as Drizzle's `node-postgres` driver or Prisma's `@prisma/adapter-pg`:
+
+  ```ts
+  new Pool({
+    connectionString: process.env.DATABASE_URL?.replace(
+      "sslmode=require",
+      "sslmode=verify-full",
+    ),
+  });
+  ```
+
+  Keep `sslmode=require` in the env file: `neon env pull` rewrites it, and libpq clients such as `psql` and psycopg fail on `verify-full` without a root certificate. On Cloudflare, `pg` connects with Hyperdrive's connection string, so leave the Neon URL you give Hyperdrive as it is.
+
 - Use the `@neondatabase/serverless` driver for serverless and edge environments (for example, when using Netlify) — HTTP transport for one-shot queries, WebSocket for transaction support. Link: https://neon.com/docs/serverless/serverless-driver.md
 
 ### 4. Set up the schema

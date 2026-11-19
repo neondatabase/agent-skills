@@ -87,7 +87,13 @@ import { Pool, Client } from "pg";
 
 const encoder = new TextEncoder();
 const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool);
 const CHANNEL = "events";
 
@@ -96,7 +102,10 @@ const CHANNEL = "events";
 // Don't call attachDatabasePool here: it would silence the idle drop that killed the feed.
 // The error listener keeps the process alive; reconnect the client on error in production (omitted here).
 const listener = new Client({
-  connectionString: process.env.DATABASE_URL_UNPOOLED,
+  connectionString: process.env.DATABASE_URL_UNPOOLED?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
 });
 listener.on("error", (err) => {
   console.error(err);

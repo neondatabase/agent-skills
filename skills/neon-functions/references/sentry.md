@@ -66,7 +66,13 @@ import { attachDatabasePool } from "@neon/functions";
 import { Hono } from "hono";
 import { Pool } from "pg";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool, {
   onUnexpectedError: (err) => Sentry.captureException(err),
 });
