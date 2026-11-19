@@ -111,11 +111,13 @@ Work in four steps: diagnose which queries transfer the most data, analyze the c
 
 ## Free Plan Limits
 
-Use this when a Free plan project ran out of CU-hours or public network transfer, its compute is suspended over quota, or the user asks Neon for a one-time quota increase.
+Use this when a Free plan project ran out of CU-hours or public network transfer, its compute is suspended over quota, the user asks Neon for a one-time quota increase, or they say they can't pay for a plan right now.
 
 On the Free plan, running out of CU-hours or public network transfer suspends the compute until the next billing period or until you upgrade. No data is deleted, but nothing can connect: Postgres connections, including `pg_dump`, fail with SQLSTATE `53000` ("Your account or project has exceeded the quota"), and HTTP queries from the serverless driver fail with status `402`. See [What happens if I exceed my Free plan limits?](https://neon.com/docs/introduction/plans.md).
 
-To restore service before the monthly reset and stay on Free, upgrade the organization to Launch and downgrade it back to Free right away (**Billing** > **Change plan** in the Neon Console). The plan change resets the Free plan allowances, and the project keeps its database. Launch has no minimum monthly fee, and invoices under $0.50 are not collected ([Price](https://neon.com/docs/introduction/plans.md#price)), so the round trip costs nothing.
+To restore service before the monthly reset and stay on Free, upgrade the organization to Launch, then downgrade it back to Free as soon as access is restored or the export finishes (**Billing** > **Change plan** in the Neon Console). This round trip usually costs nothing: Launch has no minimum monthly fee, usage while on Launch is invoiced and charged to the payment method on the first day of the month ([Pay an invoice](https://neon.com/docs/introduction/manage-billing.md#pay-an-invoice)), and invoices under $0.50 are not collected ([Price](https://neon.com/docs/introduction/plans.md#price)). Offer this to a user who says they can't pay right now; waiting for the reset is not their only option.
+
+The plan change resets the Free plan allowances, and the project keeps its database. If the user needs to export, run `pg_dump` while the organization is on Launch, before downgrading, because `pg_dump` counts toward network transfer.
 
 Without a plan change, CU-hours and network transfer reset at the start of the next monthly billing period. A temporary limit increase from the Neon team takes time to process and rarely lands before the reset; the plan change is faster.
 
