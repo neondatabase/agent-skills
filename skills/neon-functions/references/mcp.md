@@ -27,7 +27,13 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import { attachDatabasePool } from "@neon/functions";
 import { contacts } from "./db/schema";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool);
 const db = drizzle(pool);
 

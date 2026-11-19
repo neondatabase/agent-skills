@@ -114,7 +114,13 @@ import config from "../neon";
 import { todos } from "./db/schema";
 
 const env = parseEnv(config);
-const pool = new Pool({ connectionString: env.postgres.databaseUrl, max: 5 });
+const pool = new Pool({
+  connectionString: env.postgres.databaseUrl.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool);
 const db = drizzle(pool);
 
@@ -136,7 +142,13 @@ Create the `pg` pool at module scope (reused across requests on the same isolate
 
 ```typescript
 const { postgres } = parseEnv(config, ["DATABASE_URL"]); // not the unpooled URL, auth, etc.
-const pool = new Pool({ connectionString: postgres.databaseUrl, max: 5 });
+const pool = new Pool({
+  connectionString: postgres.databaseUrl.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool);
 ```
 
@@ -278,10 +290,18 @@ import { attachDatabasePool } from "@neon/functions";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool);
 const db = drizzle(pool);
 ```
+
+The injected `DATABASE_URL` carries `sslmode=require`, and `pg` 8.23 and later log a `SECURITY WARNING` for that mode on each cold start. `pg` 8 already treats `require` as `verify-full`, so passing `verify-full` keeps the same certificate checks and drops the warning.
 
 node-postgres emits idle-client failures as `error` on the pool. With no listener that is an `uncaughtException` and Node exits the isolate. Call `attachDatabasePool(pool)` once after `new Pool`. Requires `@neon/functions` ≥ 0.8.0. Expected idle disconnects (`ECONNRESET`, `EPIPE`, `ETIMEDOUT`, Postgres `57P01`, node-postgres's `Connection terminated unexpectedly`) are silent. Anything else is `console.error`, or `onUnexpectedError` if you pass it on the first call. The first call wins; a later call that passes `onUnexpectedError` is ignored and warns. This does not close the pool.
 
@@ -550,7 +570,13 @@ pool
 import { attachDatabasePool } from "@neon/functions";
 import { Pool, Client } from "pg";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
+  max: 5,
+});
 attachDatabasePool(pool);
 const CHANNEL = "chat_events";
 
@@ -559,7 +585,10 @@ const CHANNEL = "chat_events";
 // Don't call attachDatabasePool here: it would silence the idle drop that killed the feed.
 // The error listener keeps the process alive; reconnect the client on error in production (omitted here).
 const listener = new Client({
-  connectionString: process.env.DATABASE_URL_UNPOOLED,
+  connectionString: process.env.DATABASE_URL_UNPOOLED?.replace(
+    "sslmode=require",
+    "sslmode=verify-full",
+  ),
 });
 listener.on("error", (err) => {
   console.error(err);
