@@ -32,7 +32,7 @@ export default defineConfig({
 });
 ```
 
-`claim create --service` accepts `postgres`, `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway`. `init --services` accepts the same names except `postgres` (every branch has it). Selecting `data-api` on init also declares Auth. Compatibility-only:
+`claim create --service` accepts `postgres`, `auth`, `data-api`, `functions`, `object-storage`, and `ai-gateway`. `init --services` accepts the same names plus `realtime`. Selecting `data-api` on init also declares Auth. Compatibility-only:
 
 ```bash
 neon claim create --service auth --service data-api --env-pull
