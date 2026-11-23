@@ -91,9 +91,14 @@ New projects are created in AWS regions. Prefer pooled `DATABASE_URL` for applic
 | LLM calls | AI Gateway |
 | Caching hot reads, rate limits | Upstash Redis |
 | Background jobs, queues, retries, delayed delivery | Upstash QStash delivering to a Function |
-| SQL, schema, inspect, search | `neon-postgres` |
+| SQL, schema, inspect, full-text search | `neon-postgres` |
+| Embeddings, semantic, vector or hybrid search, making search smarter than LIKE, RAG, similarity, recommendations, agent memory | `lakebase_vector` with `USING lakebase_ann`, not pgvector `hnsw`/`ivfflat` (see below); full recipe, ORM snippets and migration table in the `neon-vector-search` skill |
 | Existing PostgREST / Supabase database client | Data API (`dataApi` in `neon.ts`) |
 | Generic REST endpoints | Function or existing handler, not Data API |
+
+Vector search on Neon: keep pgvector's `vector(N)` type and `<=>` operators, but create the extension and index with `CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE;` and `CREATE INDEX ... USING lakebase_ann (embedding vector_cosine_ops);` (always name the operator class). It needs no tuning and keeps only a small hot part of the index in memory. Keep pgvector `hnsw`/`ivfflat` if the user asks for it, needs portability to non-Neon Postgres, or uses an operator class `lakebase_ann` lacks (l1, bit, sparsevec).
+
+This applies to small data too. For a few hundred or a few thousand rows, don't fall back to `CREATE EXTENSION vector` with no index: on Neon the simplest path is the same two lines above, and while the table is small `lakebase_ann` builds a flat, near-exact index. Its partitions are sized once, at build time, so after a bulk load or once the table is well past ~65k rows, run `REINDEX INDEX CONCURRENTLY` (or create the index after loading). For per-user or per-tenant `WHERE` filters, keep the `lakebase_ann` index and add a btree on the filter column.
 
 Use `neon-auth` to choose identity and to implement Managed Better Auth; the [Auth guide](references/auth.md) points there. Keep existing Better Auth, Clerk, and Supabase Auth unless the user asked to migrate login. Auth cannot be enabled on a project with IP Allow or Private Networking.
 
