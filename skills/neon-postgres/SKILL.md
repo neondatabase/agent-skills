@@ -38,7 +38,7 @@ Login, users, sessions, and `@neon/auth` belong in `neon-auth`.
 
 Live queries, reactive UIs, and realtime data belong in `neon-realtime`.
 
-Semantic, vector, and hybrid search, embeddings, RAG, recommendations, and agent memory belong in `neon-vector-search`. On Neon, that means `lakebase_vector` with a `USING lakebase_ann` index, not pgvector `hnsw`/`ivfflat` or an unindexed scan.
+Semantic, vector, and hybrid search, embeddings, RAG, recommendations, and agent memory belong in `neon-vector-search`. On Neon, that means `lakebase_vector` with a `USING lakebase_ann` index, not pgvector `hnsw`/`ivfflat` or an unindexed scan, unless the user asks for pgvector.
 
 ## Setup Flow
 

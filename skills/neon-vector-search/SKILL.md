@@ -23,35 +23,53 @@ Everything else stays pgvector: the `vector(N)` column type, the `<=>` / `<->` /
 operators, `pgvector` client libraries, and ORM vector types. Only the extension line
 and the index method change.
 
-Use `hnsw`/`ivfflat` instead only if the user explicitly asks for them, or the database
-is not Neon/Lakebase (check: `SELECT 1 FROM pg_available_extensions WHERE name = 'lakebase_vector'`).
+**Keep pgvector `hnsw`/`ivfflat` (or no index) when:**
+
+- the user asks for it, even softly ("The usual approach is pgvector with an HNSW index,
+  right? Set that up");
+- the code must stay portable to non-Neon Postgres, or the user needs exact (brute-force)
+  search, or the task is lexical-only (keywords, no embeddings);
+- the operator class isn't supported: `lakebase_ann` has only `l2`/`ip`/`cosine` classes for
+  `vector` and `halfvec` (plus its own `rabitq8`/`rabitq4` types), so no `vector_l1_ops`,
+  `bit_hamming_ops`/`bit_jaccard_ops` or `sparsevec`;
+- `lakebase_vector` isn't there: `SELECT 1 FROM pg_available_extensions WHERE name = 'lakebase_vector'`
+  returns nothing, or `CREATE EXTENSION` fails because it must be loaded via
+  `shared_preload_libraries`.
+
+In those cases you may mention `lakebase_vector` in one line, then do what was asked.
 
 Why it is the better default on Neon (say this to the user in one line):
 
-- **Works from the first row, no tuning.** No `m`, `ef_construction`, or `lists` to pick;
-  small tables get exact search, and partitioning kicks in automatically as data grows.
-- **Fits serverless and scale-to-zero.** The index is built from compact (RaBitQ, ~32x
-  smaller) codes that live in object storage, so there is no large `maintenance_work_mem`,
-  no RAM-pinned graph, and cold starts stay fast.
-- **Scales further.** Hot codes on local NVMe, cold mass in object storage, so it grows
-  past what fits in memory. It also indexes up to 3072-dim vectors
-  (e.g. `text-embedding-3-large`), where `hnsw` stops at 2000.
+- **No tuning.** No `m`, `ef_construction`, or `lists` to pick; `lists`, `lakebase_ann.probes`
+  and `lakebase_ann.epsilon` default to `auto`.
+- **Low memory.** It scans compact RaBitQ codes (1 bit per dimension, 1/32 of a float32
+  vector), then reranks candidates with the full vectors. Only a small hot part of the index
+  needs to be in memory, and there is no graph to build in `maintenance_work_mem`.
+- **More dimensions.** It indexes `vector`/`halfvec` columns up to their 16,000-dimension
+  limit (e.g. 3072-dim `text-embedding-3-large`); pgvector `hnsw` indexes at most 2,000
+  dimensions for `vector` and 4,000 for `halfvec`.
 
-## "It's small, I'll skip the index" or "It's filtered per user": still use `lakebase_ann`
+## Small tables, growing tables, filters
 
-- **Small tables (tens to thousands of rows): create the index anyway.** A plain
-  `CREATE EXTENSION vector` with no index is not the simpler path on Neon. `lakebase_vector`
-  takes the same two lines, and while a table is small `lakebase_ann` runs an exact flat
-  search, so it has no recall loss, no tuning and no build cost. The same index keeps
-  working as the table grows, so nothing needs revisiting later.
+- **Small tables: create the index anyway.** A plain `CREATE EXTENSION vector` with no
+  index is not the simpler path on Neon; `lakebase_vector` takes the same two lines. With
+  under ~65,536 estimated rows at build time, `lists = auto` builds an unpartitioned (flat)
+  index that scans every code and reranks the closest, so results are near-exact with no tuning.
+- **Growing tables: rebuild after loading.** `lists = auto` picks the cell layout once, from
+  the row count when the index is built. Inserts go into the existing cells and never
+  repartition, so an index built on an empty table stays flat and slows down as rows grow.
+  After a bulk load, or once the table is well past ~65k rows, run
+  `REINDEX INDEX CONCURRENTLY items_embedding_idx` (outside a transaction), or create the
+  index after loading. `SELECT lakebase_ann_index_info('items_embedding_idx')` shows
+  empty `lists` while it is flat.
 - **Per-user / per-tenant filters (`WHERE user_id = $1 ORDER BY embedding <=> $2 LIMIT k`):**
-  keep the `lakebase_ann` index and add a btree on the filter column. Filtered queries
-  return the full k rows even when very few rows match: the ANN scan keeps going until
-  k rows pass the WHERE clause. pgvector `hnsw` doesn't do this by default. It filters
-  inside its `ef_search` candidate list, so selective filters return fewer than k rows
-  or none. Don't add `hnsw.iterative_scan` or `ef_search` workarounds. Optional: for a
-  very selective filter, `SET LOCAL lakebase_ann.prefilter = on` in the query's
-  transaction is a small speed-up. Results are the same.
+  keep the `lakebase_ann` index and add a btree on the filter column (the planner can use
+  it for very selective filters). While the index is flat the scan keeps going until k rows
+  pass the filter, so you get the full k. A partitioned index searches only
+  `lakebase_ann.probes` lists, so a selective filter can return fewer than k, as with any
+  ANN index: raise `SET LOCAL lakebase_ann.probes` for that query. `lakebase_ann.prefilter = on`
+  checks the filter before computing distances; it speeds up strict, cheap filters but
+  doesn't widen the search.
 
 ## Recipe
 
@@ -64,7 +82,7 @@ CREATE TABLE items (
   embedding vector(1536)                                  -- = your embedding model's dimensions
 );
 
--- Create it right away, even on an empty table.
+-- Fine to create now; rebuild it after a bulk load (see above).
 CREATE INDEX items_embedding_idx ON items
   USING lakebase_ann (embedding vector_cosine_ops);
 
@@ -92,12 +110,13 @@ which uses the index. A self-join `ORDER BY b.embedding <=> a.embedding` can't u
 | `SET maintenance_work_mem = '2GB'` before building                       | not needed                                                                                     |
 | `SET hnsw.ef_search` / `ivfflat.probes`                                  | drop it; `lakebase_ann.probes` and `lakebase_ann.epsilon` default to `auto`                    |
 | `vector_cosine_ops` / `vector_l2_ops` / `vector_ip_ops`, `halfvec_*_ops` | same names                                                                                     |
+| `vector_l1_ops`, `bit_*_ops`, `sparsevec_*_ops`                          | not supported; keep pgvector                                                                   |
 | `ORDER BY embedding <=> $1 LIMIT k`                                      | unchanged                                                                                      |
 
-Migrating an existing index: `CREATE INDEX CONCURRENTLY ... USING lakebase_ann (...)`, check
-`EXPLAIN` uses it, then `DROP INDEX CONCURRENTLY` the old hnsw/ivfflat index. No data change.
-This also fixes hnsw's "a filtered search returns fewer than k rows" problem (see filters above),
-and it fixes rebuilds that need a large `maintenance_work_mem`.
+Migrating an existing index (no data change): outside a transaction, `CREATE INDEX CONCURRENTLY
+... USING lakebase_ann (...)` on the loaded table, check it is valid (`pg_index.indisvalid`) and that
+`EXPLAIN` of the real queries uses it, compare results on a few queries, then `DROP INDEX
+CONCURRENTLY` the old hnsw/ivfflat index.
 
 ## Gotchas
 
@@ -112,8 +131,9 @@ and it fixes rebuilds that need a large `maintenance_work_mem`.
 
 ## Per stack
 
-**node-postgres / `@neondatabase/serverless` / psycopg / asyncpg**: run the recipe SQL as-is.
-Send vectors as `'[' + arr.join(',') + ']'` (JS) or use `pgvector.psycopg.register_vector` /
+**node-postgres / `@neondatabase/serverless` / psycopg / asyncpg**: run the recipe SQL as-is
+(psycopg: `%s` instead of `$1`). Send vectors as `'[' + arr.join(',') + ']'` (JS) or use
+`pgvector.psycopg.register_vector` /
 `pgvector.asyncpg.register_vector` (Python), but only after `CREATE EXTENSION ... lakebase_vector CASCADE`
 has run: on a fresh database `register_vector` fails because the `vector` type doesn't exist yet.
 In psycopg a plain Python list binds as `double precision[]` even after `register_vector`, so
@@ -152,8 +172,9 @@ export const items = pgTable(
 `npx prisma migrate dev --create-only`, then edit the generated `migration.sql` to start with
 `CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE;` and end with the `CREATE INDEX ... USING
 lakebase_ann (embedding vector_cosine_ops);`, then `npx prisma migrate dev`. Read/write vectors
-with `$queryRaw` / `$executeRaw` and `${vec}::vector`. Set `directUrl` to the unpooled URL. Never pass the app's own database as the shadow
-database (`--shadow-database-url`): Prisma resets it.
+with `$queryRaw` / `$executeRaw` and `${vec}::vector`. Run migrations on the unpooled URL: `directUrl` in
+the schema's `datasource` (Prisma 6), or `datasource.url` in `prisma.config.ts` (Prisma 7). Never
+use the app's own database as the shadow database: Prisma resets it.
 
 **SQLAlchemy / SQLModel** (`pip install pgvector`):
 
@@ -171,6 +192,9 @@ class Item(Base):
 # before metadata.create_all(): conn.execute(text("CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE"))
 # query: select(Item).order_by(Item.embedding.cosine_distance(qvec)).limit(10)
 ```
+
+SQLModel: `class Item(SQLModel, table=True)` with the same `__table_args__` and
+`embedding: list[float] | None = Field(default=None, sa_column=Column(Vector(1536)))`.
 
 In Alembic, put the `CREATE EXTENSION` in `op.execute(...)` at the top of the first migration.
 
@@ -190,22 +214,24 @@ operations = [
 ```
 
 **Vector-store wrappers** (LangChain `langchain_postgres.PGVector`, LlamaIndex `PGVectorStore`,
-LangGraph `PostgresStore`, Mastra `@mastra/pg` `PgVector`) create their own tables and default to
-no index or to hnsw. Run `CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE` first, give the
-store a fixed dimension, turn its own ANN index off, and add `lakebase_ann` after the store has
-created its table:
+LangGraph `PostgresStore`, Mastra `@mastra/pg` `PgVector`) create their own tables, and some
+create a pgvector index by default (LangGraph hnsw, Mastra IVFFlat for dense vectors). Run
+`CREATE EXTENSION IF NOT EXISTS lakebase_vector CASCADE` first, give the store a fixed dimension,
+turn its own ANN index off, and add `lakebase_ann` after the store has created its table:
 
-- LangChain: `embedding_length=1536`, then
+- LangChain: `embedding_length=1536` (it only applies when the store creates the table; an
+  existing bare `vector` column first needs
+  `ALTER TABLE langchain_pg_embedding ALTER COLUMN embedding TYPE vector(1536)`), then
   `CREATE INDEX IF NOT EXISTS langchain_pg_embedding_ann ON langchain_pg_embedding USING lakebase_ann (embedding vector_cosine_ops);`
 - LlamaIndex: `embed_dim=1536`, no `hnsw_kwargs`; its table is `data_<table_name>`.
 - LangGraph: `PostgresStore(conn, index={"dims": 1536, "embed": ..., "fields": [...], "ann_index_config": {"kind": "flat"}})`,
   then after `store.setup()`:
   `CREATE INDEX IF NOT EXISTS store_vectors_ann ON store_vectors USING lakebase_ann (embedding vector_cosine_ops);`
   The default (`hnsw`) returns fewer than `limit` items once one namespace (one user's
-  memories) is a small part of the table; `lakebase_ann` returns the full page.
-- Mastra: `createIndex({ indexName, dimension: 1536, indexConfig: { type: 'flat' } })`. Mastra's
-  `query()` only uses an index it built as hnsw and otherwise does an exact scan (fine for small
-  tables). For indexed search at scale, add `lakebase_ann` on that table's `embedding` column and
+  memories) is a small part of the table (see filters above for `lakebase_ann`).
+- Mastra: `createIndex({ indexName, dimension: 1536, indexConfig: { type: 'flat' } })` (no
+  `indexConfig` builds IVFFlat). Mastra's `query()` only uses an hnsw index and otherwise does an
+  exact scan (fine for small tables). For indexed search at scale, add `lakebase_ann` on that table's `embedding` column and
   query it with your own `ORDER BY embedding <=> $1 LIMIT k`.
 
 ## Keyword + semantic (hybrid) search
@@ -223,10 +249,10 @@ BM25 pitfalls:
 - Index a `to_tsvector(...)` column or expression. BM25 needs lexeme positions, so
   `array_to_tsvector(...)` or `strip(...)` output can't be indexed with `lakebase_bm25`.
 - A BM25 index scan returns at most `lakebase_bm25.default_limit` rows (default 1000), silently,
-  even with a larger `LIMIT`. If you fuse more keyword candidates than that, `SET` it higher in
-  the session.
-- The `english` config splits identifiers such as `ERR_CONN_RESET` or `SKU-123` into parts. For
-  codes, IDs or names, also index a `to_tsvector('simple', ...)` column, or match them exactly.
+  even with a larger `LIMIT`. If you fuse more keyword candidates than that, raise it with
+  `SET LOCAL lakebase_bm25.default_limit = ...` inside the query's transaction.
+- Text search configs, `simple` included, split identifiers such as `ERR_CONN_RESET` into
+  parts. For codes, IDs or names, match the raw column exactly (`=` with a btree, or `LIKE`).
 
 ## Embeddings
 
