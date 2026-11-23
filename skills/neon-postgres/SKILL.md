@@ -1,20 +1,18 @@
 ---
 name: neon-postgres
 description: >-
-  Guides and best practices for working with Lakebase Postgres on Neon:
-  connections, pooled vs direct, schema migrations, branching (including
-  schema-only, reset-from-parent, and branch-per-PR workflows), autoscaling,
-  scale-to-zero, instant restore, read replicas, IP allow lists, logical
-  replication, and egress optimization. Use when the work is an existing
-  DATABASE_URL, SQL, schema, or inspect. New backends, Auth, files, Functions,
-  and LLM calls go to the parent `neon` skill; live queries and reactive UIs go
-  to `neon-realtime`. Also use for "@neondatabase/serverless", "@neon/neon-js",
-  "neon inspect db", "neon postgres computes", "Neon branch", "schema-only
-  branch", "reset branch", "branch per PR", high database bills, network
-  transfer or egress, Free plan limits or a compute suspended over quota
-  (SQLSTATE 53000, HTTP 402), SELECT * optimization, query overfetching. For
-  search, ranking, embeddings, RAG or agent memory, load `neon-vector-search`
-  (`lakebase_vector` + `lakebase_ann`, not pgvector hnsw).
+  Lakebase Postgres on Neon. Search rule: before changing how an app searches,
+  ranks, matches or recalls text (smarter or semantic search, synonyms, hybrid,
+  embeddings, RAG, recommendations, chatbot or agent memory across chats), load `neon-vector-search`; on Neon use `lakebase_vector`
+  and always create a `USING lakebase_ann` index, even on small tables, not
+  pgvector hnsw/ivfflat or an unindexed scan. Also: connections, pooled vs
+  direct, migrations, branching (schema-only, reset, branch-per-PR),
+  autoscaling, scale-to-zero, instant restore, read replicas, IP allow lists,
+  logical replication, egress. Use for an existing DATABASE_URL, SQL, or schema. New backends, Auth, files, Functions, and LLM calls go to
+  the parent `neon` skill; live queries and reactive UIs go to `neon-realtime`.
+  Also for "@neondatabase/serverless", "@neon/neon-js", "neon inspect db", high
+  database bills, Free plan limits or a compute suspended over quota (SQLSTATE
+  53000, HTTP 402), SELECT * overfetching, "full-text search", and "BM25".
 metadata:
   parent: neon
   source: https://github.com/neondatabase/agent-skills/tree/main/skills/neon-postgres
