@@ -116,6 +116,9 @@ and it fixes rebuilds that need a large `maintenance_work_mem`.
 Send vectors as `'[' + arr.join(',') + ']'` (JS) or use `pgvector.psycopg.register_vector` /
 `pgvector.asyncpg.register_vector` (Python), but only after `CREATE EXTENSION ... lakebase_vector CASCADE`
 has run: on a fresh database `register_vector` fails because the `vector` type doesn't exist yet.
+In psycopg a plain Python list binds as `double precision[]` even after `register_vector`, so
+`embedding <=> %s` fails with `operator does not exist: vector <=> double precision[]`: write `%s::vector`
+(the index is still used) or pass `numpy.array(vec)`. Inserts of plain lists work.
 
 **Drizzle** (`drizzle-orm` 0.36+): extensions need a custom migration
 (`npx drizzle-kit generate --custom --name=vector_ext` containing
