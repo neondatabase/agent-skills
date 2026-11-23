@@ -72,6 +72,12 @@ Neon Realtime makes any SQL query live. Build realtime, reactive apps and agents
 npx skills add neondatabase/agent-skills
 ```
 
+Or install them with the GitHub CLI:
+
+```bash
+gh skill install neondatabase/agent-skills
+```
+
 ### Agent Plugin
 
 The repository root is a portable [Agent Plugins v1](https://agent-plugins.org/specification) package, so any conforming client can install it straight from this repo. The root [`plugin.json`](plugin.json) declares the plugin, [`mcp.json`](mcp.json) declares the [Neon MCP Server](https://mcp.neon.tech), and the skills are the directories under `skills/`.
