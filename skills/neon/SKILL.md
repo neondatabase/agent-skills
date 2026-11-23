@@ -129,7 +129,7 @@ The skills below live in the [`neondatabase/agent-skills`](https://github.com/ne
 | Skill                            | Use it for                                                                                                                                                                           |
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `neon-postgres`                  | Working with databases, including connections, schemas, queries, search, branching workflows, egress optimization, Free plan limits, autoscaling, performance, and scaling decisions. |
-| `neon-auth`                      | Identity routing and Managed Better Auth setup (login, users, sessions, trusted domains). Fetch: https://neon.com/docs/ai/skills/neon-auth/SKILL.md |
+| `neon-auth`                      | Identity routing and Managed Better Auth setup (login, users, sessions, trusted domains).                                                                                            |
 | `neon-object-storage`            | Storing and serving files (uploads, images, blobs), including branching them with the database.                                                                                      |
 | `neon-functions`                 | Deploying long-running or streaming serverless functions — APIs, agents, MCP servers, SSE/WebSocket servers, and Function Triggers (cron and object-storage).                        |
 | `neon-ai-gateway`                | Calling an LLM or routing across model providers with one credential, including discovering the branch's servable models at runtime via the OpenAI-compatible `/v1/models` endpoint. |
@@ -158,14 +158,6 @@ For example, to install the object storage skill globally for a specific agent w
 ```bash
 neon skills -s neon-object-storage --global -y --agent <agent-name>
 ```
-
-`neon-auth` is not in the CLI skill catalog of current releases. Unknown names fail, so do not run `neon skills -s neon-auth`. Fetch it:
-
-```
-https://neon.com/docs/ai/skills/neon-auth/SKILL.md
-```
-
-References: https://neon.com/docs/ai/skills/neon-auth/references/managed-auth.md and https://neon.com/docs/ai/skills/neon-auth/references/self-managed.md. If those URLs are unpublished, fetch the same files from https://github.com/neondatabase/agent-skills/blob/main/skills/neon-auth/SKILL.md
 
 If the Neon CLI is not available, you can visit https://neon.com/.well-known/agent-skills for a registry of all available Neon skills and fetch them manually.
 
@@ -271,7 +263,7 @@ For full MCP server installation options, see https://neon.com/docs/ai/connect-m
 neon skills -s neon --agent cursor -y
 ```
 
-To install a specific skill only (not `neon-auth` until the CLI catalog includes it; fetch it as in [Installing the Right Skill](#installing-the-right-skill)):
+To install a specific skill only:
 
 ```bash
 neon skills -s <skill-name> --agent cursor -y
