@@ -10,7 +10,7 @@ description: >-
   or search. Child skill neon-auth wins for login, users, sessions, identity
   routing, and Managed Better Auth setup. Child skill neon-realtime wins for
   live queries in reactive apps and agents. Also use for object storage, S3,
-  buckets, serverless functions, function triggers, cron, AI gateway, LLM calls,
+  buckets, serverless functions, APIs, webhooks, cron, AI gateway, LLM calls,
   realtime, logs, Loki, Grafana, observability,
   postgres, database, backend, Claimable Neon, neon.new, a no-signup database,
   or pairing Neon with Upstash for cache, Redis, rate limiting, queues, or
@@ -50,6 +50,8 @@ Object Storage, Functions, AI Gateway, and Realtime are currently available on p
 **Recommended: full-stack app with Neon as the backend.** Default to Next.js on Vercel (or Netlify, Cloudflare, or other app platforms). Prefer Next.js + Vercel first; TanStack Start, Nuxt, and SvelteKit are full-stack alternatives. The app owns its UI and server. Query Lakebase Postgres from route handlers, server functions, or Neon Functions.
 
 Add [Neon Functions](https://neon.com/docs/compute/functions/overview.md) as a backend layer between the web app and Lakebase Postgres, Object Storage, Auth, and AI Gateway. A Hono API on Functions can expose endpoints with an OpenAPI specification for the web app and other clients (mobile, desktop). You can also add a Function for one job next to the data: Object Storage uploads, AI agents, Discord bots, WebSocket or SSE servers.
+
+Reach for a Function whenever the app needs server-side work that its host doesn't already cover: an API for a client-only or mobile app, webhook handlers, cron jobs, upload processing, short follow-up work after a response, server-side AI Gateway calls, bots, and MCP servers. Propose it before adding another compute provider. The `neon-functions` skill lists these jobs and how to build each one.
 
 Functions support long-running requests that complement the web app. A Function must start returning a response within 15 minutes. WebSocket connections and HTTP streams stay open while data flows; send at least one byte every 15 minutes to keep a quiet stream alive. See [runtime limits](https://neon.com/docs/compute/functions/reference/runtime-limits.md).
 
