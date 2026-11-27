@@ -116,12 +116,12 @@ Checked 2026-10-30 against https://neon.com/docs/auth/guides/plugins.md, https:/
 | Email/password | Supported | `signUp.email`, `signIn.email` |
 | Social OAuth (Google, GitHub, Microsoft, Vercel, Apple, Discord) | Supported | `signIn.social`. Shared Google credentials are for development; production and GitHub/Vercel need your own OAuth apps. Microsoft, Apple, and Discord always need your own. Discord: see [details](#apple-microsoft-and-discord-oauth). https://neon.com/docs/auth/guides/setup-oauth.md |
 | Admin | Supported | Admin session required. Plugin customization is on the roadmap. |
-| Email OTP | Supported | Managed delivery. `emailOtp.sendVerificationOtp`, `signIn.emailOtp`. |
+| Email OTP | Supported | Managed email delivery, or your `send.otp` webhook when it is enabled ([receiver contract](references/managed-auth.md#webhooks)). `emailOtp.sendVerificationOtp`, `signIn.emailOtp`. |
 | Magic Link | Supported | Enable on the branch (off by default). `signIn.magicLink`. |
 | Organization | Partial, Beta | Members, invitations, owner/admin/member. No Teams, server hooks, custom roles/permissions, or dynamic access control. Emailed invitations: [managed-auth.md](references/managed-auth.md#organization-invitations). |
 | JWT | Supported | EdDSA (Ed25519), 15-minute expiry, no custom claims. Default client: `.token()` then `data.token`. `SupabaseAuthAdapter()`: `getSession()` then `data.session.access_token` (no `.token()`). |
 | Open API | Supported | Server routes `/reference` and `/open-api/generate-schema`. |
-| Phone Number | Supported with constraints | Browser client: existing users link a number, then sign in; no phone-first signup; own SMS webhook; custom UI. Next.js `auth.handler()` forwards the catch-all path, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. https://neon.com/docs/auth/guides/plugins/phone-number.md |
+| Phone Number | Supported with constraints | Browser client: existing users link a number, then sign in; no phone-first signup; own SMS webhook ([receiver contract](references/managed-auth.md#webhooks)); custom UI. Next.js `auth.handler()` forwards the catch-all path, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. https://neon.com/docs/auth/guides/plugins/phone-number.md |
 | MFA / Two-Factor | Roadmap | Unavailable on Managed Auth. If required: [self-managed.md](references/self-managed.md), after confirming the installed Better Auth version. |
 | Passkey, API Key, Generic OAuth, One Tap, Multi Session | Not exposed by Managed SDK/UI | If required: [self-managed.md](references/self-managed.md). Generic OAuth is not Google/GitHub/Microsoft/Vercel/Apple/Discord social sign-in. |
 | OAuth Provider (OAuth server, MCP auth) | Supported (beta) | Neon Auth is the OAuth 2.1 / OIDC server for your MCP server or third-party OAuth clients. You host the login and consent pages; no client credentials grant. See [references/oauth-server.md](references/oauth-server.md). |
@@ -129,7 +129,7 @@ Checked 2026-10-30 against https://neon.com/docs/auth/guides/plugins.md, https:/
 
 The default Managed client method is `getAnonymousToken()`. That JWT is a Neon anonymous Data API token. It is not Better Auth's Anonymous-account plugin (`signIn.anonymous`). `anonymousTokenClient()` is the SDK plugin factory, not a method on the public client. Do not call it, and do not call `getAnonymousToken()` on `SupabaseAuthAdapter()`.
 
-Trusted domains and webhooks are Neon settings, not installable Better Auth plugins.
+Trusted domains and webhooks are Neon settings, not installable Better Auth plugins. Webhook receiver contract and URL rules: [managed-auth.md](references/managed-auth.md#webhooks).
 
 ## Apple, Microsoft, and Discord OAuth
 

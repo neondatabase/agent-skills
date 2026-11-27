@@ -17,7 +17,21 @@ Managed Auth sends verification, email OTP, magic-link, and password-reset messa
 
 Production requires custom SMTP. Verification codes work on shared or custom SMTP. Verification links require custom SMTP. Checklist: https://neon.com/docs/auth/production-checklist.md. Branding and webhook delivery: https://neon.com/docs/auth/guides/customize-emails.md.
 
-SMS is separate: the Phone Number plugin needs an application `send.otp` webhook.
+The `send.otp` webhook takes over OTP delivery when it is enabled on the branch: the Phone Number plugin always needs it for SMS, and email OTP codes are delivered through it too. Receiver contract and URL rules: [Webhooks](#webhooks).
+
+## Webhooks
+
+Webhooks are a Neon setting on the branch, not an installable Better Auth plugin. Payloads, retries, and a full verification example: https://neon.com/docs/auth/guides/webhooks.md. The notes below are what a receiver must get right.
+
+**`send.otp` payload.** The event fires for phone OTPs and, when the webhook is enabled, for email OTPs as well, including a first-time email OTP sign-in where no account exists yet. Phone OTPs carry `event_data.delivery_preference: "sms"`; treat anything else as email, and handle both channels in one receiver. For a first-time email sign-in `user` is `{ "email": "<address>" }` only (lowercased) and `event_data.user_exists` is `false`. For an existing account `user` is the full record and `user_exists` is `true`. The field is absent for phone OTPs and when the account lookup failed; treat existence as unknown then. For email OTP a failed delivery is logged and the request still returns 200 so the response cannot reveal which emails have accounts; monitor the receiver, not the client. For phone OTP the request fails with `WEBHOOK_DELIVERY_FAILED`.
+
+**Sign-up disabled.** `emailAndPassword.disableSignUp` also governs email OTP sign-in. Requesting a code for an unknown email returns the same 200 as for a known one, nothing is sent (no webhook, no email), and verifying any code for that address fails with `INVALID_OTP`.
+
+**Headers.** Read `Neon-Better-Auth-Signature`, `-Signature-Kid`, `-Timestamp`, `-Event-Type`, `-Event-Id`, and `-Delivery-Attempt`. The `X-Neon-*` names are deprecated; they are still sent with identical values. Read all six from one set and never mix the two. Delivery is retried up to 3 attempts with the same `event_id` (in the signed body and in the `Event-Id` header). Record the body's `event_id` once your send succeeds and answer a repeat of it with the same 2xx without sending again; a repeat after a failed attempt is reprocessed. Consider rejecting deliveries whose `Timestamp` is more than 5 minutes old to limit replay.
+
+**Signature.** `Neon-Better-Auth-Signature` is a detached JWS (`<header>..<signature>`, `alg: EdDSA`, Ed25519) over `${timestamp}.${base64url(rawBody)}`, where `timestamp` is the `Neon-Better-Auth-Timestamp` value (Unix milliseconds) and `rawBody` is the request body before JSON parsing. Fetch `<auth base URL>/.well-known/jwks.json` (`NEON_AUTH_BASE_URL` plus that path), select the key whose `kid` matches `Neon-Better-Auth-Signature-Kid`, and verify with a JOSE library. Cache the key set and refetch only on an unknown `kid` (jose `createRemoteJWKSet` does both). In a Function, the injected `NEON_AUTH_JWKS_URL` is the same key set.
+
+**URL rules.** `https` only, a public hostname, and no `localhost`, private IP, IP literal, or Neon-hosted domain. The one exception is a Neon Functions invocation URL (`https://br-<branch>-<slug>.compute.c-<N>.<region>.aws.neon.tech/...`), which is accepted and is the recommended way to host the receiver on Neon. The Functions proxy strips client `X-Neon-*` headers, so a Function receiver must read `Neon-Better-Auth-*`.
 
 ## Packages
 
@@ -114,7 +128,7 @@ Do not destructure `{ user }` from the top-level result. Do not pass options int
 
 JWT: `const { data, error } = await auth.token();` then `data.token`. Do not call `getJWTToken()` on the public client.
 
-**Phone OTP:** the browser client exposes `phoneNumber`. Existing users link a number, then sign in; there is no phone-first signup. Next.js `auth.handler()` forwards the catch-all path to Managed Auth, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. SMS e2e needs a configured `send.otp` webhook and custom UI.
+**Phone OTP:** the browser client exposes `phoneNumber`. Existing users link a number, then sign in; there is no phone-first signup. Next.js `auth.handler()` forwards the catch-all path to Managed Auth, including phone OTP. A missing `auth.phoneNumber` server method is a missing typed helper, not a proxy rejection. SMS e2e needs a configured `send.otp` webhook and custom UI. Receiver contract: [Webhooks](#webhooks).
 
 ## Organization invitations
 
